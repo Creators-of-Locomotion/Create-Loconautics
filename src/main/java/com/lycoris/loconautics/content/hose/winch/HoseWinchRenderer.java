@@ -5,6 +5,7 @@ import com.lycoris.loconautics.client.RopeRendering;
 import com.lycoris.loconautics.common.strand.StrandRenderer;
 import com.lycoris.loconautics.content.steelcable.SteelCableHover;
 import com.lycoris.loconautics.common.strand.StrandAnchors;
+import com.lycoris.loconautics.content.hose.HoseNozzleKnot;
 import com.lycoris.loconautics.content.hose.HoseSwell;
 import com.lycoris.loconautics.content.hose.rope.HoseRope;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -134,6 +135,7 @@ public class HoseWinchRenderer implements BlockEntityRenderer<HoseWinchBlockEnti
         SuperByteBuffer knot = CachedBuffers.partialFacing(
                 LoconauticsPartialModels.HOSE_KNOT, be.getBlockState(), Direction.NORTH);
 
+        boolean nozzleKnot = liveNozzle != null && LoconauticsPartialModels.HOSE_NOZZLE_KNOT.get() != null;
         Quaternionf orient = new Quaternionf();
         double cumDist = 0.0;
         for (int i = 0; i < points.size() - 1; i++) {
@@ -145,7 +147,7 @@ public class HoseWinchRenderer implements BlockEntityRenderer<HoseWinchBlockEnti
             }
 
             if (i > 0) {
-                renderKnot(ps, vb, ownerPos, p0, orient, worldLight(level, worldPoints.get(i)), knot);
+                renderKnot(ps, vb, ownerPos, p0, orient, worldLight(level, worldPoints.get(i)), knot, 1.0f);
             }
 
             SuperByteBuffer middle = CachedBuffers.partialFacing(
@@ -160,7 +162,17 @@ public class HoseWinchRenderer implements BlockEntityRenderer<HoseWinchBlockEnti
             ps.popPose();
             cumDist += length;
         }
-        renderKnot(ps, vb, ownerPos, points.getLast(), orient, worldLight(level, worldPoints.getLast()), knot);
+        if (nozzleKnot) {
+            SuperByteBuffer nozzleBuffer = CachedBuffers.partialFacing(
+                    LoconauticsPartialModels.HOSE_NOZZLE_KNOT, be.getBlockState(), Direction.NORTH);
+            Quaternionf nozzleOrient = HoseNozzleKnot.atNozzle(orient);
+            org.joml.Vector3f back = HoseNozzleKnot.backOff(nozzleOrient);
+            renderKnot(ps, vb, ownerPos, points.getLast().add(back.x, back.y, back.z), nozzleOrient,
+                    worldLight(level, worldPoints.getLast()), nozzleBuffer, HoseNozzleKnot.INFLATE);
+        } else {
+            renderKnot(ps, vb, ownerPos, points.getLast(), orient, worldLight(level, worldPoints.getLast()), knot,
+                    1.0f);
+        }
 
         if (holdingHoseItem()) {
             RopeRendering.renderHitbox(ps, buffer, points, ownerPos, (float) HoseRope.COLLISION_RADIUS);
@@ -214,10 +226,11 @@ public class HoseWinchRenderer implements BlockEntityRenderer<HoseWinchBlockEnti
     }
 
     private static void renderKnot(PoseStack ps, VertexConsumer vb, BlockPos ownerPos,
-                                   Vec3 point, Quaternionf orient, int light, SuperByteBuffer knot) {
+                                   Vec3 point, Quaternionf orient, int light, SuperByteBuffer knot, float scale) {
         ps.pushPose();
         ps.translate(point.x - ownerPos.getX(), point.y - ownerPos.getY(), point.z - ownerPos.getZ());
         ps.mulPose(orient);
+        ps.scale(scale, scale, scale);
         ps.translate(-0.5, -0.5, -0.5);
         knot.light(light).renderInto(ps, vb);
         ps.popPose();
