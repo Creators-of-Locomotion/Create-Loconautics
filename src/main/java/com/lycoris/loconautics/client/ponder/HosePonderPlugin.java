@@ -18,18 +18,22 @@ public class HosePonderPlugin implements PonderPlugin {
         helper.forComponents(LoconauticsRegistries.HOSE.getId())
                 .addStoryBoard("hose/hose", HoseScenes::connect)
                 .addStoryBoard("hose/hose", HoseScenes::nozzle)
-                .addStoryBoard("hose/hose", HoseScenes::fluid)
+                .addStoryBoard("hose/pump", HoseScenes::fluid)
                 .addStoryBoard("hose/hose", HoseScenes::spray);
 
         helper.forComponents(LoconauticsRegistries.HOSE_WINCH.getId())
                 .addStoryBoard("hose/hose", HoseScenes::winch)
                 .addStoryBoard("hose/hose", HoseScenes::connect)
-                .addStoryBoard("hose/hose", HoseScenes::fluid);
+                .addStoryBoard("hose/pump", HoseScenes::fluid);
 
         helper.forComponents(LoconauticsRegistries.HOSE_NOZZLE.getId())
                 .addStoryBoard("hose/hose", HoseScenes::connect)
                 .addStoryBoard("hose/hose", HoseScenes::nozzle)
-                .addStoryBoard("hose/hose", HoseScenes::fluid)
-                .addStoryBoard("hose/hose", HoseScenes::spray);
+                .addStoryBoard("hose/pump", HoseScenes::fluid)
+                .addStoryBoard("hose/hose", HoseScenes::spray)
+                .addStoryBoard("hose/socket", HoseScenes::socket);
+
+        helper.forComponents(LoconauticsConstants.id("fluid_hatch_gray"))
+                .addStoryBoard("hose/socket", HoseScenes::socket);
     }
 }

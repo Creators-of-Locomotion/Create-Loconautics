@@ -162,6 +162,13 @@ public final class LoconauticsRegistries {
                             .networkSynchronized(BlockPos.STREAM_CODEC)
                             .build());
 
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<net.minecraft.resources.ResourceLocation>>
+            BOUND_BLOCK = DATA_COMPONENTS.register("bound_block", () ->
+                    DataComponentType.<net.minecraft.resources.ResourceLocation>builder()
+                            .persistent(net.minecraft.resources.ResourceLocation.CODEC)
+                            .networkSynchronized(net.minecraft.resources.ResourceLocation.STREAM_CODEC)
+                            .build());
+
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<BlockPos>>
             STEEL_CABLE_FIRST_CONNECTION = DATA_COMPONENTS.register("steel_cable_first_connection", () ->
                     DataComponentType.<BlockPos>builder()
@@ -597,6 +604,13 @@ public final class LoconauticsRegistries {
 
                         output.accept(com.lycoris.loconautics.content.boiler.BoilerBlocks.FIREBOX_ITEM.get());
                         output.accept(com.lycoris.loconautics.content.boiler.BoilerBlocks.BOILER_BODY_ITEM.get());
+                        com.lycoris.loconautics.content.boiler.BoilerBlocks.DYED_BODY_ITEMS
+                                .forEach((kind, byColor) -> byColor.forEach((color, item) ->
+                                        output.accept(new net.minecraft.world.item.ItemStack(item.get()),
+                                                color == com.lycoris.loconautics.content.boiler.BoilerBlocks.BODY_TAB_COLOR
+                                                        && kind.equals(com.lycoris.loconautics.content.boiler.BoilerBlocks.BODY_TAB_KIND)
+                                                        ? net.minecraft.world.item.CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS
+                                                        : net.minecraft.world.item.CreativeModeTab.TabVisibility.SEARCH_TAB_ONLY)));
                         output.accept(SMOKESTACK_ITEM.get());
                         output.accept(com.lycoris.loconautics.content.boiler.BoilerBlocks.STEAM_TAKEOFF_ITEM.get());
                         output.accept(com.lycoris.loconautics.content.boiler.BoilerBlocks.SMART_SAFETY_VALVE_ITEM.get());
