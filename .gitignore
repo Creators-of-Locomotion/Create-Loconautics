@@ -27,6 +27,7 @@ deps/
 
 *.md
 !README.md
+!CHANGELOG.md
 !docs/wiki/*.md
 *.py
 /skills-lock.json

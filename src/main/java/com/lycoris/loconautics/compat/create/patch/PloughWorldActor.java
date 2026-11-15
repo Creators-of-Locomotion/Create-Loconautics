@@ -32,13 +32,19 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 public final class PloughWorldActor {
 
+    // a plough placed on a body that was already scanned starts working after this many ticks
+    private static final long RESCAN_TICKS = 40;
+
     private static final Map<Long, Vec3> lastCenter = new HashMap<>();
+    private static final Map<UUID, Ploughs> known = new HashMap<>();
 
     public static void onPhysicsTick(SubLevelPhysicsSystem system, double timeStep) {
         ServerLevel serverLevel = system.getLevel();
@@ -50,13 +56,39 @@ public final class PloughWorldActor {
         for (SubLevelAccess access : container.getAllSubLevels()) {
             if (!(access instanceof ServerSubLevel subLevel) || subLevel.isRemoved()) continue;
             if (GhostWheelBodies.isWheelBody(subLevel.getUniqueId())) continue;
-            SubLevelBlocks.forEachBlock(subLevel, (pos, state) -> {
-                if (state.getBlock() instanceof PloughBlock) {
-                    tick(pos.immutable(), state, subLevel, serverLevel);
-                }
-                return true;
-            });
+            for (BlockPos localPos : ploughsOf(subLevel, serverLevel.getGameTime())) {
+                tick(localPos, subLevel.getLevel().getBlockState(localPos), subLevel, serverLevel);
+            }
         }
+    }
+
+    private static List<BlockPos> ploughsOf(ServerSubLevel subLevel, long now) {
+        Ploughs held = known.get(subLevel.getUniqueId());
+        if (held != null && held.scanned() <= now && now - held.scanned() < RESCAN_TICKS
+                && stillPloughs(subLevel, held.positions())) {
+            return held.positions();
+        }
+        List<BlockPos> positions = new ArrayList<>();
+        SubLevelBlocks.forEachBlock(subLevel, (pos, state) -> {
+            if (state.getBlock() instanceof PloughBlock) {
+                positions.add(pos.immutable());
+            }
+            return true;
+        });
+        known.put(subLevel.getUniqueId(), new Ploughs(now, positions));
+        return positions;
+    }
+
+    private static boolean stillPloughs(ServerSubLevel subLevel, List<BlockPos> positions) {
+        for (BlockPos pos : positions) {
+            if (!(subLevel.getLevel().getBlockState(pos).getBlock() instanceof PloughBlock)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private record Ploughs(long scanned, List<BlockPos> positions) {
     }
 
     private static void tick(BlockPos localPos, BlockState state, ServerSubLevel subLevel, ServerLevel world) {
@@ -130,5 +162,8 @@ public final class PloughWorldActor {
 
 
 
-    public static void invalidate(UUID subLevelId) { WorldActorUtil.invalidate(lastCenter, subLevelId); }
+    public static void invalidate(UUID subLevelId) {
+        known.remove(subLevelId);
+        WorldActorUtil.invalidate(lastCenter, subLevelId);
+    }
 }

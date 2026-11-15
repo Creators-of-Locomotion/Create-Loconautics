@@ -17,7 +17,7 @@
       "item": "loconautics:locomotive_valve"
     },
     "B": {
-      "item": "loconautics:industrial_pipe"
+      "item": "create:fluid_pipe"
     },
     "C": {
       "item": "create:railway_casing"

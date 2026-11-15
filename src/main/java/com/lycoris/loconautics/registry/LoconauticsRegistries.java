@@ -539,17 +539,17 @@ public final class LoconauticsRegistries {
                         output.accept(BEARING_AXLE_ITEM.get());
                         output.accept(TRANSMISSION_ITEM.get());
 
-                        output.accept(com.lycoris.loconautics.content.boiler.BoilerBlocks.LOCOMOTIVE_GAUGE_ITEM.get());
-                        output.accept(com.lycoris.loconautics.content.boiler.BoilerBlocks.VALVE_ITEM.get());
-                        output.accept(com.lycoris.loconautics.content.boiler.BoilerBlocks.GAUGE_BUTTON_ITEM.get());
-                        output.accept(com.lycoris.loconautics.content.boiler.BoilerBlocks.GAUGE_LEVER_ITEM.get());
-                        output.accept(com.lycoris.loconautics.content.boiler.BoilerBlocks.GAUGE_SWITCH_ITEM.get());
-
                         com.lycoris.loconautics.content.dashboard.DashboardBlocks.DASHBOARD_ITEMS
                                 .forEach((color, item) -> output.accept(new net.minecraft.world.item.ItemStack(item.get()),
                                         color == com.lycoris.loconautics.content.dashboard.DashboardBlocks.TAB_COLOR
                                                 ? net.minecraft.world.item.CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS
                                                 : net.minecraft.world.item.CreativeModeTab.TabVisibility.SEARCH_TAB_ONLY));
+
+                        output.accept(com.lycoris.loconautics.content.boiler.BoilerBlocks.LOCOMOTIVE_GAUGE_ITEM.get());
+                        output.accept(com.lycoris.loconautics.content.boiler.BoilerBlocks.VALVE_ITEM.get());
+                        output.accept(com.lycoris.loconautics.content.boiler.BoilerBlocks.GAUGE_BUTTON_ITEM.get());
+                        output.accept(com.lycoris.loconautics.content.boiler.BoilerBlocks.GAUGE_LEVER_ITEM.get());
+                        output.accept(com.lycoris.loconautics.content.boiler.BoilerBlocks.GAUGE_SWITCH_ITEM.get());
 
                         output.accept(com.simibubi.create.AllBlocks.TRACK_STATION.asStack());
                         output.accept(com.simibubi.create.AllBlocks.TRACK_SIGNAL.asStack());
@@ -575,9 +575,9 @@ public final class LoconauticsRegistries {
                         output.accept(SCREW_LINK_ITEM.get());
 
                         output.accept(HOSE_WINCH_ITEM.get());
+                        output.accept(HOSE.get());
                         output.accept(HOSE_NOZZLE_ITEM.get());
                         output.accept(HOSE_CONNECTOR_ITEM.get());
-                        output.accept(HOSE.get());
                         output.accept(FLUID_HATCH_ITEM.get());
 
                         com.lycoris.loconautics.content.conductorshat.ConductorsHats.HATS
@@ -603,7 +603,11 @@ public final class LoconauticsRegistries {
                         output.accept(CREATIVE_TRAIN_RELOCATOR.get());
 
                         output.accept(com.lycoris.loconautics.content.boiler.BoilerBlocks.FIREBOX_ITEM.get());
-                        output.accept(com.lycoris.loconautics.content.boiler.BoilerBlocks.BOILER_BODY_ITEM.get());
+                        com.lycoris.loconautics.content.boiler.BoilerBlocks.forEachBodyItem((item, inTab) ->
+                                output.accept(new net.minecraft.world.item.ItemStack(item),
+                                        inTab
+                                                ? net.minecraft.world.item.CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS
+                                                : net.minecraft.world.item.CreativeModeTab.TabVisibility.SEARCH_TAB_ONLY));
                         output.accept(SMOKESTACK_ITEM.get());
                         output.accept(com.lycoris.loconautics.content.boiler.BoilerBlocks.STEAM_TAKEOFF_ITEM.get());
                         output.accept(com.lycoris.loconautics.content.boiler.BoilerBlocks.SMART_SAFETY_VALVE_ITEM.get());

@@ -1,5 +1,6 @@
 package com.lycoris.loconautics.content.headstock;
 
+import com.simibubi.create.api.schematic.nbt.PartialSafeNBT;
 import com.lycoris.loconautics.common.copycat.CopycatBlockLogic;
 import com.lycoris.loconautics.common.copycat.CopycatMaterialHolder;
 import com.lycoris.loconautics.common.copycat.CopycatMaterialStore;
@@ -14,7 +15,7 @@ import net.neoforged.neoforge.client.model.data.ModelData;
 
 import java.util.List;
 
-public class CopycatHeadstockBlockEntity extends SmartBlockEntity implements CopycatMaterialHolder {
+public class CopycatHeadstockBlockEntity extends SmartBlockEntity implements PartialSafeNBT, CopycatMaterialHolder {
 
     private final CopycatMaterialStore copycat = new CopycatMaterialStore(this);
 
@@ -40,6 +41,12 @@ public class CopycatHeadstockBlockEntity extends SmartBlockEntity implements Cop
     protected void write(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
         super.write(tag, registries, clientPacket);
         copycat.write(tag, registries);
+    }
+
+    @Override
+    public void writeSafe(CompoundTag tag, HolderLookup.Provider registries) {
+        super.writeSafe(tag, registries);
+        copycat.writeSafe(tag, registries);
     }
 
     @Override

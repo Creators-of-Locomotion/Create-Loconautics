@@ -1,5 +1,6 @@
 package com.lycoris.loconautics.client;
 
+import com.lycoris.loconautics.foundation.ColorOrder;
 import com.lycoris.loconautics.content.controls.panel.PanelGlass;
 import com.lycoris.loconautics.LoconauticsConstants;
 import com.lycoris.loconautics.content.controls.panel.style.PanelStyle;
@@ -143,7 +144,7 @@ public class LoconauticsPartialModels {
     public static final Map<DyeColor, PartialModel> ENGINE_PISTONS = new java.util.EnumMap<>(DyeColor.class);
 
     static {
-        for (DyeColor color : DyeColor.values()) {
+        for (DyeColor color : ColorOrder.ORDER) {
             ENGINE_PISTONS.put(color, PartialModel.of(
                     LoconauticsConstants.id("block/combustion/" + color.getSerializedName() + "/piston")));
         }
@@ -154,7 +155,7 @@ public class LoconauticsPartialModels {
     public static final Map<DyeColor, PartialModel> BUFFER_HEADS = new java.util.EnumMap<>(DyeColor.class);
 
     static {
-        for (DyeColor color : DyeColor.values()) {
+        for (DyeColor color : ColorOrder.ORDER) {
             String folder = "block/buffer/" + color.getSerializedName() + "/";
             BUFFER_SLEEVES.put(color, PartialModel.of(LoconauticsConstants.id(folder + "sleeve")));
             BUFFER_RODS.put(color, PartialModel.of(LoconauticsConstants.id(folder + "rod")));
@@ -164,8 +165,12 @@ public class LoconauticsPartialModels {
 
     public static final PartialModel HOSE_STRAND =
             PartialModel.of(LoconauticsConstants.id("block/hose/strand"));
-    public static final PartialModel HOSE_KNOT =
+    public static final PartialModel HOSE_STRAND_KNOT =
             PartialModel.of(LoconauticsConstants.id("block/hose/knot"));
+    public static final PartialModel HOSE_NOZZLE_HANDLEBAR_LEFT =
+            PartialModel.of(LoconauticsConstants.id("block/hose/nozzle_handlebar_left"));
+    public static final PartialModel HOSE_NOZZLE_HANDLEBAR_RIGHT =
+            PartialModel.of(LoconauticsConstants.id("block/hose/nozzle_handlebar_right"));
     public static final PartialModel HOSE_NOZZLE_KNOT =
             PartialModel.of(LoconauticsConstants.id("block/hose/nozzle_knot"));
 
@@ -231,7 +236,7 @@ public class LoconauticsPartialModels {
             new java.util.EnumMap<>(net.minecraft.world.item.DyeColor.class);
 
     static {
-        for (net.minecraft.world.item.DyeColor color : net.minecraft.world.item.DyeColor.values()) {
+        for (net.minecraft.world.item.DyeColor color : ColorOrder.ORDER) {
             CONDUCTORS_HATS.put(color, PartialModel.of(
                     LoconauticsConstants.id("entity/conductors_hat/" + color.getSerializedName())));
         }

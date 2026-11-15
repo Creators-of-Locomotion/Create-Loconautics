@@ -1,7 +1,8 @@
 package com.lycoris.loconautics.content.boiler;
 
 import com.lycoris.loconautics.LoconauticsConstants;
-import com.lycoris.loconautics.content.boiler.barrel.BoilerBarrelBlock;
+import com.lycoris.loconautics.content.boiler.barrel.BoilerBarrelItem;
+import com.lycoris.loconautics.content.boiler.barrel.DyedBoilerBarrelBlock;
 import com.lycoris.loconautics.content.boiler.firebox.FireboxBlock;
 import com.lycoris.loconautics.content.boiler.firebox.FireboxBlockEntity;
 import com.lycoris.loconautics.content.boiler.firebox.FireboxStockerBlock;
@@ -18,6 +19,8 @@ import com.lycoris.loconautics.registry.LoconauticsRegistries;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.BlockItem;
+import com.lycoris.loconautics.foundation.ColorOrder;
+import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
@@ -29,6 +32,13 @@ import net.minecraft.world.level.material.MapColor;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.BiConsumer;
 
 public final class BoilerBlocks {
 
@@ -62,20 +72,130 @@ public final class BoilerBlocks {
                     .of(BoilerBlocks::createFireboxBE, FIREBOX.get())
                     .build(null));
 
-    public static final DeferredHolder<Block, BoilerBarrelBlock> BOILER_BODY =
-            LoconauticsRegistries.BLOCKS.register("boiler_body", () ->
-                    new BoilerBarrelBlock(barrel(), "colorless", false));
+    public static final DyeColor BODY_TAB_COLOR = DyeColor.RED;
 
-    public static final DeferredHolder<Item, BlockItem> BOILER_BODY_ITEM =
-            LoconauticsRegistries.ITEMS.register("boiler_body", () ->
-                    new com.lycoris.loconautics.content.boiler.barrel.BoilerBarrelItem(BOILER_BODY.get(), new Item.Properties().stacksTo(64)));
+    public static final String BODY_TAB_KIND = "ribbed";
+
+    public static final List<String> BODY_KINDS = List.of("ribbed", "paneled", "plated", "framed", "slatted");
+
+    public static final List<DyeColor> BODY_COLORS = ColorOrder.ORDER;
+
+    public static final Map<String, Map<DyeColor, DeferredHolder<Block, DyedBoilerBarrelBlock>>> DYED_BODIES =
+            registerDyedBodies();
+
+    public static final Map<String, Map<DyeColor, DeferredHolder<Item, BlockItem>>> DYED_BODY_ITEMS =
+            registerDyedBodyItems();
+
+    public static final Map<String, Map<String, DeferredHolder<Block, DyedBoilerBarrelBlock>>> EXTRA_BODIES =
+            registerExtraBodies();
+
+    public static final Map<String, Map<String, DeferredHolder<Item, BlockItem>>> EXTRA_BODY_ITEMS =
+            registerExtraBodyItems();
 
     public static final DeferredHolder<BlockEntityType<?>,
             BlockEntityType<com.lycoris.loconautics.content.boiler.barrel.BoilerBarrelBlockEntity>>
             BOILER_BARREL_BE = BLOCK_ENTITIES.register("boiler_barrel", () ->
             BlockEntityType.Builder
-                    .of(BoilerBlocks::createBoilerBarrelBE, BOILER_BODY.get())
+                    .of(BoilerBlocks::createBoilerBarrelBE, barrelBlocks())
                     .build(null));
+
+    public static String bodyName(DyeColor color, String kind) {
+        return color.getSerializedName() + "_" + kind + "_boiler_body";
+    }
+
+    public static String extraName(String color, String kind) {
+        return color + "_" + kind + "_boiler_body";
+    }
+
+    public static Block dyedBody(String kind, DyeColor color) {
+        Map<DyeColor, DeferredHolder<Block, DyedBoilerBarrelBlock>> byColor = DYED_BODIES.get(kind);
+        if (byColor == null || !byColor.containsKey(color)) {
+            return null;
+        }
+        return byColor.get(color).get();
+    }
+
+    public static List<Item> dyedBodyItems() {
+        List<Item> items = new ArrayList<>();
+        DYED_BODY_ITEMS.values().forEach(byColor -> byColor.values().forEach(item -> items.add(item.get())));
+        EXTRA_BODY_ITEMS.values().forEach(byKind -> byKind.values().forEach(item -> items.add(item.get())));
+        return items;
+    }
+
+    public static void forEachBodyItem(BiConsumer<Item, Boolean> out) {
+        for (DyeColor color : ColorOrder.ORDER) {
+            for (String kind : BODY_KINDS) {
+                out.accept(DYED_BODY_ITEMS.get(kind).get(color).get(),
+                        color == BODY_TAB_COLOR && kind.equals(BODY_TAB_KIND));
+            }
+        }
+        for (String color : ColorOrder.EXTRA) {
+            for (String kind : BODY_KINDS) {
+                out.accept(EXTRA_BODY_ITEMS.get(color).get(kind).get(), false);
+            }
+        }
+    }
+
+    private static Block[] barrelBlocks() {
+        List<Block> blocks = new ArrayList<>();
+        DYED_BODIES.values().forEach(byColor -> byColor.values().forEach(block -> blocks.add(block.get())));
+        EXTRA_BODIES.values().forEach(byKind -> byKind.values().forEach(block -> blocks.add(block.get())));
+        return blocks.toArray(Block[]::new);
+    }
+
+    private static Map<String, Map<String, DeferredHolder<Block, DyedBoilerBarrelBlock>>> registerExtraBodies() {
+        Map<String, Map<String, DeferredHolder<Block, DyedBoilerBarrelBlock>>> all = new LinkedHashMap<>();
+        for (String color : ColorOrder.EXTRA) {
+            Map<String, DeferredHolder<Block, DyedBoilerBarrelBlock>> byKind = new LinkedHashMap<>();
+            for (String kind : BODY_KINDS) {
+                byKind.put(kind, LoconauticsRegistries.BLOCKS.register(extraName(color, kind), () ->
+                        new DyedBoilerBarrelBlock(barrel(), kind, color)));
+            }
+            all.put(color, Collections.unmodifiableMap(byKind));
+        }
+        return Collections.unmodifiableMap(all);
+    }
+
+    private static Map<String, Map<String, DeferredHolder<Item, BlockItem>>> registerExtraBodyItems() {
+        Map<String, Map<String, DeferredHolder<Item, BlockItem>>> all = new LinkedHashMap<>();
+        for (String color : ColorOrder.EXTRA) {
+            Map<String, DeferredHolder<Item, BlockItem>> byKind = new LinkedHashMap<>();
+            for (String kind : BODY_KINDS) {
+                byKind.put(kind, LoconauticsRegistries.ITEMS.register(extraName(color, kind), () ->
+                        new BoilerBarrelItem(EXTRA_BODIES.get(color).get(kind).get(),
+                                new Item.Properties().stacksTo(64))));
+            }
+            all.put(color, Collections.unmodifiableMap(byKind));
+        }
+        return Collections.unmodifiableMap(all);
+    }
+
+    private static Map<String, Map<DyeColor, DeferredHolder<Block, DyedBoilerBarrelBlock>>> registerDyedBodies() {
+        Map<String, Map<DyeColor, DeferredHolder<Block, DyedBoilerBarrelBlock>>> all = new LinkedHashMap<>();
+        for (String kind : BODY_KINDS) {
+            Map<DyeColor, DeferredHolder<Block, DyedBoilerBarrelBlock>> byColor = new LinkedHashMap<>();
+            for (DyeColor color : BODY_COLORS) {
+                byColor.put(color, LoconauticsRegistries.BLOCKS.register(bodyName(color, kind), () ->
+                        new DyedBoilerBarrelBlock(barrel(), kind, color)));
+            }
+            all.put(kind, Collections.unmodifiableMap(byColor));
+        }
+        return Collections.unmodifiableMap(all);
+    }
+
+    private static Map<String, Map<DyeColor, DeferredHolder<Item, BlockItem>>> registerDyedBodyItems() {
+        Map<String, Map<DyeColor, DeferredHolder<Item, BlockItem>>> all = new LinkedHashMap<>();
+        for (String kind : BODY_KINDS) {
+            Map<DyeColor, DeferredHolder<Item, BlockItem>> byColor = new LinkedHashMap<>();
+            for (DyeColor color : BODY_COLORS) {
+                byColor.put(color, LoconauticsRegistries.ITEMS.register(bodyName(color, kind), () ->
+                        new BoilerBarrelItem(DYED_BODIES.get(kind).get(color).get(),
+                                new Item.Properties().stacksTo(64))));
+            }
+            all.put(kind, Collections.unmodifiableMap(byColor));
+        }
+        return Collections.unmodifiableMap(all);
+    }
 
     static com.lycoris.loconautics.content.boiler.barrel.BoilerBarrelBlockEntity createBoilerBarrelBE(
             BlockPos pos, BlockState state) {

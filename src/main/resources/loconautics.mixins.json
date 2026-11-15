@@ -12,6 +12,7 @@
     "create.track.TravellingPointPointsMixin",
     "steelcable.RopeConnectorSteelCableMixin",
     "steelcable.RopeConnectorHoseAssemblyMixin",
+    "steelcable.RopeConnectorPreviewMixin",
     "steelcable.RopeWinchAssemblyMixin",
     "steelcable.RopeWinchSteelCableMixin",
     "sable.station.StationBlockEntityAccessor",

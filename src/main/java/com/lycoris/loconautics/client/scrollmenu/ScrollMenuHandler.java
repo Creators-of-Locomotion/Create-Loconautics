@@ -25,7 +25,7 @@ public final class ScrollMenuHandler {
     }
 
     public static boolean open(ScrollMenu menu) {
-        if (current != null) return false;
+        if (current != null && current.open) return false;
         current = menu;
         menu.alpha.setValue(0);
         menu.nameAlpha.setValue(0);

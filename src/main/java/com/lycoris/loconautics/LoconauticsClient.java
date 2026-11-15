@@ -59,6 +59,7 @@ public final class LoconauticsClient {
         modBus.addListener(this::onRegisterGuiLayers);
         modBus.addListener(this::onRegisterParticleProviders);
         modBus.addListener(this::onRegisterGeometryLoaders);
+        modBus.addListener(this::onRegisterSpriteSources);
         modBus.addListener(this::onRegisterClientExtensions);
         modBus.addListener(this::onRegisterBlockColors);
         modBus.addListener(this::onAddPackFinders);
@@ -68,6 +69,7 @@ public final class LoconauticsClient {
         NeoForge.EVENT_BUS.addListener(this::onClientTick);
         NeoForge.EVENT_BUS.addListener(this::onKeyInput);
         NeoForge.EVENT_BUS.addListener(this::onMouseScroll);
+        NeoForge.EVENT_BUS.addListener(this::onMouseButton);
         NeoForge.EVENT_BUS.addListener(this::onClientDisconnect);
         NeoForge.EVENT_BUS.addListener(this::onClientLevelUnload);
         NeoForge.EVENT_BUS.addListener(this::onUseItem);
@@ -125,6 +127,12 @@ public final class LoconauticsClient {
                 LoconauticsRegistries.BOGEY.get());
     }
 
+    private void onRegisterSpriteSources(
+            net.neoforged.neoforge.client.event.RegisterSpriteSourceTypesEvent event) {
+        event.register(com.lycoris.loconautics.client.paletteswap.PaletteSwapSource.ID,
+                com.lycoris.loconautics.client.paletteswap.PaletteSwapSource.TYPE);
+    }
+
     private void onRegisterGeometryLoaders(
             net.neoforged.neoforge.client.event.ModelEvent.RegisterGeometryLoaders event) {
         event.register(LoconauticsConstants.id("connected"),
@@ -139,7 +147,6 @@ public final class LoconauticsClient {
 
     private void onCommonSetup(net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent event) {
         com.lycoris.loconautics.content.boiler.barrel.BoilerCTType.register();
-        registerBarrelCT(com.lycoris.loconautics.content.boiler.BoilerBlocks.BOILER_BODY.get(), "boiler_body");
         registerCeriseneCT();
         com.lycoris.loconautics.content.industrial.IndustrialClientSetup.register();
         for (net.minecraft.world.level.block.Block block : net.minecraft.core.registries.BuiltInRegistries.BLOCK) {
@@ -168,17 +175,6 @@ public final class LoconauticsClient {
                 model -> new com.simibubi.create.foundation.block.connected.CTModel(
                         model,
                         new com.simibubi.create.foundation.block.connected.SimpleCTBehaviour(shift)));
-    }
-
-    private static void registerBarrelCT(net.minecraft.world.level.block.Block block, String folder) {
-        String base = "block/boiler/barrel/" + folder + "/barrel_side";
-        var shift = com.lycoris.loconautics.content.boiler.barrel.BoilerCTShiftEntry.get(
-                LoconauticsConstants.id(base), LoconauticsConstants.id(base + "_ct"));
-        com.simibubi.create.CreateClient.MODEL_SWAPPER.getCustomBlockModels().register(
-                net.createmod.catnip.registry.RegisteredObjectsHelper.getKeyOrThrow(block),
-                model -> new com.simibubi.create.foundation.block.connected.CTModel(
-                        model,
-                        new com.lycoris.loconautics.content.boiler.barrel.BarrelCTBehaviour(shift)));
     }
 
     private void onClientSetup(FMLClientSetupEvent event) {
@@ -220,6 +216,11 @@ public final class LoconauticsClient {
         SimpleBlockEntityVisualizer
                 .builder(com.lycoris.loconautics.content.combustion.SmallEngineBlocks.ENGINE_BE.get())
                 .factory(com.lycoris.loconautics.content.combustion.SmallEngineVisual::new)
+                .apply();
+
+        SimpleBlockEntityVisualizer
+                .builder(LoconauticsRegistries.HOSE_NOZZLE_BE.get())
+                .factory(com.lycoris.loconautics.content.hose.nozzle.HoseNozzleVisual::new)
                 .apply();
 
         SimpleBlockEntityVisualizer
@@ -377,6 +378,10 @@ public final class LoconauticsClient {
                 com.lycoris.loconautics.content.hose.winch.HoseWinchRenderer::new
         );
         event.registerBlockEntityRenderer(
+                LoconauticsRegistries.HOSE_NOZZLE_BE.get(),
+                com.lycoris.loconautics.content.hose.nozzle.HoseNozzleRenderer::new
+        );
+        event.registerBlockEntityRenderer(
                 LoconauticsRegistries.FLUID_HATCH_BE.get(),
                 com.lycoris.loconautics.content.hatch.HatchRenderer::new
         );
@@ -488,6 +493,13 @@ public final class LoconauticsClient {
         if (event.getKey() == 256 && event.getAction() == 1) {
             AnalogControllerClientHandler.stopControllingClient();
             Minecraft.getInstance().setScreen(null);
+        }
+    }
+
+    private void onMouseButton(InputEvent.MouseButton.Pre event) {
+        if (event.getButton() != 1 || event.getAction() != 1) return;
+        if (com.lycoris.loconautics.content.variantpicker.ScrollPickerHandler.tryOpenFull()) {
+            event.setCanceled(true);
         }
     }
 

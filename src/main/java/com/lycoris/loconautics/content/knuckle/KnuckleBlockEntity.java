@@ -1,5 +1,6 @@
 package com.lycoris.loconautics.content.knuckle;
 
+import com.simibubi.create.api.schematic.nbt.PartialSafeNBT;
 import com.lycoris.loconautics.LoconauticsConstants;
 import com.lycoris.loconautics.common.copycat.CopycatBlockLogic;
 import com.lycoris.loconautics.common.copycat.CopycatMaterialHolder;
@@ -30,7 +31,7 @@ import org.joml.Vector3d;
 import java.util.List;
 import java.util.UUID;
 
-public class KnuckleBlockEntity extends SmartBlockEntity implements BlockEntitySubLevelActor, SteelCableHolder, CopycatMaterialHolder {
+public class KnuckleBlockEntity extends SmartBlockEntity implements PartialSafeNBT, BlockEntitySubLevelActor, SteelCableHolder, CopycatMaterialHolder {
 
     private static final long NOT_ENGAGED = -1L;
     private static final double TIP_OUTWARD = 0.04;
@@ -370,6 +371,12 @@ public class KnuckleBlockEntity extends SmartBlockEntity implements BlockEntityS
         }
         tag.putBoolean("Coupled", coupled);
         copycat.write(tag, registries);
+    }
+
+    @Override
+    public void writeSafe(CompoundTag tag, HolderLookup.Provider registries) {
+        super.writeSafe(tag, registries);
+        copycat.writeSafe(tag, registries);
     }
 
     @Override

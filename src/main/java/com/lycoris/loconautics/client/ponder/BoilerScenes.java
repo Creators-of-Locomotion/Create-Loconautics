@@ -109,7 +109,7 @@ public class BoilerScenes {
         scene.idle(20);
         scene.overlay().showOutline(PonderPalette.GREEN, "stocker", util.select().position(LONE_LEG), 60);
         scene.overlay().showText(60)
-                .text("A Firebox Stocker underneath holds 9 stacks of fuel")
+                .text("A Firebox Stoker underneath holds 9 stacks of fuel")
                 .attachKeyFrame()
                 .placeNearTarget()
                 .pointAt(util.vector().blockSurface(LONE_LEG, Direction.WEST));

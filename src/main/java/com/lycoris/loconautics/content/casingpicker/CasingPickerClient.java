@@ -21,7 +21,7 @@ public final class CasingPickerClient {
 
     public static final KeyMapping OPEN_KEY = new KeyMapping(
             "key.loconautics.casing_picker", KeyConflictContext.IN_GAME, InputConstants.Type.KEYSYM,
-            InputConstants.KEY_C, "key.categories.loconautics");
+            InputConstants.KEY_V, "key.categories.loconautics");
 
     private static final int CASING = 0;
     private static final int BOGEY = 1;
