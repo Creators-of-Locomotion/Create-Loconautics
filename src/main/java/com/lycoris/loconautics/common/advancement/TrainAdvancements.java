@@ -1,5 +1,6 @@
 package com.lycoris.loconautics.common.advancement;
 
+import com.lycoris.loconautics.foundation.ColorOrder;
 import com.lycoris.loconautics.LoconauticsConstants;
 import com.lycoris.loconautics.common.turntable.TurntableRegistry;
 import com.lycoris.loconautics.content.analogcontroller.AnalogControllerBlockEntity;
@@ -154,7 +155,7 @@ public final class TrainAdvancements {
     public static void enginePainted(ServerPlayer player, DyeColor color) {
         int colors = player.getPersistentData().getInt(ENGINE_COLORS) | (1 << color.getId());
         player.getPersistentData().putInt(ENGINE_COLORS, colors);
-        if (Integer.bitCount(colors) >= DyeColor.values().length) {
+        if (Integer.bitCount(colors) >= ColorOrder.ORDER.size()) {
             award(player, LOCONAUTICS_CUSTOMS);
         }
     }

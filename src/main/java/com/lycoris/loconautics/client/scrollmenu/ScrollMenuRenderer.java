@@ -16,7 +16,7 @@ public final class ScrollMenuRenderer {
     private static final int SLOT = 22;
     private static final int GAP = 4;
     private static final int NAME_GAP = 16;
-    private static final int DROP = 22;
+    private static final int DROP = 6;
     private static final int YELLOW_DROP = 6;
 
     private ScrollMenuRenderer() {

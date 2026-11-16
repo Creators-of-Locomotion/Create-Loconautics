@@ -45,7 +45,7 @@ side="BOTH"
 [[dependencies.loconautics]]
 modId="sable"
 type="required"
-versionRange="[1,)"
+versionRange="[2.0.5,)"
 ordering="AFTER"
 side="BOTH"
 

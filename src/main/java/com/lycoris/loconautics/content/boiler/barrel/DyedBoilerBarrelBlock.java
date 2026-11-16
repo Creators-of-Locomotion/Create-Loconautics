@@ -15,15 +15,26 @@ import net.minecraft.world.level.block.DirectionalBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.phys.BlockHitResult;
+import org.jetbrains.annotations.Nullable;
 
 public class DyedBoilerBarrelBlock extends BoilerBarrelBlock implements DyedBlock {
 
     private final String kind;
-    private final DyeColor dye;
+    private final String colorName;
+    @Nullable private final DyeColor dye;
 
     public DyedBoilerBarrelBlock(Properties properties, String kind, DyeColor dye) {
-        super(properties, dye.getSerializedName(), false);
+        this(properties, kind, dye.getSerializedName(), dye);
+    }
+
+    public DyedBoilerBarrelBlock(Properties properties, String kind, String colorName) {
+        this(properties, kind, colorName, null);
+    }
+
+    private DyedBoilerBarrelBlock(Properties properties, String kind, String colorName, @Nullable DyeColor dye) {
+        super(properties, colorName, false);
         this.kind = kind;
+        this.colorName = colorName;
         this.dye = dye;
     }
 
@@ -32,6 +43,7 @@ public class DyedBoilerBarrelBlock extends BoilerBarrelBlock implements DyedBloc
     }
 
     @Override
+    @Nullable
     public DyeColor getColor() {
         return dye;
     }
@@ -51,7 +63,7 @@ public class DyedBoilerBarrelBlock extends BoilerBarrelBlock implements DyedBloc
 
     @Override
     protected MapCodec<? extends DirectionalBlock> codec() {
-        return simpleCodec(properties -> new DyedBoilerBarrelBlock(properties, kind, dye));
+        return simpleCodec(properties -> new DyedBoilerBarrelBlock(properties, kind, colorName, dye));
     }
 
     @Override

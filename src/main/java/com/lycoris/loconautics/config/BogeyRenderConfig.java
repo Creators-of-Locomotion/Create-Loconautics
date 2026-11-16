@@ -9,7 +9,7 @@ public final class BogeyRenderConfig {
         ROLLING
     }
 
-    private static final Style DEFAULT_STYLE = Style.CLASSIC;
+    private static final Style DEFAULT_STYLE = Style.ROLLING;
 
     private static ModConfigSpec.EnumValue<Style> STYLE;
 

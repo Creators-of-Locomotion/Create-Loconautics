@@ -1,6 +1,5 @@
 package com.lycoris.loconautics.content.boiler.steamtakeoff;
 
-import com.lycoris.loconautics.config.LoconauticsConfig;
 import com.lycoris.loconautics.foundation.LoconauticsLang;
 import com.simibubi.create.content.kinetics.base.GeneratingKineticBlockEntity;
 import net.minecraft.ChatFormatting;
@@ -17,7 +16,7 @@ import java.util.List;
 public class SteamTakeoffBlockEntity extends GeneratingKineticBlockEntity {
 
     private float rpm;
-    private float boilerCapacity;
+    private float suPerRpm;
     private float regulator = 1f;
 
     public static final int SUPPLY_TIMEOUT = 60;
@@ -28,19 +27,19 @@ public class SteamTakeoffBlockEntity extends GeneratingKineticBlockEntity {
         super(type, pos, state);
     }
 
-    public void supply(float shaftRpm, float suppliedCapacity) {
+    public void supply(float shaftRpm, float suppliedSuPerRpm) {
         sinceSupplied = 0;
         float newRpm = Math.max(0f, shaftRpm);
-        if (newRpm == rpm && suppliedCapacity == boilerCapacity) return;
+        if (newRpm == rpm && suppliedSuPerRpm == suPerRpm) return;
         rpm = newRpm;
-        boilerCapacity = suppliedCapacity;
+        suPerRpm = suppliedSuPerRpm;
         updateGeneratedRotation();
     }
 
     public void cut() {
-        boolean wasZero = rpm == 0f && boilerCapacity == 0f;
+        boolean wasZero = rpm == 0f && suPerRpm == 0f;
         rpm = 0f;
-        boilerCapacity = 0f;
+        suPerRpm = 0f;
         sinceSupplied = SUPPLY_TIMEOUT;
         if (!wasZero) updateGeneratedRotation();
     }
@@ -89,10 +88,8 @@ public class SteamTakeoffBlockEntity extends GeneratingKineticBlockEntity {
 
     @Override
     public float calculateAddedStressCapacity() {
-        float perBody = (float) (double) LoconauticsConfig.SU_PER_BODY_BLOCK.get();
-        float added = boilerCapacity * perBody;
-        this.lastCapacityProvided = added;
-        return added;
+        this.lastCapacityProvided = suPerRpm;
+        return suPerRpm;
     }
 
     @Override
@@ -113,7 +110,7 @@ public class SteamTakeoffBlockEntity extends GeneratingKineticBlockEntity {
     protected void write(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
         super.write(tag, registries, clientPacket);
         tag.putFloat("Rpm", rpm);
-        tag.putFloat("Capacity", boilerCapacity);
+        tag.putFloat("Capacity", suPerRpm);
         tag.putFloat("Regulator", regulator);
     }
 
@@ -121,7 +118,7 @@ public class SteamTakeoffBlockEntity extends GeneratingKineticBlockEntity {
     protected void read(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
         super.read(tag, registries, clientPacket);
         rpm = tag.getFloat("Rpm");
-        boilerCapacity = tag.getFloat("Capacity");
+        suPerRpm = tag.getFloat("Capacity");
         regulator = tag.contains("Regulator") ? tag.getFloat("Regulator") : 1f;
     }
 }

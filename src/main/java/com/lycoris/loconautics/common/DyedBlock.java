@@ -1,5 +1,6 @@
 package com.lycoris.loconautics.common;
 
+import com.lycoris.loconautics.foundation.ColorOrder;
 import com.simibubi.create.content.kinetics.base.GeneratingKineticBlockEntity;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
@@ -40,7 +41,8 @@ public interface DyedBlock {
 
     default ItemInteractionResult paint(ItemStack stack, BlockState state, Level level,
                                         BlockPos pos, Player player) {
-        if (!(stack.getItem() instanceof DyeItem dye) || dye.getDyeColor() == getColor()) {
+        if (!(stack.getItem() instanceof DyeItem dye) || dye.getDyeColor() == getColor()
+                || !ColorOrder.ORDER.contains(dye.getDyeColor())) {
             return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         }
         if (level.isClientSide) return ItemInteractionResult.SUCCESS;

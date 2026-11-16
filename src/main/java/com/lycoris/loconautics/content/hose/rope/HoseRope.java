@@ -31,6 +31,7 @@ public final class HoseRope extends AttachedRopePhysicsObject {
     private double lastFirstSegmentExtension = 1.0;
     private int lastPointCount;
     private boolean attachmentsDirty;
+    private boolean forceFree;
 
     public HoseRope(UUID id, Collection<Vector3d> points, HoseType type) {
         super(id, points, COLLISION_RADIUS);
@@ -90,7 +91,14 @@ public final class HoseRope extends AttachedRopePhysicsObject {
         return getCurrentExtension() / desired;
     }
 
+    public void setForceFree(boolean forceFree) {
+        this.forceFree = forceFree;
+    }
+
     public boolean tickSnap() {
+        if (forceFree) {
+            return false;
+        }
         return tickOverstretch(extensionGoal + (getPoints().size() - 2) * 1.0, type.snapStretchPercent());
     }
 
@@ -129,7 +137,7 @@ public final class HoseRope extends AttachedRopePhysicsObject {
     }
 
     public void prePhysicsTick(SubLevelPhysicsSystem system, ServerLevel level, double timeStep) {
-        if (HoseRopeTrace.jointDisabled() || isAttachmentGrabbed(level, RopeHandle.AttachmentPoint.END,
+        if (forceFree || HoseRopeTrace.jointDisabled() || isAttachmentGrabbed(level, RopeHandle.AttachmentPoint.END,
                 be -> be instanceof HoseNozzleBlockEntity nozzle && nozzle.isGrabbed())) {
             removeConstraint();
         } else if (constraintNeedsRebuild(level)) {

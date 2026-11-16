@@ -3,7 +3,7 @@
   "category": "misc",
   "pattern": [
     "ABA",
-    "  C"
+    " C "
   ],
   "key": {
     "A": {
@@ -18,6 +18,6 @@
   },
   "result": {
     "id": "loconautics:locomotive_valve",
-    "count": 1
+    "count": 8
   }
 }

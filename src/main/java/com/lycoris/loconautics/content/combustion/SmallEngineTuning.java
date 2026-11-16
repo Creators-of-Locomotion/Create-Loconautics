@@ -1,5 +1,7 @@
 package com.lycoris.loconautics.content.combustion;
 
+import com.lycoris.loconautics.common.signal.SignalSpeed;
+
 public final class SmallEngineTuning {
 
     private SmallEngineTuning() {}
@@ -14,17 +16,15 @@ public final class SmallEngineTuning {
 
     public static final int TANK_CAPACITY = 1000;
 
-    public static final int OFF_SIGNAL = 15;
+    public static final int OFF_SIGNAL = SignalSpeed.OFF_SIGNAL;
 
     public static final int SLOWEST_SIGNAL = 14;
 
-    private static final int SPEED_STEPS = 16;
-
     public static boolean isOff(int signal) {
-        return signal >= OFF_SIGNAL;
+        return SignalSpeed.isOff(signal);
     }
 
     public static float speedFraction(int signal) {
-        return isOff(signal) ? 0f : (SPEED_STEPS - Math.max(0, signal)) / (float) SPEED_STEPS;
+        return SignalSpeed.fraction(signal);
     }
 }

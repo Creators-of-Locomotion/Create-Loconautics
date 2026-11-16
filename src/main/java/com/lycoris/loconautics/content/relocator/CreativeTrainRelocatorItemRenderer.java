@@ -132,6 +132,9 @@ public class CreativeTrainRelocatorItemRenderer extends CustomRenderedItemModelR
 
     private void renderJawGroup(PoseStack ms, PartialItemModelRenderer renderer, int light, AnimState state,
                                 net.minecraft.client.resources.model.BakedModel part) {
+        if (part == null) {
+            return;
+        }
         ms.pushPose();
         float px = JAW_PIVOT_X / 16f, py = JAW_PIVOT_Y / 16f, pz = JAW_PIVOT_Z / 16f;
         ms.translate(px, py, pz);
@@ -142,15 +145,20 @@ public class CreativeTrainRelocatorItemRenderer extends CustomRenderedItemModelR
     }
 
     private void renderGreaterJaw(PoseStack ms, PartialItemModelRenderer renderer, int light, AnimState state) {
+        net.minecraft.client.resources.model.BakedModel part = LoconauticsPartialModels.RELOCATOR_GREATER_JAW.get();
+        if (part == null) {
+            return;
+        }
         ms.pushPose();
         ms.translate(0f, greaterJawY(state) / 16f, 0f);
-        renderer.render(LoconauticsPartialModels.RELOCATOR_GREATER_JAW.get(), light);
+        renderer.render(part, light);
         ms.popPose();
     }
 
     private void renderOmnicoob(PoseStack ms, PartialItemModelRenderer renderer, int light, AnimState state) {
+        net.minecraft.client.resources.model.BakedModel part = LoconauticsPartialModels.RELOCATOR_OMNICOOB.get();
         float scale = omnicoobScale(state);
-        if (scale <= 0f) {
+        if (part == null || scale <= 0f) {
             return;
         }
         ms.pushPose();
@@ -164,7 +172,7 @@ public class CreativeTrainRelocatorItemRenderer extends CustomRenderedItemModelR
         ms.scale(scale, scale, scale);
         ms.translate(-px, -py, -pz);
 
-        renderer.render(LoconauticsPartialModels.RELOCATOR_OMNICOOB.get(), light);
+        renderer.render(part, light);
         ms.popPose();
     }
 

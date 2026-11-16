@@ -7,6 +7,8 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.block.Block;
 import net.neoforged.fml.ModList;
 
+import com.lycoris.loconautics.foundation.ColorOrder;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -14,7 +16,7 @@ import java.util.Map;
 
 public final class BlockVariantRegistry {
 
-    public static final int COLOR_COUNT = 17;
+    public static final int COLOR_COUNT = ColorOrder.COUNT;
     public static final int COLORLESS_INDEX = 16;
     public static final int MAX_TYPES = 16;
     public static final int MAX_WRAPPINGS = 8;

@@ -51,12 +51,15 @@ public final class BoilerMultiblockValidator {
 
         List<BlockPos> bodies = new ArrayList<>();
         Direction.Axis bodyAxis = null;
-        BlockPos stack = null;
-        BlockPos injector = null;
-        BlockPos takeoff = null;
-        BlockPos safetyValve = null;
-        float boilerCapacity = 0f;
-        int waterCapacity = 0;
+        BlockPos[] attached = new BlockPos[4];
+        for (BlockPos firebox : fireboxes) {
+            for (Direction dir : Direction.values()) {
+                claim(attached, level.getBlockState(firebox.relative(dir)), firebox.relative(dir), dir);
+            }
+        }
+        float boilerCapacity = fireboxes.size() * BoilerStructure.FIREBOX_BODY_SHARE;
+        int waterCapacity = Math.round(fireboxes.size() * BoilerStructure.FIREBOX_BODY_SHARE
+                * LoconauticsConfig.BODY_WATER_CAPACITY.get());
 
         while (!frontier.isEmpty() && bodies.size() < MAX_BODY_BLOCKS) {
             BlockPos current = frontier.poll();
@@ -77,14 +80,8 @@ public final class BoilerMultiblockValidator {
 
                 if (ns.is(BoilerTags.BOILER_BODY)) {
                     if (alongRun && bodySet.add(neighbor)) frontier.add(neighbor);
-                } else if (stack == null && dir == Direction.UP && ns.is(BoilerTags.SMOKESTACK)) {
-                    stack = neighbor;
-                } else if (injector == null && ns.is(BoilerTags.HATCHES)) {
-                    injector = neighbor;
-                } else if (takeoff == null && ns.getBlock() instanceof SteamTakeoffBlock) {
-                    takeoff = neighbor;
-                } else if (safetyValve == null && ns.getBlock() instanceof SafetyValveBlock) {
-                    safetyValve = neighbor;
+                } else {
+                    claim(attached, ns, neighbor, dir);
                 }
             }
         }
@@ -98,15 +95,33 @@ public final class BoilerMultiblockValidator {
                 controllerPos,
                 List.copyOf(fireboxes),
                 List.copyOf(bodies),
-                stack,
-                injector,
-                takeoff,
-                safetyValve,
+                attached[STACK],
+                attached[INJECTOR],
+                attached[TAKEOFF],
+                attached[VALVE],
                 scanConnectors(level, bodies),
                 fireboxHeat,
                 boilerCapacity,
                 waterCapacity
         ), null);
+    }
+
+    private static final int STACK = 0;
+    private static final int INJECTOR = 1;
+    private static final int TAKEOFF = 2;
+    private static final int VALVE = 3;
+
+    // an attachment counts on any side of a firebox or a body, the first of each kind wins
+    private static void claim(BlockPos[] attached, BlockState state, BlockPos pos, Direction dir) {
+        if (attached[STACK] == null && dir != Direction.DOWN && state.is(BoilerTags.SMOKESTACK)) {
+            attached[STACK] = pos;
+        } else if (attached[INJECTOR] == null && state.is(BoilerTags.HATCHES)) {
+            attached[INJECTOR] = pos;
+        } else if (attached[TAKEOFF] == null && state.getBlock() instanceof SteamTakeoffBlock) {
+            attached[TAKEOFF] = pos;
+        } else if (attached[VALVE] == null && state.getBlock() instanceof SafetyValveBlock) {
+            attached[VALVE] = pos;
+        }
     }
 
     private static void seedBody(Level level, BlockPos pos, Direction.Axis reach, boolean flush,

@@ -1,6 +1,6 @@
 package com.lycoris.loconautics.content.hatch;
 
-import com.lycoris.loconautics.content.boiler.BoilerTags;
+import com.lycoris.loconautics.content.boiler.BoilerAttach;
 import com.lycoris.loconautics.registry.LoconauticsRegistries;
 import com.simibubi.create.AllItems;
 import com.simibubi.create.content.equipment.wrench.IWrenchable;
@@ -54,7 +54,7 @@ public class FluidHatchBlock extends Block implements IBE<FluidHatchBlockEntity>
 
     public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
 
-    public static final double BARREL_BULGE = 0.5;
+    public static final double BARREL_BULGE = BoilerAttach.BULGE;
 
     private static final VoxelShape[] SHAPES = new VoxelShape[6];
     private static final VoxelShape[] SHAPES_RAISED = new VoxelShape[6];
@@ -87,7 +87,7 @@ public class FluidHatchBlock extends Block implements IBE<FluidHatchBlockEntity>
     }
 
     private static boolean onBarrel(BlockGetter level, BlockPos pos, Direction face) {
-        return level.getBlockState(pos.relative(face)).is(BoilerTags.BOILER_BODY);
+        return BoilerAttach.raisedOn(level, pos, face);
     }
 
     @Override

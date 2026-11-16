@@ -39,18 +39,22 @@ English is the main language. The other languages are community work, and more h
 | Language | Translated |
 | --- | --- |
 | English (en_us) | 100% |
-| German (de_de) | 100% |
+| Chinese, Simplified (zh_cn) | 100% |
 | Spanish (es_es) | 100% |
-| Portuguese, Brazil (pt_br) | 26% |
-| Russian (ru_ru) | 98% |
 | Galician (gl_es) | 100% |
+| Catalá (ca_es) | 99% |
+| Basque (eu_es) | 99% |
+| German (de_de) | 88% |
+| Russian (ru_ru) | 87% |
+| Portuguese, Brazil (pt_br) | 50% |
+| Italian (it_it) | 17% |
 
 Want to add a language or finish one? Copy `src/main/resources/assets/loconautics/lang/en_us.json`, name it for your language (for example `fr_fr.json`), translate the values and leave the keys as they are. Then open a pull request, or ask on Discord. A partial translation is fine, any missing text shows in English.
 
 ## Thanks
 
 - Lyc and MDLOP, development
-- Basilforrealss, TugKanTheMan and Hatchet, art
+- Basilforrealss, TugKanDeMan and Hatchet, art
 - ZyxBe, MaxweLi, Bwah, Popochka, GoldenPants, Čipollø and Miat, testing.
 - The Create team, for the trains this is built around.
 - RyanHCode and the Sable team, for the physics.

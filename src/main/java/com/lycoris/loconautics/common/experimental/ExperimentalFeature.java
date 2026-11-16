@@ -19,7 +19,6 @@ public enum ExperimentalFeature {
     BOILERWORKS("boilerworks", () -> {
         List<Item> items = new ArrayList<>(List.of(
                 BoilerBlocks.FIREBOX_ITEM.get(),
-                BoilerBlocks.BOILER_BODY_ITEM.get(),
                 BoilerBlocks.STEAM_TAKEOFF_ITEM.get(),
                 BoilerBlocks.SMART_SAFETY_VALVE_ITEM.get(),
                 BoilerBlocks.FIREBOX_STOCKER_ITEM.get(),

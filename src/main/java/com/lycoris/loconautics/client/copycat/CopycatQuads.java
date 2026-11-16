@@ -22,6 +22,7 @@ import java.util.List;
 public final class CopycatQuads {
 
     public static final int ALL_AXES = -1;
+    private static final AABB CUBE = new AABB(0.0, 0.0, 0.0, 1.0, 1.0, 1.0);
 
     private CopycatQuads() {}
 
@@ -37,16 +38,17 @@ public final class CopycatQuads {
     public static void crop(List<BakedQuad> out, BlockState material, RandomSource rand,
                             RenderType renderType, AABB box) {
         BakedModel donor = donorModel(material);
-        cropQuads(out, donor.getQuads(material, null, rand, ModelData.EMPTY, renderType), box, ALL_AXES);
+        cropQuads(out, donor.getQuads(material, null, rand, ModelData.EMPTY, renderType), box, ALL_AXES, CUBE);
         for (Direction side : Direction.values()) {
-            cropQuads(out, donor.getQuads(material, side, rand, ModelData.EMPTY, renderType), box, ALL_AXES);
+            cropQuads(out, donor.getQuads(material, side, rand, ModelData.EMPTY, renderType), box, ALL_AXES, CUBE);
         }
     }
 
-    public static void cropQuads(List<BakedQuad> out, List<BakedQuad> template, AABB box, int depthAxis) {
-        for (AABB piece : split(box)) {
-            AABB source = corner(piece, depthAxis);
-            Vec3 move = new Vec3(piece.minX - source.minX, piece.minY - source.minY, piece.minZ - source.minZ);
+    public static void cropQuads(List<BakedQuad> out, List<BakedQuad> template, AABB box, int depthAxis, AABB shape) {
+        for (Piece piece : split(box, depthAxis, shape)) {
+            AABB source = corner(piece);
+            AABB at = piece.box();
+            Vec3 move = new Vec3(at.minX - source.minX, at.minY - source.minY, at.minZ - source.minZ);
             for (BakedQuad quad : template) {
                 out.add(BakedQuadHelper.cloneWithCustomGeometry(quad,
                         BakedModelHelper.cropAndMove(quad.getVertices(), quad.getSprite(), source, move)));
@@ -54,37 +56,61 @@ public final class CopycatQuads {
         }
     }
 
-    private static AABB corner(AABB piece, int depthAxis) {
-        double[] min = {piece.minX, piece.minY, piece.minZ};
-        double[] max = {piece.maxX, piece.maxY, piece.maxZ};
+    private record Piece(AABB box, boolean[] high) {}
+
+    private static AABB corner(Piece piece) {
+        AABB at = piece.box();
+        double[] min = {at.minX, at.minY, at.minZ};
+        double[] max = {at.maxX, at.maxY, at.maxZ};
         for (int axis = 0; axis < 3; axis++) {
-            if (depthAxis != ALL_AXES && depthAxis != axis) continue;
-            double lo = min[axis];
-            double hi = max[axis];
-            boolean outer = depthAxis == axis && (lo <= 0.0 || hi >= 1.0);
-            boolean takeHigh = depthAxis == ALL_AXES || outer ? lo + hi >= 1.0 : lo + hi < 1.0;
-            min[axis] = takeHigh ? 1.0 - (hi - lo) : 0.0;
-            max[axis] = takeHigh ? 1.0 : hi - lo;
+            double length = max[axis] - min[axis];
+            min[axis] = piece.high()[axis] ? 1.0 - length : 0.0;
+            max[axis] = piece.high()[axis] ? 1.0 : length;
         }
         return new AABB(min[0], min[1], min[2], max[0], max[1], max[2]);
     }
 
-    private static List<AABB> split(AABB box) {
-        List<AABB> pieces = new ArrayList<>(8);
-        for (double[] x : spans(box.minX, box.maxX)) {
-            for (double[] y : spans(box.minY, box.maxY)) {
-                for (double[] z : spans(box.minZ, box.maxZ)) {
-                    pieces.add(new AABB(x[0], y[0], z[0], x[1], y[1], z[1]));
+    private static List<Piece> split(AABB box, int depthAxis, AABB shape) {
+        double[] min = {box.minX, box.minY, box.minZ};
+        double[] max = {box.maxX, box.maxY, box.maxZ};
+        double[] shapeMin = {shape.minX, shape.minY, shape.minZ};
+        double[] shapeMax = {shape.maxX, shape.maxY, shape.maxZ};
+        List<List<double[]>> spans = new ArrayList<>(3);
+        for (int axis = 0; axis < 3; axis++) {
+            spans.add(axis == depthAxis
+                    ? depthSpans(min[axis], max[axis])
+                    : spans(min[axis], max[axis], (shapeMin[axis] + shapeMax[axis]) / 2.0));
+        }
+        List<Piece> pieces = new ArrayList<>(8);
+        for (double[] x : spans.get(0)) {
+            for (double[] y : spans.get(1)) {
+                for (double[] z : spans.get(2)) {
+                    pieces.add(new Piece(new AABB(x[0], y[0], z[0], x[1], y[1], z[1]),
+                            new boolean[] {x[2] > 0.0, y[2] > 0.0, z[2] > 0.0}));
                 }
             }
         }
         return pieces;
     }
 
-    private static List<double[]> spans(double min, double max) {
-        if (min < 0.5 && max > 0.5 && (min > 0.0 || max < 1.0)) {
-            return List.of(new double[] {min, 0.5}, new double[] {0.5, max});
+    // the shape is cut at its own middle, the low half takes the low corner of the donor and the high half the high corner
+    private static List<double[]> spans(double min, double max, double mid) {
+        if (min < mid && max > mid && (min > 0.0 || max < 1.0)) {
+            return List.of(new double[] {min, mid, 0.0}, new double[] {mid, max, 1.0});
         }
-        return List.of(new double[] {min, max});
+        return List.of(new double[] {min, max, min + max >= 2.0 * mid ? 1.0 : 0.0});
+    }
+
+    private static List<double[]> depthSpans(double min, double max) {
+        List<double[]> raw = min < 0.5 && max > 0.5 && (min > 0.0 || max < 1.0)
+                ? List.of(new double[] {min, 0.5}, new double[] {0.5, max})
+                : List.of(new double[] {min, max});
+        List<double[]> out = new ArrayList<>(raw.size());
+        for (double[] span : raw) {
+            boolean inner = span[0] > 0.0 && span[1] < 1.0;
+            boolean high = inner ? span[0] + span[1] < 1.0 : span[0] + span[1] >= 1.0;
+            out.add(new double[] {span[0], span[1], high ? 1.0 : 0.0});
+        }
+        return out;
     }
 }

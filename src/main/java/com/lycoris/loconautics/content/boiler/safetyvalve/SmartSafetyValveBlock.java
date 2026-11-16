@@ -1,7 +1,7 @@
 package com.lycoris.loconautics.content.boiler.safetyvalve;
 
 import com.lycoris.loconautics.content.boiler.BoilerBlocks;
-import com.lycoris.loconautics.content.boiler.barrel.BoilerBarrelBlock;
+import com.lycoris.loconautics.content.boiler.BoilerAttach;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.sounds.SoundEvents;
@@ -31,7 +31,7 @@ public class SmartSafetyValveBlock extends SafetyValveBlock {
 
     public static final BooleanProperty BRASS = BooleanProperty.create("brass");
 
-    public static final double BARREL_BULGE = 0.5;
+    public static final double BARREL_BULGE = BoilerAttach.BULGE;
 
     private static final double[][] PARTS = {
             {2, 0, 2, 14, 4, 14},
@@ -97,8 +97,7 @@ public class SmartSafetyValveBlock extends SafetyValveBlock {
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
         Direction face = context.getClickedFace();
-        BlockPos base = context.getClickedPos().relative(face.getOpposite());
-        boolean onBarrel = context.getLevel().getBlockState(base).getBlock() instanceof BoilerBarrelBlock;
+        boolean onBarrel = BoilerAttach.raisedOn(context.getLevel(), context.getClickedPos(), face.getOpposite());
         return defaultBlockState().setValue(FACING, face).setValue(RAISED, onBarrel);
     }
 

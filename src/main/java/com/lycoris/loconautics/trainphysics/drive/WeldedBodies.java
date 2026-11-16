@@ -248,7 +248,7 @@ public final class WeldedBodies {
 
     // a sticker joint is only made once the pair has finished easing straight, or it would fight the ease
     public static boolean pairSettled(UUID a, UUID b) {
-        return SETTLED.contains(Set.of(a, b));
+        return a.equals(b) || SETTLED.contains(Set.of(a, b));
     }
 
     public static void carry(PhysicsPipeline pipeline, ServerLevel level, ServerSubLevel car, double dt) {

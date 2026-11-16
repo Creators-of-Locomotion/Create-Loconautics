@@ -1,5 +1,6 @@
 package com.lycoris.loconautics.content.hose.link;
 
+import com.lycoris.loconautics.client.HoseDraw;
 import com.lycoris.loconautics.client.LoconauticsPartialModels;
 import com.lycoris.loconautics.content.steelcable.SteelCableHolderBehaviour;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -11,6 +12,7 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.core.Direction;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 
 public class HoseConnectorRenderer implements BlockEntityRenderer<HoseConnectorBlockEntity> {
 
@@ -20,16 +22,20 @@ public class HoseConnectorRenderer implements BlockEntityRenderer<HoseConnectorB
     @Override
     public void render(HoseConnectorBlockEntity be, float partialTicks, PoseStack ps,
                        MultiBufferSource buffer, int light, int overlay) {
+        if (be.previewStrand() != null && be.getLevel() != null) {
+            com.lycoris.loconautics.client.HoseStrandDraw.draw(ps, buffer, be.getLevel(), be.getBlockPos(),
+                    be.getBlockState(), be.previewStrand());
+        }
         SteelCableHolderBehaviour holder = be.getBehaviour(SteelCableHolderBehaviour.TYPE);
-        if (holder == null || holder.attachedStrandIds().isEmpty()) {
+        if (be.previewStrand() == null || holder == null || holder.attachedStrandIds().isEmpty()) {
             return;
         }
         Direction open = be.plateSide().getOpposite();
         SuperByteBuffer knot = CachedBuffers.partialFacing(
-                LoconauticsPartialModels.HOSE_KNOT, be.getBlockState(), be.plateSide());
-        knot.translate(open.getStepX() * 0.1875, open.getStepY() * 0.1875, open.getStepZ() * 0.1875)
-                .light(light)
-                .renderInto(ps, buffer.getBuffer(RenderType.solid()));
+                LoconauticsPartialModels.HOSE_NOZZLE_KNOT, be.getBlockState(), Direction.NORTH);
+        Vec3 attach = be.getAttachmentPoint().subtract(Vec3.atLowerCornerOf(be.getBlockPos()));
+        HoseDraw.connectorKnot(ps, buffer.getBuffer(RenderType.solid()), knot, attach,
+                new Vec3(open.getStepX(), open.getStepY(), open.getStepZ()), light);
     }
 
     @Override

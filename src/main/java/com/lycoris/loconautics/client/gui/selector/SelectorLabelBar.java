@@ -80,9 +80,10 @@ public final class SelectorLabelBar {
             graphics.drawString(font, shown, x, top + SelectorPanel.LABEL_Y + 1,
                     SelectorPanel.LABEL_TEXT_COLOR, false);
         }
+        if (editing) return;
         SelectorPanel.blitRename(graphics, Math.min(x + width + 5, left + SelectorPanel.PANEL_W - ICON_SIZE - 4),
                 top + (SelectorPanel.LABEL_BAR_H - ICON_SIZE) / 2, over);
-        if (!over || editing) return;
+        if (!over) return;
         graphics.renderComponentTooltip(font, List.of(
                 Component.translatable("gui.loconautics.selector.label"),
                 Component.translatable("gui.loconautics.selector.label.hint").withStyle(ChatFormatting.GRAY)),

@@ -1,17 +1,22 @@
 package com.lycoris.loconautics.client.copycat;
 
+import com.lycoris.loconautics.common.copycat.CopycatBlockLogic;
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.content.decoration.copycat.CopycatModel;
+import com.simibubi.create.content.decoration.copycat.FilteredBlockAndTintGetter;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelState;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.client.ChunkRenderTypeSet;
 import net.neoforged.neoforge.client.model.data.ModelData;
+import net.neoforged.neoforge.client.model.data.ModelProperty;
 import org.joml.Matrix4f;
 import org.joml.Vector4f;
 
@@ -20,13 +25,25 @@ import java.util.List;
 
 public class CopycatBoxesModel extends CopycatModel {
 
+    private static final ModelProperty<ModelData> DONOR_DATA = new ModelProperty<>();
+
     private final List<AABB> boxes;
     private final int depthAxis;
+    private final AABB shape;
 
     public CopycatBoxesModel(BakedModel originalModel, List<AABB> boxes, ModelState modelState) {
         super(originalModel);
         this.boxes = boxes.stream().map(box -> rotate(box, modelState.getRotation().getMatrix())).toList();
         this.depthAxis = thinnestAxis(this.boxes);
+        this.shape = bounds(this.boxes);
+    }
+
+    private static AABB bounds(List<AABB> boxes) {
+        AABB total = boxes.get(0);
+        for (AABB box : boxes) {
+            total = total.minmax(box);
+        }
+        return total;
     }
 
     private static int thinnestAxis(List<AABB> boxes) {
@@ -59,12 +76,36 @@ public class CopycatBoxesModel extends CopycatModel {
     }
 
     @Override
+    protected ModelData.Builder gatherModelData(ModelData.Builder builder, BlockAndTintGetter world, BlockPos pos,
+                                                BlockState state, ModelData blockEntityData) {
+        super.gatherModelData(builder, world, pos, state, blockEntityData);
+        BlockState material = getMaterial(blockEntityData);
+        FilteredBlockAndTintGetter neighbors = new FilteredBlockAndTintGetter(world,
+                target -> CopycatBlockLogic.connectsTo(world, pos, target, state));
+        return builder.with(DONOR_DATA, getModelOf(material).getModelData(neighbors, pos, material, ModelData.EMPTY));
+    }
+
+    @Override
+    public List<BakedQuad> getQuads(BlockState state, Direction side, RandomSource rand, ModelData data,
+                                    RenderType renderType) {
+        BlockState material = getMaterial(data);
+        ModelData donorData = data.get(DONOR_DATA);
+        if (donorData == null) {
+            return super.getQuads(state, side, rand, data, renderType);
+        }
+        if (renderType != null && !getModelOf(material).getRenderTypes(material, rand, donorData).contains(renderType)) {
+            return originalModel.getQuads(state, side, rand, data, renderType);
+        }
+        return getCroppedQuads(state, side, rand, material, donorData, renderType);
+    }
+
+    @Override
     protected List<BakedQuad> getCroppedQuads(BlockState state, Direction side, RandomSource rand,
                                               BlockState material, ModelData wrappedData, RenderType renderType) {
         List<BakedQuad> template = getModelOf(material).getQuads(material, side, rand, wrappedData, renderType);
         List<BakedQuad> quads = new ArrayList<>(template.size() * boxes.size());
         for (AABB box : boxes) {
-            CopycatQuads.cropQuads(quads, template, box, depthAxis);
+            CopycatQuads.cropQuads(quads, template, box, depthAxis, shape);
         }
         return quads;
     }
@@ -75,6 +116,7 @@ public class CopycatBoxesModel extends CopycatModel {
         if (AllBlocks.COPYCAT_BASE.has(material)) {
             return originalModel.getRenderTypes(state, rand, data);
         }
-        return getModelOf(material).getRenderTypes(material, rand, ModelData.EMPTY);
+        ModelData donorData = data.get(DONOR_DATA);
+        return getModelOf(material).getRenderTypes(material, rand, donorData == null ? ModelData.EMPTY : donorData);
     }
 }

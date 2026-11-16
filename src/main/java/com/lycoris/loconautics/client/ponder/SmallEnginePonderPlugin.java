@@ -2,6 +2,7 @@ package com.lycoris.loconautics.client.ponder;
 
 import com.lycoris.loconautics.LoconauticsConstants;
 import com.lycoris.loconautics.content.combustion.SmallEngineBlocks;
+import com.lycoris.loconautics.foundation.ColorOrder;
 import net.createmod.ponder.api.registration.PonderPlugin;
 import net.createmod.ponder.api.registration.PonderSceneRegistrationHelper;
 import net.minecraft.resources.ResourceLocation;
@@ -29,7 +30,7 @@ public class SmallEnginePonderPlugin implements PonderPlugin {
 
     private static List<ResourceLocation> engines() {
         List<ResourceLocation> ids = new ArrayList<>();
-        for (DyeColor color : DyeColor.values()) {
+        for (DyeColor color : ColorOrder.ORDER) {
             ids.add(SmallEngineBlocks.ENGINES.get(color).getId());
         }
         return ids;

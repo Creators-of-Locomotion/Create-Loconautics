@@ -8,7 +8,6 @@ public final class LoconauticsConfig {
 
     private static final String TRANSLATION_PREFIX = LoconauticsConstants.MOD_ID + ".configuration.";
 
-    public enum Realism { REALISTIC, ARCADE }
     public enum TemperatureUnit { CELSIUS, FAHRENHEIT, KELVIN }
 
     public static ModConfigSpec.BooleanValue ENABLE_SABLE_TRAINS;
@@ -45,14 +44,21 @@ public final class LoconauticsConfig {
     public static ModConfigSpec.BooleanValue AUTO_RERAIL_ENABLED;
     public static ModConfigSpec.DoubleValue AUTO_RERAIL_MAX_SPEED;
 
-    public static ModConfigSpec.EnumValue<Realism> BOILER_REALISM;
     public static ModConfigSpec.DoubleValue AMBIENT_TEMPERATURE_C;
     public static ModConfigSpec.DoubleValue WORKING_TEMPERATURE_C;
 
     public static ModConfigSpec.IntValue WARMUP_TICKS;
-    public static ModConfigSpec.DoubleValue SU_PER_BODY_BLOCK;
+    public static ModConfigSpec.IntValue WARMUP_PER_SIZE_LEVEL_TICKS;
+    public static ModConfigSpec.DoubleValue SU_PER_LEVEL;
+    public static ModConfigSpec.DoubleValue BANKED_BURN_FRACTION;
 
     public static ModConfigSpec.IntValue BOILER_MAX_LENGTH;
+    public static ModConfigSpec.IntValue BOILER_MAX_LEVEL;
+    public static ModConfigSpec.IntValue FIRE_LEVELS_POOR;
+    public static ModConfigSpec.IntValue FIRE_LEVELS_NORMAL;
+    public static ModConfigSpec.IntValue FIRE_LEVELS_PREMIUM;
+    public static ModConfigSpec.IntValue POOR_FUEL_BURN_LIMIT;
+    public static ModConfigSpec.IntValue PREMIUM_FUEL_BURN_LIMIT;
     public static ModConfigSpec.IntValue BODY_WATER_CAPACITY;
     public static ModConfigSpec.IntValue INJECTOR_TANK_CAPACITY;
 
@@ -60,8 +66,6 @@ public final class LoconauticsConfig {
     public static ModConfigSpec.DoubleValue BURST_PRESSURE;
     public static ModConfigSpec.IntValue CROWN_SHEET_TICKS;
     public static ModConfigSpec.IntValue DRAFT_CHOKE_TICKS;
-    public static ModConfigSpec.DoubleValue FAILURE_EXPLOSION_BASE;
-    public static ModConfigSpec.DoubleValue FAILURE_EXPLOSION_MAX;
 
     public static ModConfigSpec.BooleanValue CRASH_EXPLODE_ENABLED;
     public static ModConfigSpec.DoubleValue CRASH_IMPACT_THRESHOLD;
@@ -279,9 +283,6 @@ public final class LoconauticsConfig {
 
         BUILDER.push("boiler");
 
-        BOILER_REALISM = BUILDER
-                .defineEnum("boilerRealism", Realism.REALISTIC);
-
         AMBIENT_TEMPERATURE_C = BUILDER
                 .defineInRange("ambientTemperatureC", 20.0, -100.0, 1000.0);
 
@@ -291,13 +292,46 @@ public final class LoconauticsConfig {
         WARMUP_TICKS = BUILDER
                 .defineInRange("warmupTicks", 1800, 20, 72000);
 
-        SU_PER_BODY_BLOCK = BUILDER
-                .defineInRange("suPerBodyBlock", 83.0, 0.0, 100000.0);
+        WARMUP_PER_SIZE_LEVEL_TICKS = BUILDER
+                .comment("Extra warmup ticks for each size level above 3.")
+                .defineInRange("warmupPerSizeLevelTicks", 333, 0, 72000);
+
+        SU_PER_LEVEL = BUILDER
+                .comment("Stress units a boiler gives for each level at full pressure.")
+                .defineInRange("suPerLevel", 16384.0, 0.0, 1000000.0);
+
+        BANKED_BURN_FRACTION = BUILDER
+                .comment("Share of full burn a lit boiler keeps when its master signal is 15.")
+                .defineInRange("bankedBurnFraction", 0.05, 0.0, 1.0);
 
         BOILER_MAX_LENGTH = BUILDER
                 .comment("Most body blocks a boiler may span along its length before it stops working.",
                         "Longer boilers burn more fuel and draw more water.")
-                .defineInRange("maxLength", 8, 1, 256);
+                .defineInRange("maxLength", 12, 1, 256);
+
+        BOILER_MAX_LEVEL = BUILDER
+                .comment("Highest level a boiler can reach. The level is the lowest of its size and its fire.")
+                .defineInRange("maxLevel", 12, 1, 64);
+
+        FIRE_LEVELS_POOR = BUILDER
+                .comment("Levels each firebox adds to the fire limit with poor fuel like wood.")
+                .defineInRange("fireLevelsPoor", 2, 1, 16);
+
+        FIRE_LEVELS_NORMAL = BUILDER
+                .comment("Levels each firebox adds to the fire limit with normal fuel like coal.")
+                .defineInRange("fireLevelsNormal", 3, 1, 16);
+
+        FIRE_LEVELS_PREMIUM = BUILDER
+                .comment("Levels each firebox adds to the fire limit with premium fuel like coal blocks.")
+                .defineInRange("fireLevelsPremium", 4, 1, 16);
+
+        POOR_FUEL_BURN_LIMIT = BUILDER
+                .comment("Fuel that burns this many ticks or less counts as poor, unless a fuel tag says otherwise.")
+                .defineInRange("poorFuelBurnLimit", 400, 1, 1000000);
+
+        PREMIUM_FUEL_BURN_LIMIT = BUILDER
+                .comment("Fuel that burns longer than this many ticks counts as premium, unless a fuel tag says otherwise.")
+                .defineInRange("premiumFuelBurnLimit", 3200, 1, 1000000);
 
         BODY_WATER_CAPACITY = BUILDER
                 .defineInRange("bodyWaterCapacity", 8000, 1, 1000000);
@@ -322,12 +356,6 @@ public final class LoconauticsConfig {
 
         CROWN_SHEET_TICKS = BUILDER
                 .defineInRange("crownSheetTicks", 600, 20, 72000);
-
-        FAILURE_EXPLOSION_BASE = BUILDER
-                .defineInRange("failureExplosionBase", 3.0, 0.0, 100.0);
-
-        FAILURE_EXPLOSION_MAX = BUILDER
-                .defineInRange("failureExplosionMax", 9.0, 0.0, 100.0);
 
         BUILDER.pop();
 
@@ -526,10 +554,6 @@ public final class LoconauticsConfig {
                 .defineInRange("dialWobbleDegrees", 1.2, 0.0, 20.0);
 
         BUILDER.pop();
-    }
-
-    public static boolean realistic() {
-        return BOILER_REALISM.get() == Realism.REALISTIC;
     }
 
     private LoconauticsConfig() {
