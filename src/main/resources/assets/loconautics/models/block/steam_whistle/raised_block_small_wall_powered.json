@@ -1,6 +1,0 @@
-{
-    "parent": "loconautics:block/steam_whistle/raised_block_small_wall",
-    "textures": {
-        "2": "create:block/copper_redstone_plate_powered"
-    }
-}

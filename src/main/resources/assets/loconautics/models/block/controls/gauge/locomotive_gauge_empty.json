@@ -1,8 +1,0 @@
-{
-    "parent": "block/block",
-    "render_type": "minecraft:cutout",
-    "textures": {
-        "0": "loconautics:block/controls/gauge_atlas",
-        "particle": "create:block/industrial_iron_block"
-    }
-}
