@@ -21,6 +21,8 @@ public final class FireboxGroups {
 
     public static final ConnectionBounds BOUNDS = ConnectionBounds.FLAT_3X3;
 
+    public static final int MAX_RUN = 3;
+
     private FireboxGroups() {}
 
     public static boolean isFirebox(BlockGetter level, BlockPos pos) {
@@ -134,10 +136,21 @@ public final class FireboxGroups {
     public static boolean canAbsorb(BlockGetter level, BlockPos controller, Collection<BlockPos> extra) {
         Set<BlockPos> combined = new HashSet<>(members(level, controller));
         for (BlockPos pos : extra) {
-            if (!BOUNDS.fits(combined, pos)) return false;
             combined.add(pos.immutable());
         }
-        return true;
+        return combined.size() <= MAX_RUN && inLine(combined);
+    }
+
+    private static boolean inLine(Collection<BlockPos> group) {
+        boolean sameX = true;
+        boolean sameZ = true;
+        BlockPos first = group.iterator().next();
+        for (BlockPos pos : group) {
+            if (pos.getY() != first.getY()) return false;
+            sameX &= pos.getX() == first.getX();
+            sameZ &= pos.getZ() == first.getZ();
+        }
+        return sameX || sameZ;
     }
 
     public static void adopt(Level level, BlockPos controller, Collection<BlockPos> members) {

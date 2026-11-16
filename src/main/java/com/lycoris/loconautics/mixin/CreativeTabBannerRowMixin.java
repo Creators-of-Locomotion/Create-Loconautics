@@ -14,7 +14,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 
-@Mixin(value = CreativeModeTab.class, remap = false)
+// another mod rebuilds displayItems as a set, which merges every padding row into one empty slot, so this runs last
+@Mixin(value = CreativeModeTab.class, remap = false, priority = 2000)
 public class CreativeTabBannerRowMixin {
 
     @Shadow

@@ -55,8 +55,9 @@ public final class BoilerMultiblockValidator {
         BlockPos injector = null;
         BlockPos takeoff = null;
         BlockPos safetyValve = null;
-        float boilerCapacity = 0f;
-        int waterCapacity = 0;
+        float boilerCapacity = fireboxes.size() * BoilerStructure.FIREBOX_BODY_SHARE;
+        int waterCapacity = Math.round(fireboxes.size() * BoilerStructure.FIREBOX_BODY_SHARE
+                * LoconauticsConfig.BODY_WATER_CAPACITY.get());
 
         while (!frontier.isEmpty() && bodies.size() < MAX_BODY_BLOCKS) {
             BlockPos current = frontier.poll();

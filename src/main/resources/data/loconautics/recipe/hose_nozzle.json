@@ -8,7 +8,7 @@
   ],
   "key": {
     "A": {
-      "item": "loconautics:industrial_pipe"
+      "item": "create:fluid_pipe"
     },
     "B": {
       "item": "minecraft:iron_ingot"

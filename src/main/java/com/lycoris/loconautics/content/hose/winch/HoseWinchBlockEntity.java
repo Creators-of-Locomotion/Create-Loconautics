@@ -21,6 +21,7 @@ import com.lycoris.loconautics.content.hose.nozzle.HoseNozzleBlockEntity;
 import com.lycoris.loconautics.content.hose.rope.HoseRope;
 import com.lycoris.loconautics.content.hose.rope.HoseRopeManager;
 import com.lycoris.loconautics.trainphysics.TrainConsist;
+import com.lycoris.loconautics.trainphysics.state.SableTrainRegistry;
 import com.simibubi.create.content.kinetics.base.KineticEffectHandler;
 import com.simibubi.create.content.kinetics.base.GeneratingKineticBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
@@ -50,6 +51,7 @@ public class HoseWinchBlockEntity extends GeneratingKineticBlockEntity implement
 
     private static final float COIL_DEGREES_PER_RPM_TICK = 0.3f;
     private static final double TAUT_STRETCH = 1.02;
+    private static final double TRAIN_SLACK = 0.75;
     private static final int FLOW_LINGER_TICKS = 3;
     public static final float FREE_SPIN_CAPACITY = 256.0f;
     private static final double FREE_SPIN_SLACK = 0.001;
@@ -68,6 +70,9 @@ public class HoseWinchBlockEntity extends GeneratingKineticBlockEntity implement
 
     private FluidStack flowFluid = FluidStack.EMPTY;
     private int flowTicks;
+    private boolean flowReversed;
+    private boolean lastSyncedReversed;
+    private boolean clientReversed;
     private int flowRate = 1;
     private boolean pressureReaches;
     private boolean suctionReaches;
@@ -242,7 +247,9 @@ public class HoseWinchBlockEntity extends GeneratingKineticBlockEntity implement
     private void syncFluidState() {
         if (Math.abs(throwStrength - lastSyncedThrow) > 0.02f
                 || Math.abs(reach - lastSyncedReach) > 0.1f
+                || flowReversed != lastSyncedReversed
                 || !FluidStack.isSameFluidSameComponents(flowFluid, lastSyncedFluid)) {
+            lastSyncedReversed = flowReversed;
             lastSyncedThrow = throwStrength;
             lastSyncedReach = reach;
             lastSyncedFluid = flowFluid.copy();
@@ -261,7 +268,8 @@ public class HoseWinchBlockEntity extends GeneratingKineticBlockEntity implement
         syncFluidState();
     }
 
-    private void noteFlow(FluidStack moved) {
+    private void noteFlow(FluidStack moved, boolean reversed) {
+        flowReversed = reversed;
         flowFluid = moved.copyWithAmount(1);
         flowTicks = FLOW_LINGER_TICKS;
     }
@@ -330,7 +338,7 @@ public class HoseWinchBlockEntity extends GeneratingKineticBlockEntity implement
                 logFillRefused(nozzle != null ? "nozzle took 0, spray=" + sprayStrength : "no sink", resource);
             }
             if (moved > 0 && action.execute()) {
-                noteFlow(resource);
+                noteFlow(resource, false);
             }
             return moved;
         }
@@ -343,7 +351,7 @@ public class HoseWinchBlockEntity extends GeneratingKineticBlockEntity implement
             }
             FluidStack out = sink.drain(resource, action);
             if (!out.isEmpty() && action.execute()) {
-                noteFlow(out);
+                noteFlow(out, true);
             }
             return out;
         }
@@ -356,7 +364,7 @@ public class HoseWinchBlockEntity extends GeneratingKineticBlockEntity implement
             }
             FluidStack out = sink.drain(Math.min(maxDrain, flowRate), action);
             if (!out.isEmpty() && action.execute()) {
-                noteFlow(out);
+                noteFlow(out, true);
             }
             return out;
         }
@@ -530,6 +538,15 @@ public class HoseWinchBlockEntity extends GeneratingKineticBlockEntity implement
         if (reelSpeed < 0.0 && rope.getStretchRatio() > TAUT_STRETCH && sharesBody(winchSubLevelId(), strand.nozzleSubLevelId)) {
             reelSpeed = 0.0;
         }
+        boolean trainToTrain = linksTwoTrains(winchSubLevelId(), strand.nozzleSubLevelId);
+        rope.setForceFree(trainToTrain);
+        if (trainToTrain) {
+            double desired = rope.getExtension() + (rope.getPoints().size() - 2);
+            double need = rope.getCurrentExtension() + TRAIN_SLACK - desired;
+            if (need > 0.0) {
+                reelSpeed = Math.max(reelSpeed, Math.min(FREE_SPIN_MAX_PAYOUT, need));
+            }
+        }
         int pointsBefore = rope.getPoints().size();
         rope.reel(reelSpeed, winchWorld());
         if (!freeSpinning && getSpeed() != 0.0f) {
@@ -549,6 +566,12 @@ public class HoseWinchBlockEntity extends GeneratingKineticBlockEntity implement
                 rope.justSynced();
             }
         }
+    }
+
+    private static boolean linksTwoTrains(@Nullable UUID winchSub, @Nullable UUID nozzleSub) {
+        return winchSub != null && nozzleSub != null && !winchSub.equals(nozzleSub)
+                && SableTrainRegistry.bySubLevel(winchSub) != null
+                && SableTrainRegistry.bySubLevel(nozzleSub) != null;
     }
 
     private boolean sharesBody(@Nullable UUID winchSub, @Nullable UUID nozzleSub) {
@@ -634,6 +657,7 @@ public class HoseWinchBlockEntity extends GeneratingKineticBlockEntity implement
         if (clientPacket) {
             tag.putFloat("Throw", throwStrength);
             tag.putFloat("Reach", reach);
+            tag.putBoolean("Reversed", flowReversed);
             tag.put("FlowFluid", flowFluid.saveOptional(registries));
             HoseStrand strand = getAttachedStrand();
             tag.putBoolean("HasStrand", strand != null);
@@ -661,6 +685,7 @@ public class HoseWinchBlockEntity extends GeneratingKineticBlockEntity implement
         if (clientPacket) {
             clientThrow = tag.getFloat("Throw");
             clientReach = tag.getFloat("Reach");
+            clientReversed = tag.getBoolean("Reversed");
             clientFluid = tag.contains("FlowFluid")
                     ? FluidStack.parseOptional(registries, tag.getCompound("FlowFluid")) : FluidStack.EMPTY;
             clientHasStrand = tag.getBoolean("HasStrand");
@@ -696,6 +721,10 @@ public class HoseWinchBlockEntity extends GeneratingKineticBlockEntity implement
 
     public boolean clientHasFluid() {
         return !clientFluid.isEmpty();
+    }
+
+    public boolean clientReversed() {
+        return clientReversed;
     }
 
     public float clientReach() {

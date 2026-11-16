@@ -1,5 +1,6 @@
 package com.lycoris.loconautics.content.buffer;
 
+import com.simibubi.create.api.schematic.nbt.PartialSafeNBT;
 import com.lycoris.loconautics.common.copycat.CopycatBlockLogic;
 import com.lycoris.loconautics.common.copycat.CopycatMaterialHolder;
 import com.lycoris.loconautics.common.copycat.CopycatMaterialStore;
@@ -27,7 +28,7 @@ import org.joml.Vector3dc;
 import java.util.List;
 import java.util.UUID;
 
-public class BufferBlockEntity extends SmartBlockEntity implements BlockEntitySubLevelActor, CopycatMaterialHolder {
+public class BufferBlockEntity extends SmartBlockEntity implements PartialSafeNBT, BlockEntitySubLevelActor, CopycatMaterialHolder {
 
     private final CopycatMaterialStore copycat = new CopycatMaterialStore(this);
 
@@ -184,6 +185,12 @@ public class BufferBlockEntity extends SmartBlockEntity implements BlockEntitySu
         super.write(tag, registries, clientPacket);
         tag.putFloat("Compression", compressionPixels);
         copycat.write(tag, registries);
+    }
+
+    @Override
+    public void writeSafe(CompoundTag tag, HolderLookup.Provider registries) {
+        super.writeSafe(tag, registries);
+        copycat.writeSafe(tag, registries);
     }
 
     @Override

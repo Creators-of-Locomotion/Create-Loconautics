@@ -35,7 +35,8 @@ public class BlockVariantPickerScreen extends Screen {
     private static final int TINT = 0xD8060606;
     private static final int NAME_DOWN = 16;
 
-    private static final int[] COLOR_ORDER = {15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 16};
+    private static final int[] COLOR_ORDER =
+            java.util.stream.IntStream.range(0, BlockVariantRegistry.COLOR_COUNT).toArray();
 
     private final BlockVariantPickerData d;
     private int hoveredFlatSlot = -1;

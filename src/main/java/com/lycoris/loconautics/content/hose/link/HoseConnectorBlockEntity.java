@@ -1,6 +1,7 @@
 package com.lycoris.loconautics.content.hose.link;
 
 import com.lycoris.loconautics.content.hose.flow.HoseFlowSink;
+import com.lycoris.loconautics.content.hose.flow.HosePipeSink;
 import com.lycoris.loconautics.content.hose.flow.HosePressure;
 import com.lycoris.loconautics.content.hose.flow.HoseSourceProbe;
 import com.lycoris.loconautics.content.hose.flow.PressureProbe;
@@ -19,11 +20,13 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-public class HoseConnectorBlockEntity extends SmartBlockEntity implements HoseLinkEndpoint {
+public class HoseConnectorBlockEntity extends SmartBlockEntity
+        implements HoseLinkEndpoint, com.lycoris.loconautics.common.PreviewStrandHolder {
 
     private final IFluidHandler linkHandler = new LinkHandler();
     private final PressureProbe pressureProbe = new PressureProbe();
     private final HoseSourceProbe sourceProbe = new HoseSourceProbe();
+    @Nullable private List<Vec3> previewStrand;
 
     public HoseConnectorBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
@@ -32,6 +35,17 @@ public class HoseConnectorBlockEntity extends SmartBlockEntity implements HoseLi
     @Override
     public void addBehaviours(List<BlockEntityBehaviour> behaviours) {
         behaviours.add(new SteelCableHolderBehaviour(this, strandCapacity()));
+    }
+
+    @Override
+    @Nullable
+    public List<Vec3> previewStrand() {
+        return previewStrand;
+    }
+
+    @Override
+    public void setPreviewStrand(@Nullable List<Vec3> points) {
+        previewStrand = points;
     }
 
     public Direction plateSide() {
@@ -49,6 +63,9 @@ public class HoseConnectorBlockEntity extends SmartBlockEntity implements HoseLi
             return null;
         }
         Direction plate = plateSide();
+        if (HosePipeSink.isPipe(level, getBlockPos().relative(plate))) {
+            return new HosePipeSink(level, getBlockPos(), plate);
+        }
         return level.getCapability(Capabilities.FluidHandler.BLOCK, getBlockPos().relative(plate),
                 plate.getOpposite());
     }

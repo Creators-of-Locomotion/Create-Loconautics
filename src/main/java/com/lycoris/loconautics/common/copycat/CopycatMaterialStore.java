@@ -3,6 +3,7 @@ package com.lycoris.loconautics.common.copycat;
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
@@ -88,6 +89,14 @@ public class CopycatMaterialStore {
         tag.put("Material", NbtUtils.writeBlockState(material));
         if (!consumed.isEmpty()) {
             tag.put("Consumed", consumed.save(registries));
+        }
+    }
+
+    public void writeSafe(CompoundTag tag, HolderLookup.Provider registries) {
+        tag.put("Material", NbtUtils.writeBlockState(material));
+        if (!consumed.isEmpty()) {
+            ItemStack plain = new ItemStack(consumed.getItemHolder(), consumed.getCount(), DataComponentPatch.EMPTY);
+            tag.put("Consumed", plain.save(registries));
         }
     }
 

@@ -27,7 +27,8 @@ import java.util.UUID;
 public final class HoseLinks {
 
     private static final int MAX_HOPS = 16;
-    private static final int MAX_LINKS_PER_BLOCK = 2;
+    private static final int MAX_LINKS_PER_RELAY = 2;
+    private static final int MAX_LINKS_PER_ENDPOINT = 1;
 
     private HoseLinks() {
     }
@@ -124,7 +125,8 @@ public final class HoseLinks {
         long winchCount = winchHoses.all().stream()
                 .filter(s -> Objects.equals(s.nozzleSubLevelId, subId) && be.getBlockPos().equals(s.nozzleLocalPos))
                 .count();
-        return fluidStrands(be, strands).size() + winchCount >= MAX_LINKS_PER_BLOCK;
+        int limit = be instanceof HoseLinkEndpoint ? MAX_LINKS_PER_ENDPOINT : MAX_LINKS_PER_RELAY;
+        return fluidStrands(be, strands).size() + winchCount >= limit;
     }
 
     @Nullable

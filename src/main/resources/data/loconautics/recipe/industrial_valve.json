@@ -15,7 +15,7 @@
       "item": "create:iron_sheet"
     },
     "B": {
-      "item": "loconautics:industrial_pipe"
+      "item": "create:fluid_pipe"
     }
   },
   "result": {

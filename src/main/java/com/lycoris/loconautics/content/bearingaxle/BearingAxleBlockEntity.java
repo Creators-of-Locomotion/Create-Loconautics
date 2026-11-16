@@ -2,10 +2,10 @@ package com.lycoris.loconautics.content.bearingaxle;
 
 import com.lycoris.loconautics.common.LinkHolder;
 import com.lycoris.loconautics.common.RedstoneLinkPair;
-import com.lycoris.loconautics.config.LoconauticsConfig;
 import com.lycoris.loconautics.foundation.LoconauticsLang;
 import com.lycoris.loconautics.registry.LoconauticsRegistries;
 import com.lycoris.loconautics.trainphysics.drive.AxleGearing;
+import com.lycoris.loconautics.trainphysics.drive.AxleImpact;
 import com.lycoris.loconautics.trainphysics.drive.TrainPropulsion;
 import com.simibubi.create.api.equipment.goggles.IHaveGoggleInformation;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
@@ -28,10 +28,6 @@ import java.util.List;
 
 public class BearingAxleBlockEntity extends KineticBlockEntity
         implements IHaveGoggleInformation, MenuProvider, LinkHolder {
-
-    static final double MASS_DIVISOR = 10.0;
-    static final double BASE_IMPACT = 1.0;
-    static final double SLOPE_STRESS_PER_DEGREE = 0.5;
 
     private double totalMassKg;
     private double slopeAngleDeg;
@@ -198,12 +194,7 @@ public class BearingAxleBlockEntity extends KineticBlockEntity
         if (validity != BearingAxleValidity.Status.VALID) {
             return 0.0;
         }
-        double slope = LoconauticsConfig.SLOPE_EFFECTS_ENABLED.get()
-                ? SLOPE_STRESS_PER_DEGREE * slopeAngleDeg
-                : 0.0;
-        return AxleGearing.stressImpact(BASE_IMPACT, massShare,
-                MASS_DIVISOR, slope,
-                opposed ? LoconauticsConfig.OPPOSED_STRESS_FACTOR.get() : 1.0);
+        return AxleImpact.of(massShare, slopeAngleDeg, opposed);
     }
 
     public double networkCapacity() {

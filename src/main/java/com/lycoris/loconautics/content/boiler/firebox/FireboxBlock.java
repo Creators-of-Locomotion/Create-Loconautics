@@ -1,6 +1,7 @@
 package com.lycoris.loconautics.content.boiler.firebox;
 
 
+import com.lycoris.loconautics.common.ignition.Igniters;
 import com.lycoris.loconautics.common.ShiftPlacement;
 import com.lycoris.loconautics.client.connected.ConnectedBlock;
 import com.lycoris.loconautics.client.connected.ConnectionBounds;
@@ -8,9 +9,14 @@ import com.lycoris.loconautics.client.copycat.CopycatMaterialSource;
 import com.lycoris.loconautics.client.copycat.CopycatQuads;
 import com.lycoris.loconautics.compat.cbc.BoilerImpactCallback;
 import com.lycoris.loconautics.content.boiler.BoilerBlocks;
+import com.lycoris.loconautics.content.boiler.BoilerPlacement;
+import com.lycoris.loconautics.content.boiler.BoilerShapes;
 import com.mojang.serialization.MapCodec;
 import com.simibubi.create.content.equipment.wrench.IWrenchable;
 import dev.ryanhcode.sable.api.block.BlockSubLevelAssemblyListener;
+import dev.ryanhcode.sable.api.block.BlockSubLevelCollisionShape;
+import net.createmod.catnip.placement.IPlacementHelper;
+import net.createmod.catnip.placement.PlacementHelpers;
 import dev.ryanhcode.sable.api.block.BlockWithSubLevelCollisionCallback;
 import dev.ryanhcode.sable.api.physics.callback.BlockSubLevelCollisionCallback;
 import net.minecraft.core.BlockPos;
@@ -20,6 +26,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.BlockGetter;
@@ -38,13 +45,20 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
 
 public class FireboxBlock extends BaseEntityBlock
         implements BlockWithSubLevelCollisionCallback, BlockSubLevelAssemblyListener, IWrenchable, ConnectedBlock,
-        CopycatMaterialSource {
+        CopycatMaterialSource, BlockSubLevelCollisionShape {
 
     public static final BooleanProperty EXTENSION = BooleanProperty.create("extension");
+
+    private static final int PLACEMENT_ID = PlacementHelpers.register(new BoilerPlacement(
+            state -> state.getBlock() instanceof FireboxBlock,
+            stack -> stack.getItem() instanceof BlockItem item && item.getBlock() instanceof FireboxBlock,
+            BlockStateProperties.HORIZONTAL_FACING));
 
 
     public FireboxBlock(BlockBehaviour.Properties properties) {
@@ -171,6 +185,21 @@ public class FireboxBlock extends BaseEntityBlock
     }
 
     @Override
+    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext ctx) {
+        return BoilerShapes.visual(state.getValue(BlockStateProperties.HORIZONTAL_FACING).getAxis(), false);
+    }
+
+    @Override
+    public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext ctx) {
+        return BoilerShapes.collision(state.getValue(BlockStateProperties.HORIZONTAL_FACING).getAxis(), false);
+    }
+
+    @Override
+    public VoxelShape getSubLevelCollisionShape(BlockGetter level, BlockState state) {
+        return BoilerShapes.collision(state.getValue(BlockStateProperties.HORIZONTAL_FACING).getAxis(), false);
+    }
+
+    @Override
     public BlockSubLevelCollisionCallback sable$getCallback() {
         return BoilerImpactCallback.INSTANCE;
     }
@@ -215,18 +244,25 @@ public class FireboxBlock extends BaseEntityBlock
     protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level,
                                               BlockPos pos, Player player, InteractionHand hand,
                                               BlockHitResult hitResult) {
+        IPlacementHelper helper = PlacementHelpers.get(PLACEMENT_ID);
+        if (helper.matchesItem(stack)) {
+            return helper.getOffset(player, level, state, pos, hitResult)
+                    .placeInWorld(level, (BlockItem) stack.getItem(), player, hand, hitResult);
+        }
         if (state.getValue(EXTENSION)) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         if (!(level.getBlockEntity(pos) instanceof FireboxBlockEntity controller)) {
             return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         }
         if (stack.getItem() instanceof net.minecraft.world.item.ShovelItem) {
             if (level.isClientSide) return ItemInteractionResult.SUCCESS;
-            if (controller.isLockedOut()) {
-                controller.clearLockout();
-            } else {
-                controller.dropFuel();
-            }
+            controller.dropFuel();
             return ItemInteractionResult.SUCCESS;
+        }
+        if (Igniters.is(stack)) {
+            if (level.isClientSide) return ItemInteractionResult.SUCCESS;
+            return controller.ignite(player, stack)
+                    ? ItemInteractionResult.SUCCESS
+                    : ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         }
         if (!FireboxBlockEntity.isFuel(stack)) {
             return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;

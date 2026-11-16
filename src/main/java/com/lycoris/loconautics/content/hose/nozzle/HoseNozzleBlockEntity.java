@@ -37,6 +37,7 @@ import dev.ryanhcode.sable.api.sublevel.SubLevelContainer;
 import dev.ryanhcode.sable.sublevel.ServerSubLevel;
 import dev.ryanhcode.sable.sublevel.SubLevel;
 import net.minecraft.core.BlockPos;
+import net.minecraft.util.Mth;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
@@ -89,6 +90,13 @@ public class HoseNozzleBlockEntity extends SmartBlockEntity
     @Nullable private PhysicsConstraintHandle dockConstraint;
     private int undockSafety;
     private long redockReadyTick;
+
+    private static final float HANDLEBAR_FOLD_STEP = 0.125f;
+    private static final float HANDLEBAR_GRAB_FOLD = 0.4f;
+    private boolean lastSyncedGrabbed;
+    private boolean clientGrabbed;
+    private float handlebarFold;
+    private float lastHandlebarFold;
 
     private final IFluidHandler linkSinkHandler = new LinkSink();
     private FluidStack linkFluid = FluidStack.EMPTY;
@@ -180,15 +188,37 @@ public class HoseNozzleBlockEntity extends SmartBlockEntity
     public void tick() {
         super.tick();
         if (level instanceof ServerLevel) {
+            tickGrabSync();
             tickLinkSpray(level.getGameTime());
             tickSuction(level.getGameTime());
         } else if (level != null && level.isClientSide) {
+            tickHandlebars();
             var containing = dev.ryanhcode.sable.Sable.HELPER.getContaining(level, getBlockPos());
             if (containing instanceof dev.ryanhcode.sable.sublevel.ClientSubLevel sub) {
                 emitSprayClient(sub);
             }
             emitSuctionClient(containing instanceof dev.ryanhcode.sable.sublevel.ClientSubLevel sub ? sub : null);
         }
+    }
+
+    private void tickHandlebars() {
+        lastHandlebarFold = handlebarFold;
+        float target = getBlockState().getValue(HoseNozzleBlock.POWERED) ? 1.0f
+                : clientGrabbed ? HANDLEBAR_GRAB_FOLD : 0.0f;
+        handlebarFold = Mth.clamp(target, handlebarFold - HANDLEBAR_FOLD_STEP, handlebarFold + HANDLEBAR_FOLD_STEP);
+    }
+
+    private void tickGrabSync() {
+        boolean grabbed = !grabbers.isEmpty();
+        if (grabbed != lastSyncedGrabbed) {
+            lastSyncedGrabbed = grabbed;
+            sendData();
+        }
+    }
+
+    public float getHandlebarFold(float partialTicks) {
+        float fold = Mth.lerp(partialTicks, lastHandlebarFold, handlebarFold);
+        return fold * fold * (3.0f - 2.0f * fold);
     }
 
     public void setSuckPower(float power) {
@@ -775,6 +805,7 @@ public class HoseNozzleBlockEntity extends SmartBlockEntity
         tag.put("SuctionTank", suctionTank.writeToNBT(registries, new net.minecraft.nbt.CompoundTag()));
         if (clientPacket) {
             tag.putFloat("SprayThrow", sprayThrow);
+            tag.putBoolean("Grabbed", lastSyncedGrabbed);
             tag.put("SprayFluid", sprayFluid.saveOptional(registries));
             tag.put("SuckFluid", lastSyncedSuckFluid.saveOptional(registries));
             tag.putFloat("SuckStrength", lastSyncedSuckStrength);
@@ -788,6 +819,7 @@ public class HoseNozzleBlockEntity extends SmartBlockEntity
         suctionTank.readFromNBT(registries, tag.getCompound("SuctionTank"));
         if (clientPacket) {
             clientSprayThrow = tag.getFloat("SprayThrow");
+            clientGrabbed = tag.getBoolean("Grabbed");
             clientSprayFluid = tag.contains("SprayFluid")
                     ? FluidStack.parseOptional(registries, tag.getCompound("SprayFluid")) : FluidStack.EMPTY;
             clientSuckFluid = tag.contains("SuckFluid")

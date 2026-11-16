@@ -13,7 +13,7 @@
       "item": "loconautics:industrial_iron_sheet"
     },
     "C": {
-      "item": "loconautics:industrial_pipe"
+      "item": "create:fluid_pipe"
     }
   },
   "result": {
