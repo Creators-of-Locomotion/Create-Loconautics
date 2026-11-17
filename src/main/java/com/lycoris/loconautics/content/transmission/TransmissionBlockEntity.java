@@ -116,8 +116,8 @@ public class TransmissionBlockEntity extends SplitShaftBlockEntity implements Me
                 () -> LoconauticsConfig.TRANSMISSION_SU_IMPACT.get().floatValue(), 4.0f, "transmission_su_impact");
 
         float inputSpeed = Math.abs(getTheoreticalSpeed());
-        if (inputSpeed == 0f) return impact;
-        return impact * computeTargetRPM() / inputSpeed;
+        lastStressApplied = inputSpeed == 0f ? impact : impact * computeTargetRPM() / inputSpeed;
+        return lastStressApplied;
     }
 
     @Override

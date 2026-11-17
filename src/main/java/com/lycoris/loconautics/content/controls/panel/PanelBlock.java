@@ -1,13 +1,11 @@
 package com.lycoris.loconautics.content.controls.panel;
 
 import com.simibubi.create.content.equipment.wrench.IWrenchable;
-import dev.ryanhcode.sable.api.block.BlockSubLevelAssemblyListener;
 import net.createmod.catnip.math.AngleHelper;
 import net.createmod.catnip.math.VecHelper;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Direction.Axis;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -22,6 +20,8 @@ import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.FaceAttachedHorizontalDirectionalBlock;
 import net.minecraft.world.level.block.SimpleWaterloggedBlock;
+import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -42,7 +42,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 public abstract class PanelBlock extends FaceAttachedHorizontalDirectionalBlock
-        implements IWrenchable, PanelHost, BlockSubLevelAssemblyListener, SimpleWaterloggedBlock {
+        implements IWrenchable, PanelHost, SimpleWaterloggedBlock {
 
     public static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
 
@@ -139,11 +139,13 @@ public abstract class PanelBlock extends FaceAttachedHorizontalDirectionalBlock
     }
 
     @Override
-    public void afterMove(ServerLevel originLevel, ServerLevel resultingLevel, BlockState newState,
-                          BlockPos oldPos, BlockPos newPos) {
-        if (resultingLevel.getBlockEntity(newPos) instanceof PanelBlockEntity panel) {
-            panel.onAssembled(newPos.subtract(oldPos));
-        }
+    protected BlockState rotate(BlockState state, Rotation rotation) {
+        return state.setValue(FACING, rotation.rotate(state.getValue(FACING)));
+    }
+
+    @Override
+    protected BlockState mirror(BlockState state, Mirror mirror) {
+        return state.rotate(mirror.getRotation(state.getValue(FACING)));
     }
 
     @Override

@@ -26,7 +26,7 @@ import java.util.UUID;
 public final class SablePsiDriver {
 
     private static final double MAX_LINK_SPEED = 5.0;
-    private static final int MAX_REACH = 2;
+    private static final int MAX_CENTER_DISTANCE = 3;
 
     private static final double STRICT_LATERAL = 0.35;
     private static final double CARRIAGE_LATERAL = 0.75;
@@ -119,7 +119,7 @@ public final class SablePsiDriver {
 
     private static boolean stillInReach(Vec3 delta, Vec3 axis, boolean carriage) {
         double along = delta.dot(axis);
-        if (along < 0.5 || along > MAX_REACH + 0.5) {
+        if (along < 0.5 || along > MAX_CENTER_DISTANCE + 0.5) {
             return false;
         }
         double lateral = carriage ? CARRIAGE_LATERAL : STRICT_LATERAL;
@@ -132,7 +132,7 @@ public final class SablePsiDriver {
         Vec3 axis = SablePsiFrames.dirToWorld(own, state.getValue(PortableStorageInterfaceBlock.FACING), false);
         Vec3 origin = SablePsiFrames.toWorld(own, be.getBlockPos(), false);
 
-        for (int step = 1; step <= MAX_REACH; step++) {
+        for (int step = 1; step <= MAX_CENTER_DISTANCE; step++) {
             Vec3 center = origin.add(axis.scale(step));
             BoundingBox3d bounds = new BoundingBox3d(new AABB(BlockPos.containing(center)).inflate(0.5));
             for (SubLevel candidate : Sable.HELPER.getAllIntersecting(level, bounds)) {
@@ -163,7 +163,7 @@ public final class SablePsiDriver {
             return false;
         }
         Vec3 delta = gapVector(own, be.getBlockPos(), farSub, farPos);
-        if (!carriage && !squarelyAligned(delta, axis)) {
+        if (!stillInReach(delta, axis, carriage)) {
             return false;
         }
         link(level, be, host, own, farSub, far, farPos, delta.dot(axis));
@@ -173,14 +173,6 @@ public final class SablePsiDriver {
     private static Vec3 gapVector(@Nullable ServerSubLevel own, BlockPos ownPos,
                                   @Nullable ServerSubLevel far, BlockPos farPos) {
         return SablePsiFrames.toWorld(far, farPos, false).subtract(SablePsiFrames.toWorld(own, ownPos, false));
-    }
-
-    private static boolean squarelyAligned(Vec3 delta, Vec3 axis) {
-        double along = delta.dot(axis);
-        if (along < 0.5 || along > MAX_REACH + 0.5) {
-            return false;
-        }
-        return delta.subtract(axis.scale(along)).length() <= STRICT_LATERAL;
     }
 
     private static void link(ServerLevel level, PortableStorageInterfaceBlockEntity be, SablePsiHost host,

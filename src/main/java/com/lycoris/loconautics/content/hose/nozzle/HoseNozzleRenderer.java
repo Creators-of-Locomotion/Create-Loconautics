@@ -32,6 +32,9 @@ public class HoseNozzleRenderer extends SafeBlockEntityRenderer<HoseNozzleBlockE
 
     private static void bar(PoseStack ms, MultiBufferSource buffer, BlockState state, int light,
                             PartialModel model, float pivotX, float degrees) {
+        if (model.get() == null) {
+            return;
+        }
         SuperByteBuffer part = CachedBuffers.partial(model, state);
         part.translate(pivotX, HoseNozzleHandlebars.PIVOT_Y, 0.0f)
                 .rotateZDegrees(degrees)

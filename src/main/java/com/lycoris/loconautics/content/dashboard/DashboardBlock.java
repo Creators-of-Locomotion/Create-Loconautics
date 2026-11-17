@@ -27,6 +27,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
+import net.minecraft.world.level.block.Mirror;
+import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
@@ -51,6 +53,19 @@ public class DashboardBlock extends HorizontalDirectionalBlock
         implements ConnectedBlock, DyedBlock, IWrenchable, PanelHost, IBE<DashboardBlockEntity> {
 
     public static final int MAX_RUN = 5;
+
+    @Override
+    protected BlockState rotate(BlockState state, Rotation rotation) {
+        return state.setValue(FACING, rotation.rotate(state.getValue(FACING)));
+    }
+
+    @Override
+    protected BlockState mirror(BlockState state, Mirror mirror) {
+        if (mirror == Mirror.NONE) return state;
+        return state.rotate(mirror.getRotation(state.getValue(FACING)))
+                .setValue(JOIN_CW, state.getValue(JOIN_CCW))
+                .setValue(JOIN_CCW, state.getValue(JOIN_CW));
+    }
 
     public static final BooleanProperty JOIN_CW = BooleanProperty.create("join_cw");
 

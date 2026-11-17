@@ -27,6 +27,7 @@ import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.function.UnaryOperator;
 
 public record ValvePart(float degrees, @Nullable BlockPos safetyValve, int wheelColor) implements PanelPart {
 
@@ -57,8 +58,8 @@ public record ValvePart(float degrees, @Nullable BlockPos safetyValve, int wheel
     }
 
     @Override
-    public PanelPart relocated(Level level, BlockPos shift, boolean copied) {
-        return new ValvePart(degrees, PanelPart.follow(level, safetyValve, shift, copied), wheelColor);
+    public PanelPart mapTargets(UnaryOperator<BlockPos> relocation) {
+        return new ValvePart(degrees, relocation.apply(safetyValve), wheelColor);
     }
 
     @Override

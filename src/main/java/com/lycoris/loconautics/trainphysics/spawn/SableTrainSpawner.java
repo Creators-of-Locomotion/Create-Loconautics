@@ -26,6 +26,7 @@ import com.lycoris.loconautics.trainphysics.teleport.TeleportStrands;
 import com.lycoris.loconautics.trainphysics.teleport.TrainTeleporter;
 import com.lycoris.loconautics.trainphysics.wheels.GhostWheelBodies;
 import com.simibubi.create.content.trains.bogey.AbstractBogeyBlock;
+import com.simibubi.create.content.trains.bogey.AbstractBogeyBlockEntity;
 import com.simibubi.create.content.trains.entity.TravellingPoint;
 import com.simibubi.create.content.trains.graph.TrackGraph;
 import com.simibubi.create.content.trains.graph.TrackGraphHelper;
@@ -1065,7 +1066,7 @@ public final class SableTrainSpawner {
                 return null;
             }
             RailCarriage rail = seatFollowerUnder(hit, world);
-            if (rail == null || rail.center() == null) {
+            if (rail == null || rail.center() == null || !acceptsTrack(sub, bogey, rail)) {
                 return null;
             }
             seats.add(new BogeySeat(bogey, hit, rail, world));
@@ -1129,6 +1130,9 @@ public final class SableTrainSpawner {
             bogeys = seatBogeysAlongRail(train, train.car().bogeys(), loc, upNormal, lookAngle);
         }
         if (bogeys == null) {
+            return null;
+        }
+        if (sub != null && bogeys.stream().anyMatch(bogey -> !acceptsTrack(sub, bogey, bogey.rail()))) {
             return null;
         }
 
@@ -1594,7 +1598,22 @@ public final class SableTrainSpawner {
         if (hit == null) {
             return null;
         }
-        return seatFollowerUnder(hit, world);
+        RailCarriage rail = seatFollowerUnder(hit, world);
+        return acceptsTrack(sub, bogey, rail) ? rail : null;
+    }
+
+    private static boolean acceptsTrack(ServerSubLevel sub, SableTrain.Bogey bogey, @Nullable RailCarriage rail) {
+        if (rail == null || rail.trackMaterial() == null) {
+            return false;
+        }
+        BlockPos pos = sub.getPlot().getCenterBlock().offset(bogey.localPos());
+        BlockState state = sub.getLevel().getBlockState(pos);
+        if (!(state.getBlock() instanceof AbstractBogeyBlock<?> block)) {
+            return false;
+        }
+        var style = sub.getLevel().getBlockEntity(pos) instanceof AbstractBogeyBlockEntity be
+                ? be.getStyle() : block.getDefaultStyle();
+        return block.getValidPathfindingTypes(style).contains(rail.trackMaterial().trackType);
     }
 
     private static boolean hangs(ServerSubLevel sub, SableTrain.Bogey bogey) {

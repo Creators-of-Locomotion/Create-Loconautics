@@ -10,9 +10,11 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Rotation;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.function.UnaryOperator;
 
 public interface PanelPart {
 
@@ -68,6 +70,17 @@ public interface PanelPart {
     }
 
     default PanelPart relocated(Level level, BlockPos shift, boolean copied) {
+        return mapTargets(target -> follow(level, target, shift, copied));
+    }
+
+    default PanelPart relocated(Level level, BlockPos oldPos, BlockPos newPos, Rotation rotation) {
+        return mapTargets(target -> {
+            if (target == null || !level.isLoaded(target) || !level.getBlockState(target).isAir()) return target;
+            return target.subtract(oldPos).rotate(rotation).offset(newPos);
+        });
+    }
+
+    default PanelPart mapTargets(UnaryOperator<BlockPos> relocation) {
         return this;
     }
 

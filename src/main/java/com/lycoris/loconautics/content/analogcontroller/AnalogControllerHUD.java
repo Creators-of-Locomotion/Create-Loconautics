@@ -74,7 +74,7 @@ public class AnalogControllerHUD {
         double ratio = AnalogControllerClientHandler.speedBarRatio(ace);
         displayedSpeed.chase((int) (ratio * 18) / 18.0, 0.5, LerpedFloat.Chaser.EXP);
         displayedSpeed.tickChaser();
-        displayedThrottle.chase(maxPower / 15.0, 0.2, LerpedFloat.Chaser.EXP);
+        displayedThrottle.chase((int) (maxPower * 18.0f / 15.0f) / 18.0, 0.2, LerpedFloat.Chaser.EXP);
         displayedThrottle.tickChaser();
         float animSpeed    = displayedSpeed.getValue(partialTicks);
         float animThrottle = displayedThrottle.getValue(partialTicks);

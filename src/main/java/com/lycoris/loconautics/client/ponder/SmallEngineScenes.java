@@ -172,6 +172,7 @@ public class SmallEngineScenes {
         scene.idle(15);
         Selection feed = feedLine(util);
         scene.world().setKineticSpeed(feed, PUMP_RPM);
+        scene.world().setKineticSpeed(util.select().position(PUMP), -PUMP_RPM);
         scene.world().propagatePipeChange(PUMP);
         scene.effects().rotationSpeedIndicator(COG);
         drive(scene, util, 0, util.select().position(MIDDLE), MIDDLE);
@@ -443,6 +444,7 @@ public class SmallEngineScenes {
         scene.world().showSection(util.select().fromTo(SHAFT_NEAR, SHAFT_FAR), Direction.NORTH);
         scene.idle(10);
         scene.world().setKineticSpeed(feedLine(util), PUMP_RPM);
+        scene.world().setKineticSpeed(util.select().position(PUMP), -PUMP_RPM);
         scene.world().propagatePipeChange(PUMP);
         scene.effects().rotationSpeedIndicator(COG);
         scene.idle(10);

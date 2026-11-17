@@ -356,7 +356,7 @@ public enum GaugeMetric implements StringRepresentable {
     }
 
     private static float speedFraction(VelocitySensorBlockEntity be) {
-        return over((float) Math.abs(be.getAdjustedVelocity()), be.getMaxSpeed().getValue());
+        return over((float) Math.abs(be.getAdjustedVelocity()), Math.abs(be.getMaxSpeed().getValue()));
     }
 
     private static String degrees(double radians) {
