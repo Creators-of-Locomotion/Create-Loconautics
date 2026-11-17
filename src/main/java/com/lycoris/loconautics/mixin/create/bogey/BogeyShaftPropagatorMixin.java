@@ -9,6 +9,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
@@ -18,6 +19,11 @@ import java.util.List;
 
 @Mixin(value = RotationPropagator.class, remap = false)
 public abstract class BogeyShaftPropagatorMixin {
+
+    @Shadow
+    private static float getAxisModifier(KineticBlockEntity be, Direction direction) {
+        throw new AssertionError();
+    }
 
     @Inject(method = "getPotentialNeighbourLocations", at = @At("RETURN"), cancellable = true)
     private static void loconautics$reachPastBogey(KineticBlockEntity be, CallbackInfoReturnable<List<BlockPos>> cir) {
@@ -63,7 +69,17 @@ public abstract class BogeyShaftPropagatorMixin {
         if (from.getBlockState().getBlock() instanceof IRotate a && to.getBlockState().getBlock() instanceof IRotate b
                 && a.hasShaftTowards(level, from.getBlockPos(), from.getBlockState(), dir)
                 && b.hasShaftTowards(level, to.getBlockPos(), to.getBlockState(), dir.getOpposite())) {
-            cir.setReturnValue(1.0f);
+            float custom = from.propagateRotationTo(to, from.getBlockState(), to.getBlockState(),
+                    diff, true, false);
+            if (custom != 0.0f) {
+                cir.setReturnValue(custom);
+                return;
+            }
+            float targetModifier = getAxisModifier(to, dir.getOpposite());
+            if (targetModifier != 0.0f) {
+                targetModifier = 1.0f / targetModifier;
+            }
+            cir.setReturnValue(getAxisModifier(from, dir) * targetModifier);
         }
     }
 }

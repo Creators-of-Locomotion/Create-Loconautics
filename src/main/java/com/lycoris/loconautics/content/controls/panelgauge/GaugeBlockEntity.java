@@ -24,6 +24,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.function.UnaryOperator;
 
 public class GaugeBlockEntity extends PanelBlockEntity {
 
@@ -53,9 +54,9 @@ public class GaugeBlockEntity extends PanelBlockEntity {
         }
 
         @Override
-        public PanelPart relocated(Level level, BlockPos shift, boolean copied) {
+        public PanelPart mapTargets(UnaryOperator<BlockPos> relocation) {
             if (!bound()) return this;
-            return new Gauge(PanelPart.follow(level, firebox, shift, copied), metric, background, front, needleColor, options);
+            return new Gauge(relocation.apply(firebox), metric, background, front, needleColor, options);
         }
 
         @Override

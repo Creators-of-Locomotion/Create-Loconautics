@@ -176,6 +176,10 @@ public final class RerailApproach {
             return abort(train);
         }
         if (heldFromOutside(level, sub)) {
+            if (ExternalForceDerail.staffHolds(sub)) {
+                GAVE_UP.remove(train.id());
+                RerailBalance.noteManualRerail(train);
+            }
             BogeyEditTrace.refuse(train, "held from outside");
             BogeyEditTrace.phase(train, "held", ExternalForceDerail.staffHolds(sub) ? "physics staff" : "rope");
             return abort(train);

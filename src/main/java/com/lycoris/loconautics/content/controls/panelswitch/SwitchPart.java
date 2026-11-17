@@ -26,6 +26,7 @@ import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.function.UnaryOperator;
 
 public record SwitchPart(int power, @Nullable BlockPos link, int body, int knobColor, int style, int options) implements RedstoneLinkedPart {
 
@@ -67,8 +68,8 @@ public record SwitchPart(int power, @Nullable BlockPos link, int body, int knobC
     }
 
     @Override
-    public PanelPart relocated(Level level, BlockPos shift, boolean copied) {
-        return new SwitchPart(power, PanelPart.follow(level, link, shift, copied), body, knobColor, style, options);
+    public PanelPart mapTargets(UnaryOperator<BlockPos> relocation) {
+        return new SwitchPart(power, relocation.apply(link), body, knobColor, style, options);
     }
 
     @Override

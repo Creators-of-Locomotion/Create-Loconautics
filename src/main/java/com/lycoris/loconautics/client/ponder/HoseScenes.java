@@ -5,6 +5,8 @@ import com.lycoris.loconautics.content.hose.winch.HoseWinchBlockEntity;
 import com.lycoris.loconautics.registry.LoconauticsRegistries;
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.AllItems;
+import com.simibubi.create.content.fluids.pump.PumpBlock;
+import com.simibubi.create.content.fluids.pump.PumpBlockEntity;
 import com.simibubi.create.content.fluids.tank.FluidTankBlockEntity;
 import com.simibubi.create.foundation.ponder.CreateSceneBuilder;
 import net.createmod.catnip.math.Pointing;
@@ -395,7 +397,7 @@ public class HoseScenes {
         scene.world().restoreBlocks(util.select().position(PUMP_SHAFT_BASE));
         scene.world().showSection(util.select().fromTo(PUMP_SHAFT_NEAR, PUMP_SHAFT_FAR), Direction.DOWN);
         scene.idle(15);
-        pumpSpeed(scene, pump, drive, 64.0f);
+        pumpSpeed(scene, PUMP, drive, 64.0f);
         scene.world().propagatePipeChange(PUMP);
         scene.effects().rotationSpeedIndicator(PUMP_COG);
         scene.overlay().showText(60)
@@ -421,7 +423,7 @@ public class HoseScenes {
                 .pointAt(util.vector().topOf(SOCKET));
         scene.idle(70);
 
-        pumpSpeed(scene, pump, drive, -64.0f);
+        pumpSpeed(scene, PUMP, drive, -64.0f);
         scene.world().propagatePipeChange(PUMP);
         scene.effects().rotationDirectionIndicator(PUMP_COG);
         scene.overlay().showText(60)
@@ -431,7 +433,7 @@ public class HoseScenes {
                 .pointAt(util.vector().topOf(PUMP));
         scene.idle(70);
 
-        pumpSpeed(scene, pump, drive, 64.0f);
+        pumpSpeed(scene, PUMP, drive, 64.0f);
         scene.world().propagatePipeChange(PUMP);
         scene.world().modifyBlock(DOCKED, state -> state.setValue(BlockStateProperties.POWERED, false), false);
         drag(scene, nozzle, PULL_OUT_F, WINCH, END_DOCKED, END_F_LOOSE, 0.0f, 20);
@@ -492,7 +494,7 @@ public class HoseScenes {
         scene.idle(5);
         scene.world().showSection(util.select().fromTo(PUMP_SHAFT_NEAR, PUMP_SHAFT_FAR), Direction.DOWN);
         scene.idle(15);
-        pumpSpeed(scene, pumpOf(util), driveOf(util), 64.0f);
+        pumpSpeed(scene, PUMP, driveOf(util), 64.0f);
         scene.world().propagatePipeChange(PUMP);
         scene.effects().rotationSpeedIndicator(PUMP_COG);
         scene.world().modifyBlockEntity(TOWER_TANK, FluidTankBlockEntity.class, be -> be.getTankInventory()
@@ -504,7 +506,7 @@ public class HoseScenes {
                 .pointAt(util.vector().topOf(CONNECTOR));
         scene.idle(70);
 
-        pumpSpeed(scene, pumpOf(util), driveOf(util), -64.0f);
+        pumpSpeed(scene, PUMP, driveOf(util), -64.0f);
         scene.world().propagatePipeChange(PUMP);
         scene.effects().rotationDirectionIndicator(PUMP_COG);
         scene.overlay().showText(60)
@@ -513,7 +515,7 @@ public class HoseScenes {
                 .pointAt(util.vector().topOf(CONNECTOR));
         scene.idle(70);
 
-        pumpSpeed(scene, pumpOf(util), driveOf(util), 0.0f);
+        pumpSpeed(scene, PUMP, driveOf(util), 0.0f);
         scene.overlay().showControls(util.vector().topOf(CONNECTOR), Pointing.DOWN, 40)
                 .rightClick()
                 .withItem(new ItemStack(AllItems.WRENCH.get()));
@@ -592,7 +594,7 @@ public class HoseScenes {
         scene.world().restoreBlocks(util.select().position(PUMP_SHAFT_BASE));
         scene.world().showSection(util.select().fromTo(PUMP_SHAFT_NEAR, PUMP_SHAFT_FAR), Direction.DOWN);
         scene.idle(15);
-        pumpSpeed(scene, pumpOf(util), driveOf(util), 64.0f);
+        pumpSpeed(scene, PUMP, driveOf(util), 64.0f);
         scene.world().propagatePipeChange(PUMP);
         scene.effects().rotationSpeedIndicator(PUMP_COG);
         scene.world().modifyBlockEntity(RELAY_TANK, FluidTankBlockEntity.class, be -> be.getTankInventory()
@@ -683,7 +685,7 @@ public class HoseScenes {
                 sagging(previous, new Vec3(RUN_END_X + 0.5, 2.6875, 2.5)));
         scene.idle(20);
 
-        pumpSpeed(scene, runPump, runDrive, 64.0f);
+        pumpSpeed(scene, PUMP, runDrive, 64.0f);
         scene.world().propagatePipeChange(new BlockPos(RUN_WINCH_X, 3, 2));
         scene.world().modifyBlockEntity(new BlockPos(RUN_END_X, 1, 2), FluidTankBlockEntity.class,
                 be -> be.getTankInventory().fill(new FluidStack(Fluids.WATER, 8000), FluidAction.EXECUTE));
@@ -725,7 +727,7 @@ public class HoseScenes {
                 .pointAt(util.vector().topOf(CONNECTOR));
         scene.idle(70);
 
-        pumpSpeed(scene, pumpOf(util), driveOf(util), SLOW_RPM);
+        pumpSpeed(scene, PUMP, driveOf(util), SLOW_RPM);
         scene.world().propagatePipeChange(PUMP);
         scene.effects().rotationSpeedIndicator(PUMP_COG);
         scene.overlay().showText(60)
@@ -735,7 +737,7 @@ public class HoseScenes {
                 .pointAt(util.vector().topOf(CONNECTOR));
         scene.idle(70);
 
-        pumpSpeed(scene, pumpOf(util), driveOf(util), 64.0f);
+        pumpSpeed(scene, PUMP, driveOf(util), 64.0f);
         scene.world().propagatePipeChange(PUMP);
         scene.effects().rotationSpeedIndicator(PUMP_COG);
         scene.world().modifyBlockEntity(TOWER_TANK, FluidTankBlockEntity.class, be -> be.getTankInventory()
@@ -747,7 +749,7 @@ public class HoseScenes {
                 .pointAt(util.vector().topOf(CONNECTOR));
         scene.idle(70);
 
-        pumpSpeed(scene, pumpOf(util), driveOf(util), -SLOW_RPM);
+        pumpSpeed(scene, PUMP, driveOf(util), -SLOW_RPM);
         scene.world().propagatePipeChange(PUMP);
         scene.effects().rotationDirectionIndicator(PUMP_COG);
         scene.overlay().showText(60)
@@ -799,7 +801,7 @@ public class HoseScenes {
         scene.idle(5);
         scene.world().showSection(util.select().position(LINK_SHAFT), Direction.DOWN);
         scene.idle(15);
-        pumpSpeed(scene, util.select().position(LINK_PUMP),
+        pumpSpeed(scene, LINK_PUMP,
                 util.select().position(LINK_COG).add(util.select().position(LINK_SHAFT)), 64.0f);
         scene.world().propagatePipeChange(LINK_PUMP);
         scene.effects().rotationSpeedIndicator(LINK_COG);
@@ -972,8 +974,16 @@ public class HoseScenes {
     }
 
     // a cogwheel meshing with the pump turns the other way
-    private static void pumpSpeed(CreateSceneBuilder scene, Selection pump, Selection drive, float speed) {
-        scene.world().setKineticSpeed(pump, speed);
+    private static void pumpSpeed(CreateSceneBuilder scene, BlockPos pump, Selection drive, float speed) {
+        scene.world().modifyBlockEntity(pump, PumpBlockEntity.class, be -> {
+            if (be.getSpeed() * speed < 0 && be.getLevel() != null) {
+                Direction facing = be.getBlockState().getValue(PumpBlock.FACING);
+                be.getLevel().setBlock(be.getBlockPos(), be.getBlockState()
+                        .setValue(PumpBlock.FACING, facing.getOpposite()), 2);
+            }
+            be.setSpeed(speed);
+            be.updatePressureChange();
+        });
         scene.world().setKineticSpeed(drive, -speed);
     }
 

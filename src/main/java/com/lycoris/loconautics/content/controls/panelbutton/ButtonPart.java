@@ -25,6 +25,7 @@ import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.function.UnaryOperator;
 
 public record ButtonPart(long pressedUntil, @Nullable BlockPos link,
                          int body, int capColor, int style, int options) implements RedstoneLinkedPart {
@@ -65,8 +66,8 @@ public record ButtonPart(long pressedUntil, @Nullable BlockPos link,
     }
 
     @Override
-    public PanelPart relocated(Level level, BlockPos shift, boolean copied) {
-        return new ButtonPart(pressedUntil, PanelPart.follow(level, link, shift, copied), body, capColor, style, options);
+    public PanelPart mapTargets(UnaryOperator<BlockPos> relocation) {
+        return new ButtonPart(pressedUntil, relocation.apply(link), body, capColor, style, options);
     }
 
     @Override

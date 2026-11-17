@@ -67,7 +67,7 @@ public class HoseWinchRenderer implements BlockEntityRenderer<HoseWinchBlockEnti
         KineticBlockEntityRenderer.renderRotatingKineticBlock(be, KineticBlockEntityRenderer.shaft(axis), ps,
                 buffer.getBuffer(RenderType.solid()), light);
 
-        if (be.clientHasStrand()) {
+        if (be.clientHasStrand() && LoconauticsPartialModels.HOSE_WINCH_COIL.get() != null) {
             SuperByteBuffer coil = CachedBuffers.partial(
                     LoconauticsPartialModels.HOSE_WINCH_COIL, state);
             spin(coil, state, axis, angle).light(light).renderInto(ps, buffer.getBuffer(RenderType.solid()));

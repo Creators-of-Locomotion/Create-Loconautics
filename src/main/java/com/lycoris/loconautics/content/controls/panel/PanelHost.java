@@ -2,9 +2,12 @@ package com.lycoris.loconautics.content.controls.panel;
 
 import com.simibubi.create.content.equipment.wrench.IWrenchable;
 import com.simibubi.create.content.equipment.wrench.WrenchItem;
+import dev.ryanhcode.sable.api.block.BlockSubLevelAssemblyListener;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.ItemInteractionResult;
@@ -14,6 +17,8 @@ import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.block.HorizontalDirectionalBlock;
+import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
@@ -25,7 +30,19 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-public interface PanelHost {
+public interface PanelHost extends BlockSubLevelAssemblyListener {
+
+    @Override
+    default void afterMove(ServerLevel originLevel, ServerLevel resultingLevel, BlockState oldState,
+                           BlockPos oldPos, BlockPos newPos) {
+        if (!(resultingLevel.getBlockEntity(newPos) instanceof PanelBlockEntity panel)) return;
+        Direction facing = panel.getBlockState().getValue(HorizontalDirectionalBlock.FACING);
+        for (Rotation rotation : Rotation.values()) {
+            if (rotation.rotate(oldState.getValue(HorizontalDirectionalBlock.FACING)) != facing) continue;
+            panel.onAssembled(oldPos, newPos, rotation);
+            break;
+        }
+    }
 
     PanelSlot targetedSlot(BlockPos pos, BlockState state, Vec3 clickLocation);
 

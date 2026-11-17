@@ -20,6 +20,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
@@ -83,16 +84,20 @@ public class PanelBlockEntity extends SmartBlockEntity implements IHaveGoggleInf
     }
 
     public void onAssembled(BlockPos shift) {
-        assemblyShift = shift;
+        onAssembled(BlockPos.ZERO, shift, Rotation.NONE);
+    }
+
+    public void onAssembled(BlockPos oldPos, BlockPos newPos, Rotation rotation) {
+        assemblyMove = new AssemblyMove(oldPos.immutable(), newPos.immutable(), rotation);
     }
 
     private void relocateParts() {
-        BlockPos shift = assemblyShift;
-        assemblyShift = null;
+        AssemblyMove move = assemblyMove;
+        assemblyMove = null;
         for (PanelSlot slot : PanelSlot.values()) {
             PanelPart part = parts.get(slot);
             if (part == null) continue;
-            PanelPart moved = part.relocated(level, shift, false);
+            PanelPart moved = part.relocated(level, move.oldPos(), move.newPos(), move.rotation());
             if (!moved.equals(part)) replacePart(slot, moved);
         }
     }
@@ -124,7 +129,7 @@ public class PanelBlockEntity extends SmartBlockEntity implements IHaveGoggleInf
     public void tick() {
         super.tick();
         boolean server = level != null && !level.isClientSide;
-        if (server && assemblyShift != null) relocateParts();
+        if (server && assemblyMove != null) relocateParts();
         if (server && schematicShift != null) followCopiedParts();
         for (PanelSlot slot : PanelSlot.values()) {
             PanelPart part = parts.get(slot);
@@ -306,7 +311,10 @@ public class PanelBlockEntity extends SmartBlockEntity implements IHaveGoggleInf
         return null;
     }
 
-    @Nullable private BlockPos assemblyShift;
+    private record AssemblyMove(BlockPos oldPos, BlockPos newPos, Rotation rotation) {
+    }
+
+    @Nullable private AssemblyMove assemblyMove;
 
     private static final String ORIGIN_TAG = "SchematicOrigin";
 

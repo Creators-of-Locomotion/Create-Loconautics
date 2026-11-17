@@ -61,7 +61,8 @@ public class DrivenBogeyModel extends BakedModelWrapper<BakedModel> {
     @Override
     public @NotNull ModelData getModelData(@NotNull BlockAndTintGetter level, @NotNull BlockPos pos,
                                            @NotNull BlockState state, @NotNull ModelData modelData) {
-        return modelData.derive().with(DRIVEN, driven(level, pos)).build();
+        return super.getModelData(level, pos, state, modelData).derive()
+                .with(DRIVEN, driven(level, pos)).build();
     }
 
     private static boolean driven(BlockAndTintGetter level, BlockPos bogey) {
@@ -101,6 +102,9 @@ public class DrivenBogeyModel extends BakedModelWrapper<BakedModel> {
             return driven ? grayed(own) : own;
         }
         BakedModel swapped = pick(driven, shafted).get();
+        if (swapped == null) {
+            return super.getQuads(state, face, rand, data, renderType);
+        }
         boolean turned = state.hasProperty(BlockStateProperties.HORIZONTAL_AXIS)
                 && state.getValue(BlockStateProperties.HORIZONTAL_AXIS) == Direction.Axis.X;
         if (!turned) {

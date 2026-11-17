@@ -76,6 +76,10 @@ public final class RollerWorldActor {
 
         if (TrainActorControls.isDisabled(roller)) return;
 
+        if (roller.mode.getValue() == TUNNEL_PAVE_MODE) {
+            clearHeadroom(world, localPos, pavingPos, worldUp);
+        }
+
         BlockState paveWith = resolvePavingBlock(roller);
         if (paveWith == null || paveWith.isAir()) return;
 
@@ -84,9 +88,6 @@ public final class RollerWorldActor {
         if (world.getBlockState(pavingPos).is(paveWith.getBlock())) return;
         if (!consumePavingItem(subLevel, roller)) return;
 
-        if (roller.mode.getValue() == TUNNEL_PAVE_MODE) {
-            clearHeadroom(world, localPos, pavingPos, worldUp);
-        }
         pave(world, pavingPos, paveWith);
     }
 

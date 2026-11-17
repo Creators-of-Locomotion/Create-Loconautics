@@ -1,0 +1,22 @@
+allprojects {
+    afterEvaluate { project ->
+        if (!project.plugins.hasPlugin('net.neoforged.moddev')) return
+
+        def regression = project.sourceSets.create('issueRegression') {
+            java.srcDir project.file('verification/java')
+            resources.srcDir project.file('verification/resources')
+            compileClasspath += project.sourceSets.main.output + project.sourceSets.main.compileClasspath
+            runtimeClasspath += project.sourceSets.main.output + project.sourceSets.main.runtimeClasspath
+        }
+        project.neoForge.addModdingDependenciesTo(regression)
+        project.neoForge.mods.named('loconautics') {
+            sourceSet regression
+        }
+        project.neoForge.runs.named('gameTestServer') {
+            gameDirectory = project.layout.buildDirectory.dir('issue-verification/run')
+            systemProperty 'neoforge.enabledGameTestNamespaces', 'loconautics'
+            logLevel = org.slf4j.event.Level.INFO
+            jvmArgument '-Xmx4G'
+        }
+    }
+}

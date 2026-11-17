@@ -23,6 +23,7 @@ import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.function.UnaryOperator;
 
 public record LeverPart(int power, @Nullable BlockPos link, int body, int knobColor, int style, int options) implements RedstoneLinkedPart {
 
@@ -59,8 +60,8 @@ public record LeverPart(int power, @Nullable BlockPos link, int body, int knobCo
     }
 
     @Override
-    public PanelPart relocated(Level level, BlockPos shift, boolean copied) {
-        return new LeverPart(power, PanelPart.follow(level, link, shift, copied), body, knobColor, style, options);
+    public PanelPart mapTargets(UnaryOperator<BlockPos> relocation) {
+        return new LeverPart(power, relocation.apply(link), body, knobColor, style, options);
     }
 
     @Override
