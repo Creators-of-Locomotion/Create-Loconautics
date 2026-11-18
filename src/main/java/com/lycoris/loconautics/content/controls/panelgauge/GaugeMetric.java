@@ -70,6 +70,13 @@ public enum GaugeMetric implements StringRepresentable {
     TRAIN_WEIGHT(FireboxBlockEntity.class,
             GaugeMetric::trainWeight,
             be -> over((float) Math.max(0.0, be.getLastTrainMass()), 3000f), ChatFormatting.GOLD, 3),
+    BOILER_LEVEL(FireboxBlockEntity.class,
+            be -> be.getDisplayLevel() + " / " + be.getDisplayMaxLevel(),
+            be -> over(be.getDisplayLevel(), be.getDisplayMaxLevel()), ChatFormatting.GOLD, 6),
+    BOGEY_POWER(FireboxBlockEntity.class,
+            be -> be.getDisplayBogeyDemand() <= 0f ? "--"
+                    : String.format(Locale.US, "%,.0f / %,.0f SU", be.getDisplayBogeyDemand(), be.getDisplayMaxSu()),
+            be -> over(be.getDisplayBogeyDemand(), be.getDisplayMaxSu()), ChatFormatting.AQUA, 15),
 
     SPEEDOMETER_RPM(SpeedGaugeBlockEntity.class,
             be -> String.format(Locale.US, "%,.0f RPM", Math.abs(be.getSpeed())),

@@ -15,6 +15,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.entity.player.Player;
 import dev.ryanhcode.sable.api.sublevel.ServerSubLevelContainer;
 import dev.ryanhcode.sable.api.sublevel.SubLevelContainer;
@@ -36,6 +37,7 @@ public class TrainStatusChat {
     private static final int GOOD = 0xD5ECC2;
     private static final int BAD = 0xFFD3B4;
     private static final int MAX_QUEUED = 3;
+    private static final double HEAR_RANGE = 64.0;
 
     private static final Set<String> QUIET_ON_PLATE = Set.of("end_of_track", "track_missing", "no_path",
             "no_path_reason", "no_match", "no_package_target", "postal_unreachable", "back_on_track", "partial_derail",
@@ -402,6 +404,45 @@ public class TrainStatusChat {
         return host != null && TurntableRegistry.byPlate(host.getUniqueId()) != null;
     }
 
+    // a train nobody owns tells whoever stands near it
+    @Nullable
+    private static Player nearestPlayer(SableTrain train, ServerLevel level) {
+        ChunkPos chunk = train.bodyChunk();
+        if (chunk == null) {
+            return null;
+        }
+        Player nearest = null;
+        double best = HEAR_RANGE * HEAR_RANGE;
+        for (Player candidate : level.players()) {
+            double dx = candidate.getX() - chunk.getMiddleBlockX();
+            double dz = candidate.getZ() - chunk.getMiddleBlockZ();
+            double distance = dx * dx + dz * dz;
+            if (distance <= best) {
+                best = distance;
+                nearest = candidate;
+            }
+        }
+        return nearest;
+    }
+
+    // true only when somebody was told just now, it keeps trying until a player can hear it
+    public static boolean cannotContinueOnce(SableTrain train, Component reason) {
+        State state = state(train);
+        ServerLevel level = train.level();
+        if (state.navigation || level == null || level.getServer() == null) {
+            return false;
+        }
+        UUID owner = train.owner();
+        Player player = owner == null ? nearestPlayer(train, level)
+                : level.getServer().getPlayerList().getPlayer(owner);
+        if (player == null) {
+            return false;
+        }
+        display(train, "cannot_continue", false, reason);
+        state.navigation = true;
+        return true;
+    }
+
     private static void display(SableTrain train, String key, boolean good, Object... args) {
         if (QUIET_ON_PLATE.contains(key) && onTurntable(train)) {
             return;
@@ -416,10 +457,11 @@ public class TrainStatusChat {
         if (state.queued.size() > MAX_QUEUED) {
             state.queued.remove(0);
         }
-        if (level == null || level.getServer() == null || owner == null) {
+        if (level == null || level.getServer() == null) {
             return;
         }
-        Player player = level.getServer().getPlayerList().getPlayer(owner);
+        Player player = owner == null ? nearestPlayer(train, level)
+                : level.getServer().getPlayerList().getPlayer(owner);
         if (player == null) {
             return;
         }

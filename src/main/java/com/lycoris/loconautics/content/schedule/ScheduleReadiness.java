@@ -3,6 +3,8 @@ package com.lycoris.loconautics.content.schedule;
 import com.lycoris.loconautics.content.analogcontroller.AnalogControllerBlock;
 import com.lycoris.loconautics.content.analogcontroller.AnalogControllerBlockEntity;
 import com.lycoris.loconautics.content.bearingaxle.BearingAxleBlockEntity;
+import com.lycoris.loconautics.content.boiler.bogey.BoilerBogeyBlockEntity;
+import com.lycoris.loconautics.content.boiler.firebox.FireboxBlockEntity;
 import com.lycoris.loconautics.content.bearingaxle.BearingAxleValidity;
 import com.lycoris.loconautics.content.transmission.TransmissionBlockEntity;
 import com.lycoris.loconautics.common.sable.SubLevelBlocks;
@@ -49,6 +51,10 @@ public final class ScheduleReadiness {
             return Result.fail("no_driver");
         }
 
+        BoilerBogeyBlockEntity boilerBogey = LocomotiveHardware.boilerBogey(sub, controller);
+        if (boilerBogey != null) {
+            return checkBoiler(controller, boilerBogey);
+        }
         BearingAxleBlockEntity axle = BearingAxleValidity.resolve(sub);
         if (axle == null) {
             return Result.fail("invalid_bearing_axle");
@@ -76,6 +82,22 @@ public final class ScheduleReadiness {
             return Result.fail("no_rotation");
         }
         return Result.PASS;
+    }
+
+    private static Result checkBoiler(AnalogControllerBlockEntity controller, BoilerBogeyBlockEntity bogey) {
+        LocomotiveHardware.Result wiring = LocomotiveHardware.validate(controller, bogey);
+        if (!wiring.ok()) {
+            return Result.fail(wiring.messageKey());
+        }
+        FireboxBlockEntity boiler = bogey.boiler();
+        if (boiler == null) {
+            return Result.fail("no_boiler");
+        }
+        // a boiler that has just loaded has no structure yet, so its pressure reads zero for a moment
+        if (!boiler.hasValidStructure()) {
+            return Result.PASS;
+        }
+        return boiler.drivePressure() > 0f ? Result.PASS : Result.fail("no_boiler_fire");
     }
 
     @Nullable

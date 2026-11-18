@@ -110,13 +110,23 @@ public final class HoseFlowSink implements IFluidHandler {
         return moved;
     }
 
+    private FluidStack markDrain(FluidStack drained, FluidAction action) {
+        if (!drained.isEmpty() && action.execute()) {
+            long now = level.getGameTime();
+            for (Hop hop : hops) {
+                HoseFlowTracker.mark(hop.strandId(), !hop.forward(), now);
+            }
+        }
+        return drained;
+    }
+
     @Override
     public FluidStack drain(FluidStack resource, FluidAction action) {
-        return delegate.drain(resource, action);
+        return markDrain(delegate.drain(resource, action), action);
     }
 
     @Override
     public FluidStack drain(int maxDrain, FluidAction action) {
-        return delegate.drain(maxDrain, action);
+        return markDrain(delegate.drain(maxDrain, action), action);
     }
 }

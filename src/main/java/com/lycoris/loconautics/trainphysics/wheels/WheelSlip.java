@@ -65,7 +65,8 @@ public final class WheelSlip {
                 || ExternalForceDerail.staffHolds(sub);
         // commanded is the shafts rpm, a computer holding the train at 0 overrides the speed but never the shaft
         boolean computerIdle = CcControl.held(train.id()) && !CcControl.isDriving(train.id());
-        boolean stuck = !locked && !computerIdle
+        boolean gaining = train.gainingSpeed(train.level().getGameTime(), carSpeed);
+        boolean stuck = !locked && !computerIdle && !gaining
                 && Math.abs(commanded) > STALL_COMMAND && Math.abs(carSpeed) < STALL_SPEED;
         int was = train.wheelStall().getOrDefault(bogeyLocal, 0);
         int stall = locked || computerIdle ? 0

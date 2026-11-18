@@ -29,6 +29,11 @@ public interface TrainDriveSource {
 
     long getPlacedTime();
 
+    // how much of its full pull the source has right now, a boiler with low steam pulls less
+    default double powerFraction() {
+        return 1.0;
+    }
+
     // the car mass this source was last solved with
     double trainMass();
 

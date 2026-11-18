@@ -68,6 +68,7 @@
     "create.link.RedstoneLinkPanelSkinMixin",
     "create.link.LinkBehaviourPanelMixin",
     "create.fluid.FluidPipeBarrelGapMixin",
+    "create.fluid.PipeConnectionHoseFlowMixin",
     "create.fluid.IndustrialPumpRangeMixin",
     "create.contraption.PortableStorageInterfaceSableMixin",
     "compat.create.CreateStickerMixin",
@@ -100,6 +101,7 @@
   "client": [
     "client.gui.SubMenuConfigScreenAccessor",
     "client.ponder.PonderUiBlurMixin",
+    "client.goggles.GoggleBoilerBodyMixin",
     "client.whistle.WhistleHornMixin",
     "client.whistle.WhistleSoundInstanceMixin",
     "client.whistle.WhistleRendererRaiseMixin",

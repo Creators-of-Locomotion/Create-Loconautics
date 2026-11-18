@@ -35,8 +35,11 @@ public abstract class SafetyValveBlockEntity extends SmartBlockEntity implements
     private static final float SCALD_DAMAGE = 1f;
     private static final int STEAM_COLOR = 0xF2F5F7;
 
+    private static final long BOILER_GRACE_TICKS = 40L;
+
     private float opening;
     private boolean venting;
+    private long lastBoilerTick = Long.MIN_VALUE;
 
     public SafetyValveBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
@@ -52,6 +55,8 @@ public abstract class SafetyValveBlockEntity extends SmartBlockEntity implements
         if (level == null) return;
         if (level.isClientSide) {
             SafetyValveHissClient.tick(this, venting && opening > 0f);
+        } else {
+            expireBoiler();
         }
         if (!venting || opening <= 0f) return;
         if (level.isClientSide) {
@@ -59,6 +64,22 @@ public abstract class SafetyValveBlockEntity extends SmartBlockEntity implements
             return;
         }
         scaldEntities();
+    }
+
+    // a valve nobody updates, a boiler that lost its structure or was broken, must not keep blowing
+    public void boilerSeen() {
+        if (level != null) lastBoilerTick = level.getGameTime();
+    }
+
+    private void expireBoiler() {
+        long now = level.getGameTime();
+        if (lastBoilerTick == Long.MIN_VALUE) lastBoilerTick = now;
+        if (now - lastBoilerTick <= BOILER_GRACE_TICKS) return;
+        if (venting) setVenting(false);
+        releaseOpening();
+    }
+
+    protected void releaseOpening() {
     }
 
     protected Vec3 mouthDirection() {

@@ -216,7 +216,7 @@ public final class BoilerBlocks {
                     .build(null));
 
     public static final DeferredHolder<Block, SteamTakeoffBlock> STEAM_TAKEOFF =
-            LoconauticsRegistries.BLOCKS.register("steam_takeoff", () -> new SteamTakeoffBlock(LoconauticsBlockProperties.metallic()));
+            LoconauticsRegistries.BLOCKS.register("steam_takeoff", () -> new SteamTakeoffBlock(LoconauticsBlockProperties.metallic().noOcclusion()));
 
     public static final DeferredHolder<Item, BlockItem> STEAM_TAKEOFF_ITEM =
             LoconauticsRegistries.ITEMS.register("steam_takeoff", () ->

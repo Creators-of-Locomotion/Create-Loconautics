@@ -382,6 +382,9 @@ public final class LoconauticsRegistries {
     public static final DeferredHolder<Item, Item> VALVE_GEAR =
             ITEMS.register("valve_gear", () -> new Item(new Item.Properties()));
 
+    public static final DeferredHolder<Item, Item> TRAIN_WHEEL =
+            ITEMS.register("train_wheel", () -> new Item(new Item.Properties()));
+
     public static final DeferredHolder<Item, Item> INDUSTRIAL_IRON_SHEET =
             ITEMS.register("industrial_iron_sheet", () -> new Item(new Item.Properties().stacksTo(64)));
 
@@ -543,7 +546,6 @@ public final class LoconauticsRegistries {
 
                         output.accept(BEARING_AXLE_ITEM.get());
                         output.accept(TRANSMISSION_ITEM.get());
-                        output.accept(com.lycoris.loconautics.content.boiler.BoilerBlocks.BOILER_BOGEY_ITEM.get());
 
                         com.lycoris.loconautics.content.dashboard.DashboardBlocks.DASHBOARD_ITEMS
                                 .forEach((color, item) -> output.accept(new net.minecraft.world.item.ItemStack(item.get()),
@@ -618,8 +620,10 @@ public final class LoconauticsRegistries {
                         output.accept(com.lycoris.loconautics.content.boiler.BoilerBlocks.STEAM_TAKEOFF_ITEM.get());
                         output.accept(com.lycoris.loconautics.content.boiler.BoilerBlocks.SMART_SAFETY_VALVE_ITEM.get());
                         output.accept(com.lycoris.loconautics.content.boiler.BoilerBlocks.FIREBOX_STOCKER_ITEM.get());
+                        output.accept(com.lycoris.loconautics.content.boiler.BoilerBlocks.BOILER_BOGEY_ITEM.get());
                         output.accept(BOILER_TUBES.get());
                         output.accept(VALVE_GEAR.get());
+                        output.accept(TRAIN_WHEEL.get());
                         com.lycoris.loconautics.content.combustion.SmallEngineBlocks.ENGINE_ITEMS
                                 .forEach((color, item) -> output.accept(new net.minecraft.world.item.ItemStack(item.get()),
                                         color == com.lycoris.loconautics.content.combustion.SmallEngineBlocks.TAB_COLOR

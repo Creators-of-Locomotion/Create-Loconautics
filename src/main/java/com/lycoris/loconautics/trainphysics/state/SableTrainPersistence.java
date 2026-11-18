@@ -235,6 +235,9 @@ public final class SableTrainPersistence {
         if (train.owner() != null) {
             tag.putUUID("Owner", train.owner());
         }
+        if (train.boilerSummary() != null) {
+            tag.put("Boiler", train.boilerSummary().save());
+        }
         tag.putDouble("TargetSpeed", train.targetSpeed());
         tag.putDouble("Speed", train.speed());
         tag.putDouble("Accel", train.accel());
@@ -431,6 +434,9 @@ public final class SableTrainPersistence {
         train.setDerailedQuiet(tag.getBoolean("Derailed"));
         if (tag.hasUUID("Owner")) {
             train.setOwner(tag.getUUID("Owner"));
+        }
+        if (tag.contains("Boiler")) {
+            train.setBoilerSummary(com.lycoris.loconautics.content.boiler.BoilerSummary.load(tag.getCompound("Boiler")));
         }
         train.setTargetSpeed(tag.getDouble("TargetSpeed"));
         train.setSpeed(tag.getDouble("Speed"));

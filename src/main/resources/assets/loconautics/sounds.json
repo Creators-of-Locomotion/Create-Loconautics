@@ -11,5 +11,13 @@
                 "stream": false
             }
         ]
+    },
+    "safety_valve_hiss": {
+        "sounds": [
+            {
+                "name": "loconautics:safetyvalve/hiss",
+                "stream": false
+            }
+        ]
     }
 }

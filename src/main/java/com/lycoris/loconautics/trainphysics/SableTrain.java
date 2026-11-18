@@ -45,6 +45,7 @@ public final class SableTrain {
     private final boolean physics;
 
     private UUID owner;
+    private com.lycoris.loconautics.content.boiler.BoilerSummary boilerSummary;
     private double speed;
     private double lastRollingSpeed;
     private double targetSpeed;
@@ -203,6 +204,14 @@ public final class SableTrain {
 
     public UUID owner() {
         return owner;
+    }
+
+    public com.lycoris.loconautics.content.boiler.BoilerSummary boilerSummary() {
+        return boilerSummary;
+    }
+
+    public void setBoilerSummary(com.lycoris.loconautics.content.boiler.BoilerSummary summary) {
+        this.boilerSummary = summary;
     }
 
     public void setOwner(UUID owner) {
@@ -369,6 +378,20 @@ public final class SableTrain {
     private final java.util.Map<BlockPos, Double> wheelSurface = new java.util.LinkedHashMap<>();
 
     private final java.util.Map<BlockPos, Integer> wheelStall = new java.util.LinkedHashMap<>();
+
+    private double lastCarSpeed;
+    private long lastCarSpeedTick = Long.MIN_VALUE;
+    private boolean gainingSpeed;
+
+    // true while the car speed is still climbing, a slow start is not a stuck wheel
+    public boolean gainingSpeed(long gameTime, double carSpeed) {
+        if (lastCarSpeedTick != gameTime) {
+            gainingSpeed = Math.abs(carSpeed) > Math.abs(lastCarSpeed) + 1.0e-5;
+            lastCarSpeed = carSpeed;
+            lastCarSpeedTick = gameTime;
+        }
+        return gainingSpeed;
+    }
 
     private final java.util.Set<BlockPos> slippingBogeys = new java.util.LinkedHashSet<>();
 
