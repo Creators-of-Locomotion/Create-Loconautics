@@ -122,6 +122,9 @@ public final class RailSnap {
             return;
         }
         Vector3d tangent = SableTrainDriver.railTangent(car);
+        if (tangent == null) {
+            return;
+        }
         Vector3d vel = handle.getLinearVelocity(new Vector3d());
         Vector3d railVel = SableTrainDriver.railVelocityUnder(sub, car);
         double vTan = new Vector3d(vel).sub(railVel).dot(tangent);

@@ -1,13 +1,13 @@
 package com.lycoris.loconautics.content.boiler;
 
 import com.lycoris.loconautics.config.LoconauticsConfig;
+import com.lycoris.loconautics.content.boiler.barrel.BarrelPipeConnector;
 import com.lycoris.loconautics.content.boiler.safetyvalve.SafetyValveBlock;
 import com.lycoris.loconautics.content.boiler.steamtakeoff.SteamTakeoffBlock;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -64,7 +64,7 @@ public final class BoilerMultiblockValidator {
         while (!frontier.isEmpty() && bodies.size() < MAX_BODY_BLOCKS) {
             BlockPos current = frontier.poll();
             BlockState currentState = level.getBlockState(current);
-            Direction.Axis axis = bodyAxis(currentState);
+            Direction.Axis axis = BarrelPipeConnector.bodyAxis(currentState);
             if (axis != null) {
                 if (bodyAxis != null && bodyAxis != axis) return new Scan(null, "align_boiler_body");
                 bodyAxis = axis;
@@ -127,7 +127,7 @@ public final class BoilerMultiblockValidator {
     private static void seedBody(Level level, BlockPos pos, Direction.Axis reach, boolean flush,
                                  Set<BlockPos> bodySet, Queue<BlockPos> frontier) {
         BlockState state = level.getBlockState(pos);
-        Direction.Axis axis = bodyAxis(state);
+        Direction.Axis axis = BarrelPipeConnector.bodyAxis(state);
         boolean fits = flush ? axis == null || axis == reach : axis == reach;
         if (state.is(BoilerTags.BOILER_BODY) && fits && bodySet.add(pos)) {
             frontier.add(pos);
@@ -146,23 +146,10 @@ public final class BoilerMultiblockValidator {
         return max - min + 1;
     }
 
-    private static Direction.Axis bodyAxis(BlockState state) {
-        if (state.hasProperty(BlockStateProperties.FACING)) {
-            return state.getValue(BlockStateProperties.FACING).getAxis();
-        }
-        if (state.hasProperty(BlockStateProperties.HORIZONTAL_FACING)) {
-            return state.getValue(BlockStateProperties.HORIZONTAL_FACING).getAxis();
-        }
-        if (state.hasProperty(BlockStateProperties.AXIS)) {
-            return state.getValue(BlockStateProperties.AXIS);
-        }
-        return null;
-    }
-
     private static List<BlockPos> scanConnectors(Level level, List<BlockPos> bodies) {
         List<BlockPos> found = new ArrayList<>();
         for (BlockPos body : bodies) {
-            Direction.Axis length = com.lycoris.loconautics.content.boiler.barrel.BarrelPipeConnector
+            Direction.Axis length = BarrelPipeConnector
                     .bodyAxis(level.getBlockState(body));
             if (length == null) continue;
             for (Direction face : Direction.values()) {
@@ -174,7 +161,7 @@ public final class BoilerMultiblockValidator {
                     continue;
                 }
                 if (face.getAxis() == length) continue;
-                if (com.lycoris.loconautics.content.boiler.barrel.BarrelPipeConnector
+                if (BarrelPipeConnector
                         .ensureConnector(level, body, face)) {
                     found.add(body.relative(face));
                 }

@@ -2,12 +2,17 @@ package com.lycoris.loconautics.content.boiler;
 
 public record BoilerPool(float max, float bogeyDemand, float outputUsed) {
 
+    // bogeys that are stopped for overdraw draw nothing, so the outputs get the whole pool
+    public float bogeyDraw() {
+        return bogeysOverdrawn() ? 0f : bogeyDemand;
+    }
+
     public float remainder() {
-        return Math.max(0f, max - bogeyDemand);
+        return Math.max(0f, max - bogeyDraw());
     }
 
     public float used() {
-        return bogeyDemand + outputUsed;
+        return bogeyDraw() + outputUsed;
     }
 
     public float usedFraction() {

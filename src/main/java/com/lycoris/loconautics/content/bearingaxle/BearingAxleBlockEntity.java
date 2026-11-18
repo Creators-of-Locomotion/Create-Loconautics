@@ -6,11 +6,13 @@ import com.lycoris.loconautics.foundation.LoconauticsLang;
 import com.lycoris.loconautics.registry.LoconauticsRegistries;
 import com.lycoris.loconautics.trainphysics.drive.AxleGearing;
 import com.lycoris.loconautics.trainphysics.drive.AxleImpact;
+import com.lycoris.loconautics.trainphysics.drive.TrainDriveSource;
 import com.lycoris.loconautics.trainphysics.drive.TrainPropulsion;
 import com.simibubi.create.api.equipment.goggles.IHaveGoggleInformation;
 import com.simibubi.create.content.kinetics.base.KineticBlockEntity;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -27,7 +29,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 public class BearingAxleBlockEntity extends KineticBlockEntity
-        implements IHaveGoggleInformation, MenuProvider, LinkHolder {
+        implements IHaveGoggleInformation, MenuProvider, LinkHolder, TrainDriveSource {
 
     private double totalMassKg;
     private double slopeAngleDeg;
@@ -190,6 +192,33 @@ public class BearingAxleBlockEntity extends KineticBlockEntity
         return maxGearRatio;
     }
 
+    @Override
+    public Direction frontLocal() {
+        return BearingAxleValidity.axleFrontLocal(this);
+    }
+
+    @Override
+    public double rawRpm() {
+        return getSpeed();
+    }
+
+    @Override
+    public double effectiveRpm() {
+        return isOverStressed() ? 0.0 : getSpeed();
+    }
+
+    @Override
+    public boolean isPlumbed() {
+        return hasNetwork();
+    }
+
+    @Override
+    public AxleGearing.Load gearingLoad(double massShare, boolean opposed, boolean gearsEnabled) {
+        return new AxleGearing.Load(hasNetwork() ? network : null, networkCapacity(), networkStress(),
+                ownNetworkStress(), directImpact(massShare, opposed), gearsEnabled ? gear : 0);
+    }
+
+    @Override
     public double directImpact(double massShare, boolean opposed) {
         if (validity != BearingAxleValidity.Status.VALID) {
             return 0.0;
@@ -209,7 +238,8 @@ public class BearingAxleBlockEntity extends KineticBlockEntity
         return lastStressApplied * Math.abs(getTheoreticalSpeed());
     }
 
-    public double getTrainMass() {
+    @Override
+    public double trainMass() {
         return totalMassKg;
     }
 

@@ -15,6 +15,7 @@ import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import com.lycoris.loconautics.content.boiler.BoilerAttach;
 import net.minecraft.world.phys.Vec3;
 
 public class SmokestackBlockEntity extends BlockEntity {
@@ -92,7 +93,8 @@ public class SmokestackBlockEntity extends BlockEntity {
             exhaust.reset();
             return;
         }
-        smoke.track(new Vec3(worldPosition.getX() + 0.5, worldPosition.getY() + 1.0, worldPosition.getZ() + 0.5));
+        double standOff = getBlockState().getValue(SmokestackBlock.RAISED) ? BoilerAttach.BULGE : 0.0;
+        smoke.track(new Vec3(worldPosition.getX() + 0.5, worldPosition.getY() + 1.0 + standOff, worldPosition.getZ() + 0.5));
         float strength = power / 15.0F;
 
         float lift = boilerDriven ? 1.0F : Mth.lerp(strength, LIFT_MIN, LIFT_MAX);

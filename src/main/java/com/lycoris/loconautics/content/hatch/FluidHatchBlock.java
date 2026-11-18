@@ -1,6 +1,7 @@
 package com.lycoris.loconautics.content.hatch;
 
 import com.lycoris.loconautics.content.boiler.BoilerAttach;
+import com.lycoris.loconautics.foundation.pick.OversizeShape;
 import com.lycoris.loconautics.registry.LoconauticsRegistries;
 import com.simibubi.create.AllItems;
 import com.simibubi.create.content.equipment.wrench.IWrenchable;
@@ -41,7 +42,7 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
 
-public class FluidHatchBlock extends Block implements IBE<FluidHatchBlockEntity>, IWrenchable, SimpleWaterloggedBlock {
+public class FluidHatchBlock extends Block implements IBE<FluidHatchBlockEntity>, IWrenchable, SimpleWaterloggedBlock, OversizeShape {
 
     public static final EnumProperty<Direction> FACING =
             EnumProperty.create("facing", Direction.class, d -> true);

@@ -199,6 +199,12 @@ public final class LoconauticsClient {
         PonderIndex.addPlugin(new com.lycoris.loconautics.client.ponder.TrainPonderPlugin());
 
         SimpleBlockEntityVisualizer
+                .builder(com.lycoris.loconautics.content.boiler.BoilerBlocks.BOILER_BOGEY_BE.get())
+                .factory(com.simibubi.create.content.trains.bogey.BogeyBlockEntityVisual::new)
+                .skipVanillaRender(be -> true)
+                .apply();
+
+        SimpleBlockEntityVisualizer
                 .builder(com.lycoris.loconautics.content.boiler.BoilerBlocks.FIREBOX_BE.get())
                 .factory(com.lycoris.loconautics.content.boiler.firebox.FireboxVisual::new)
                 .apply();
@@ -322,6 +328,10 @@ public final class LoconauticsClient {
 
     private void onRegisterRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerBlockEntityRenderer(
+                com.lycoris.loconautics.content.boiler.BoilerBlocks.BOILER_BOGEY_BE.get(),
+                com.simibubi.create.content.trains.bogey.BogeyBlockEntityRenderer::new
+        );
+        event.registerBlockEntityRenderer(
                 LoconauticsRegistries.ANALOG_CONTROLLER_BE.get(),
                 AnalogControllerRenderer::new
         );
@@ -402,6 +412,8 @@ public final class LoconauticsClient {
                 TransmissionScreen::new);
         event.register(LoconauticsRegistries.BEARING_AXLE_MENU.get(),
                 com.lycoris.loconautics.content.bearingaxle.BearingAxleScreen::new);
+        event.register(LoconauticsRegistries.BOILER_BOGEY_MENU.get(),
+                com.lycoris.loconautics.content.boiler.bogey.BoilerBogeyScreen::new);
         event.register(LoconauticsRegistries.PANEL_FREQUENCY_MENU.get(), PanelPartScreens::create);
     }
 

@@ -1,6 +1,7 @@
 package com.lycoris.loconautics.content.controls.panel;
 
 import com.lycoris.loconautics.content.combustion.SmallEngineBlock;
+import com.lycoris.loconautics.content.controls.panel.target.RedstoneTargets;
 import com.lycoris.loconautics.content.transmission.TransmissionBlock;
 import com.lycoris.loconautics.registry.LoconauticsRegistries;
 import com.simibubi.create.AllBlocks;
@@ -63,7 +64,8 @@ public abstract class LinkBoundBlockItem extends PanelBlockItem {
         BlockState state = level.getBlockState(pos);
 
         Player player = context.getPlayer();
-        if (state.getBlock() instanceof SmallEngineBlock || state.getBlock() instanceof TransmissionBlock) {
+        if (state.getBlock() instanceof SmallEngineBlock || state.getBlock() instanceof TransmissionBlock
+                || RedstoneTargets.of(state) != null) {
             if (!level.isClientSide) {
                 bind(context.getItemInHand(), player, state, pos);
             }

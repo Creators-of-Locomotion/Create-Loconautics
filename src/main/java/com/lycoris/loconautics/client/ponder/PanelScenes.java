@@ -9,7 +9,9 @@ import com.lycoris.loconautics.content.controls.panel.style.PanelStyles;
 import com.lycoris.loconautics.content.controls.panelbutton.ButtonPart;
 import com.lycoris.loconautics.content.controls.panellever.LeverPart;
 import com.lycoris.loconautics.content.controls.panelswitch.SwitchPart;
+import com.simibubi.create.AllBlocks;
 import com.simibubi.create.AllItems;
+import com.simibubi.create.content.contraptions.chassis.StickerBlock;
 import com.simibubi.create.foundation.ponder.CreateSceneBuilder;
 import net.createmod.catnip.math.Pointing;
 import net.createmod.ponder.api.scene.SceneBuilder;
@@ -18,6 +20,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.phys.Vec3;
 
@@ -31,6 +35,19 @@ public class PanelScenes {
     private static final BlockPos LEFT_LINK = new BlockPos(0, 2, 2);
     private static final BlockPos RIGHT_LAMP = new BlockPos(4, 1, 2);
     private static final BlockPos RIGHT_LINK = new BlockPos(4, 2, 2);
+
+    private static final BlockPos TARGET = new BlockPos(2, 1, 1);
+    private static final BlockState LAMP_OFF = Blocks.REDSTONE_LAMP.defaultBlockState();
+    private static final BlockState LAMP_ON = LAMP_OFF.setValue(BlockStateProperties.LIT, true);
+    private static final BlockState TRAPDOOR_SHUT = Blocks.IRON_TRAPDOOR.defaultBlockState()
+            .setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.NORTH);
+    private static final BlockState TRAPDOOR_OPEN = TRAPDOOR_SHUT.setValue(BlockStateProperties.OPEN, true);
+    private static final BlockState RAIL_OFF = Blocks.POWERED_RAIL.defaultBlockState();
+    private static final BlockState RAIL_ON = RAIL_OFF.setValue(BlockStateProperties.POWERED, true);
+    private static final BlockState STICKER_OFF = AllBlocks.STICKER.getDefaultState()
+            .setValue(BlockStateProperties.FACING, Direction.UP);
+    private static final BlockState STICKER_ON = STICKER_OFF.setValue(StickerBlock.EXTENDED, true)
+            .setValue(BlockStateProperties.POWERED, true);
 
     private static final int CLICK_TICKS = 20;
     private static final int CLICK_LANDS = 8;
@@ -338,6 +355,77 @@ public class PanelScenes {
                 .placeNearTarget()
                 .pointAt(face);
         scene.idle(70);
+    }
+
+    public static void targets(SceneBuilder builder, SceneBuildingUtil util) {
+        CreateSceneBuilder scene = open(builder, "panel_targets", "Connecting Panel Parts to Blocks");
+        Vec3 face = util.vector().blockSurface(PANEL, Direction.NORTH);
+        Vec3 targetTop = util.vector().blockSurface(TARGET, Direction.NORTH);
+        ItemStack button = new ItemStack(BoilerBlocks.GAUGE_BUTTON_ITEM.get());
+
+        scene.world().showSection(util.select().fromTo(CASING_LOW, CASING_HIGH), Direction.DOWN);
+        scene.idle(10);
+        scene.world().showSection(util.select().position(PANEL), Direction.SOUTH);
+        scene.world().showSection(util.select().position(TARGET), Direction.DOWN);
+        scene.idle(15);
+
+        click(scene, targetTop, button, true, () -> {
+        });
+        scene.overlay().showText(70)
+                .text("Panel parts can be bound to any block that accepts Redstone")
+                .attachKeyFrame()
+                .placeNearTarget()
+                .pointAt(targetTop);
+        scene.idle(80);
+
+        click(scene, face, button, false, () -> addButton(scene, PanelSlot.TOP_LEFT, TARGET));
+        click(scene, face, ItemStack.EMPTY, false, () -> setTarget(scene, LAMP_ON, true));
+        scene.overlay().showText(60)
+                .text("The part powers the block directly, no Link is needed")
+                .attachKeyFrame()
+                .placeNearTarget()
+                .pointAt(face);
+        scene.idle(70);
+        setTarget(scene, LAMP_OFF, false);
+        scene.idle(10);
+
+        setTarget(scene, TRAPDOOR_SHUT, true);
+        scene.idle(15);
+        scene.overlay().showText(60)
+                .text("The part stays bound when another block takes its place")
+                .attachKeyFrame()
+                .placeNearTarget()
+                .pointAt(targetTop);
+        scene.idle(30);
+        click(scene, face, ItemStack.EMPTY, false, () -> setTarget(scene, TRAPDOOR_OPEN, false));
+        scene.idle(50);
+        setTarget(scene, TRAPDOOR_SHUT, false);
+        scene.idle(10);
+
+        setTarget(scene, RAIL_OFF, true);
+        scene.idle(15);
+        click(scene, face, ItemStack.EMPTY, false, () -> setTarget(scene, RAIL_ON, false));
+        scene.overlay().showText(70)
+                .text("Rails, Doors and Machines answer to it the same way")
+                .attachKeyFrame()
+                .placeNearTarget()
+                .pointAt(targetTop);
+        scene.idle(30);
+        setTarget(scene, RAIL_OFF, false);
+        scene.idle(10);
+
+        setTarget(scene, STICKER_OFF, true);
+        scene.idle(15);
+        click(scene, face, ItemStack.EMPTY, false, () -> setTarget(scene, STICKER_ON, false));
+        scene.idle(50);
+    }
+
+    private static void setTarget(CreateSceneBuilder scene, BlockState state, boolean particles) {
+        scene.world().setBlock(TARGET, state, particles);
+        if (state.hasProperty(BlockStateProperties.POWERED) && state.getValue(BlockStateProperties.POWERED)
+                || state.hasProperty(BlockStateProperties.LIT) && state.getValue(BlockStateProperties.LIT)) {
+            scene.effects().indicateRedstone(TARGET);
+        }
     }
 
     private static void showPlain(CreateSceneBuilder scene, SceneBuildingUtil util) {

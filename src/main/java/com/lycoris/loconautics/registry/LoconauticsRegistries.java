@@ -217,8 +217,13 @@ public final class LoconauticsRegistries {
             BEARING_AXLE_MENU = MENUS.register("bearing_axle", () ->
             IMenuTypeExtension.create(LoconauticsRegistries::createBearingAxleMenu));
 
+    public static final DeferredHolder<MenuType<?>, MenuType<com.lycoris.loconautics.content.boiler.bogey.BoilerBogeyMenu>>
+            BOILER_BOGEY_MENU = MENUS.register("boiler_bogey", () ->
+            IMenuTypeExtension.create((id, inv, buf) -> new com.lycoris.loconautics.content.boiler.bogey.BoilerBogeyMenu(
+                    LoconauticsRegistries.BOILER_BOGEY_MENU.get(), id, inv, buf)));
+
     public static final DeferredHolder<MenuType<?>, MenuType<PanelFrequencyMenu>>
-            PANEL_FREQUENCY_MENU = MENUS.register("panel_frequency", () ->
+            PANEL_FREQUENCY_MENU =MENUS.register("panel_frequency", () ->
             IMenuTypeExtension.create(LoconauticsRegistries::createPanelFrequencyMenu));
 
     public static final DeferredHolder<Block, TurntableBearingBlock> TURNTABLE_BEARING =
@@ -538,6 +543,7 @@ public final class LoconauticsRegistries {
 
                         output.accept(BEARING_AXLE_ITEM.get());
                         output.accept(TRANSMISSION_ITEM.get());
+                        output.accept(com.lycoris.loconautics.content.boiler.BoilerBlocks.BOILER_BOGEY_ITEM.get());
 
                         com.lycoris.loconautics.content.dashboard.DashboardBlocks.DASHBOARD_ITEMS
                                 .forEach((color, item) -> output.accept(new net.minecraft.world.item.ItemStack(item.get()),

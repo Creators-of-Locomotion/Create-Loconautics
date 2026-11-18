@@ -11,6 +11,7 @@ import com.lycoris.loconautics.compat.cbc.BoilerImpactCallback;
 import com.lycoris.loconautics.content.boiler.BoilerBlocks;
 import com.lycoris.loconautics.content.boiler.BoilerPlacement;
 import com.lycoris.loconautics.content.boiler.BoilerShapes;
+import com.lycoris.loconautics.foundation.pick.OversizeShape;
 import com.mojang.serialization.MapCodec;
 import com.simibubi.create.content.equipment.wrench.IWrenchable;
 import dev.ryanhcode.sable.api.block.BlockSubLevelAssemblyListener;
@@ -51,7 +52,7 @@ import org.jetbrains.annotations.Nullable;
 
 public class FireboxBlock extends BaseEntityBlock
         implements BlockWithSubLevelCollisionCallback, BlockSubLevelAssemblyListener, IWrenchable, ConnectedBlock,
-        CopycatMaterialSource, BlockSubLevelCollisionShape {
+        CopycatMaterialSource, BlockSubLevelCollisionShape, OversizeShape {
 
     public static final BooleanProperty EXTENSION = BooleanProperty.create("extension");
 
@@ -255,7 +256,7 @@ public class FireboxBlock extends BaseEntityBlock
         }
         if (stack.getItem() instanceof net.minecraft.world.item.ShovelItem) {
             if (level.isClientSide) return ItemInteractionResult.SUCCESS;
-            controller.dropFuel();
+            if (!controller.extinguish()) controller.dropFuel();
             return ItemInteractionResult.SUCCESS;
         }
         if (Igniters.is(stack)) {

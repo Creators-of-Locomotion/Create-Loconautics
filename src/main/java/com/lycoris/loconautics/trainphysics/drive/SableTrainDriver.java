@@ -8,7 +8,6 @@ import com.lycoris.loconautics.trainphysics.debug.force.ForceTrace;
 import com.lycoris.loconautics.LoconauticsConstants;
 import com.lycoris.loconautics.config.LoconauticsConfig;
 import com.lycoris.loconautics.content.analogcontroller.AnalogControllerBlockEntity;
-import com.lycoris.loconautics.content.bearingaxle.BearingAxleBlockEntity;
 import com.lycoris.loconautics.content.schedule.SableScheduleRuntime;
 import com.lycoris.loconautics.content.schedule.ScheduleReadiness;
 import com.lycoris.loconautics.network.packets.train.SableTrainSyncPacket;
@@ -926,9 +925,8 @@ public final class SableTrainDriver {
 
     public static net.minecraft.core.Direction axleFacing(SableTrain train) {
         ServerSubLevel sub = axleSub(train);
-        BearingAxleBlockEntity axle = sub == null ? null : TrainPropulsion.bearingAxleIn(sub);
-        return axle == null ? null
-                : com.lycoris.loconautics.content.bearingaxle.BearingAxleBlock.front(axle.getBlockState());
+        TrainDriveSource axle = sub == null ? null : TrainPropulsion.driveSourceIn(sub);
+        return axle == null ? null : axle.frontLocal();
     }
 
     public static Vec3 axleNose(SableTrain train) {

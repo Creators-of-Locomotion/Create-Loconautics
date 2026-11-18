@@ -6,7 +6,6 @@ import com.lycoris.loconautics.foundation.smoke.SmokeOptions;
 import com.lycoris.loconautics.foundation.smoke.SmokeStyle;
 import com.lycoris.loconautics.trainphysics.fx.ParticleWorldLock;
 import com.lycoris.loconautics.trainphysics.portal.PortalCutsClient;
-import com.simibubi.create.AllSoundEvents;
 import com.simibubi.create.api.equipment.goggles.IHaveGoggleInformation;
 import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
@@ -38,7 +37,6 @@ public abstract class SafetyValveBlockEntity extends SmartBlockEntity implements
 
     private float opening;
     private boolean venting;
-    private int hissCooldown;
 
     public SafetyValveBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
@@ -51,7 +49,11 @@ public abstract class SafetyValveBlockEntity extends SmartBlockEntity implements
     @Override
     public void tick() {
         super.tick();
-        if (level == null || !venting || opening <= 0f) return;
+        if (level == null) return;
+        if (level.isClientSide) {
+            SafetyValveHissClient.tick(this, venting && opening > 0f);
+        }
+        if (!venting || opening <= 0f) return;
         if (level.isClientSide) {
             ventSteam();
             return;
@@ -65,6 +67,14 @@ public abstract class SafetyValveBlockEntity extends SmartBlockEntity implements
 
     protected double mouthDistance() {
         return 0.5;
+    }
+
+    public Vec3 hissPosition() {
+        return Sable.HELPER.projectOutOfSubLevel(level, localMouth());
+    }
+
+    public boolean isVenting() {
+        return venting;
     }
 
     private Vec3 localMouth() {
@@ -105,11 +115,6 @@ public abstract class SafetyValveBlockEntity extends SmartBlockEntity implements
                     worldUp.x * speed + (random.nextDouble() - 0.5) * 0.05 * spread.x,
                     worldUp.y * speed + (random.nextDouble() - 0.5) * 0.05 * spread.y,
                     worldUp.z * speed + (random.nextDouble() - 0.5) * 0.05 * spread.z);
-        }
-
-        if (--hissCooldown <= 0) {
-            AllSoundEvents.STEAM.playAt(level, worldMouth, 0.3f + 0.7f * opening, 0.7f + 0.5f * opening, false);
-            hissCooldown = 4 + Math.round((1f - opening) * 8f);
         }
     }
 

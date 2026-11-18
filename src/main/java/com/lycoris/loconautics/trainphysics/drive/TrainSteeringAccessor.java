@@ -1,6 +1,5 @@
 package com.lycoris.loconautics.trainphysics.drive;
 
-import com.lycoris.loconautics.content.bearingaxle.BearingAxleBlockEntity;
 import com.lycoris.loconautics.trainphysics.SableTrain;
 import com.lycoris.loconautics.common.sable.SubLevelData;
 import dev.ryanhcode.sable.sublevel.ServerSubLevel;
@@ -16,8 +15,8 @@ public final class TrainSteeringAccessor {
             return;
         }
         ServerSubLevel sub = SubLevelData.resolve(train.level(), train.car().subLevelId());
-        BearingAxleBlockEntity axle = sub == null ? null : TrainPropulsion.bearingAxleIn(sub);
-        Direction target = TrainSteering.target(TrainSteering.axleFront(axle, sub), dir);
+        TrainDriveSource axle = sub == null ? null : TrainPropulsion.driveSourceIn(sub);
+        Direction target = TrainSteering.target(DriveSources.front(axle, sub), dir);
         train.setSteerIntent(target);
         TrainSteering.clearFollow(train.car());
         TrainSteering.applySteerTarget(train.car(), target);

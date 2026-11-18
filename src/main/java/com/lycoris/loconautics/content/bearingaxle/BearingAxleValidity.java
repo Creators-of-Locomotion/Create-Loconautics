@@ -1,5 +1,6 @@
 package com.lycoris.loconautics.content.bearingaxle;
 
+import com.lycoris.loconautics.trainphysics.drive.DriveSources;
 import com.lycoris.loconautics.common.sable.SubLevelBlocks;
 import dev.ryanhcode.sable.sublevel.ServerSubLevel;
 import net.minecraft.core.BlockPos;
@@ -92,17 +93,7 @@ public final class BearingAxleValidity {
 
     @Nullable
     private static BearingAxleBlockEntity pick(List<BearingAxleBlockEntity> valid) {
-        BearingAxleBlockEntity best = null;
-        double bestStrength = -1.0;
-        for (BearingAxleBlockEntity axle : valid) {
-            double strength = Math.abs(axle.getSpeed());
-            if (best == null || strength > bestStrength
-                    || (strength == bestStrength && olderThan(axle, best))) {
-                best = axle;
-                bestStrength = strength;
-            }
-        }
-        return best;
+        return DriveSources.pick(valid);
     }
 
     public static Direction axleFrontLocal(BearingAxleBlockEntity axle) {
@@ -111,12 +102,5 @@ public final class BearingAxleValidity {
             return Direction.NORTH;
         }
         return BearingAxleBlock.front(state);
-    }
-
-    private static boolean olderThan(BearingAxleBlockEntity a, BearingAxleBlockEntity b) {
-        if (a.getPlacedTime() != b.getPlacedTime()) {
-            return a.getPlacedTime() < b.getPlacedTime();
-        }
-        return a.getBlockPos().asLong() < b.getBlockPos().asLong();
     }
 }

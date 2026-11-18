@@ -7,10 +7,13 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 
 public final class BoilerAttach {
     public static final TagKey<Block> HOSTS = TagKey.create(net.minecraft.core.registries.Registries.BLOCK,
             LoconauticsConstants.id("boiler_hosts"));
+
+    public static final BooleanProperty RAISED = BooleanProperty.create("raised");
 
     // how far a part sits out from its host, in blocks
     public static final double BULGE = 0.5;

@@ -34,22 +34,20 @@ Sable and Simulated are the only hard dependencies. Their jars are not in this r
 
 ## Translations
 
-English is the main language. The other languages are community work, and more help is welcome.
+<a href="https://gitlocalize.com/repo/10923?utm_source=badge"> <img src="https://gitlocalize.com/repo/10923/whole_project/badge.svg" /> </a>
 
-| Language | Translated |
-| --- | --- |
-| English (en_us) | 100% |
-| Chinese, Simplified (zh_cn) | 100% |
-| Spanish (es_es) | 100% |
-| Galician (gl_es) | 100% |
-| Catalá (ca_es) | 99% |
-| Basque (eu_es) | 99% |
-| German (de_de) | 88% |
-| Russian (ru_ru) | 87% |
-| Portuguese, Brazil (pt_br) | 50% |
-| Italian (it_it) | 17% |
+English is the main language, and every other language is made by the community. New contributors are always welcome.
 
-Want to add a language or finish one? Copy `src/main/resources/assets/loconautics/lang/en_us.json`, name it for your language (for example `fr_fr.json`), translate the values and leave the keys as they are. Then open a pull request, or ask on Discord. A partial translation is fine, any missing text shows in English.
+### Help translate
+
+You can translate directly in the app on [GitLocalize](https://gitlocalize.com/repo/10923).
+
+1. Open the project on GitLocalize and find your language.
+2. If your language is not listed, ask on Discord and we will add it.
+3. Edit the translations right there in the editor.
+4. You can also review translations in other languages and help improve them.
+
+Partial translations are fine. Any text that is missing will be shown in English.
 
 ## Thanks
 

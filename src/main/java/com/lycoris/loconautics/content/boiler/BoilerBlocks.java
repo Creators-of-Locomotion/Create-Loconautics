@@ -228,6 +228,22 @@ public final class BoilerBlocks {
                     .of(BoilerBlocks::createSteamTakeoffBE, STEAM_TAKEOFF.get())
                     .build(null));
 
+    public static final DeferredHolder<Block, com.lycoris.loconautics.content.boiler.bogey.BoilerBogeyBlock>
+            BOILER_BOGEY = LoconauticsRegistries.BLOCKS.register("boiler_bogey", () ->
+            new com.lycoris.loconautics.content.boiler.bogey.BoilerBogeyBlock(
+                    LoconauticsBlockProperties.metallic().noOcclusion()));
+
+    public static final DeferredHolder<Item, BlockItem> BOILER_BOGEY_ITEM =
+            LoconauticsRegistries.ITEMS.register("boiler_bogey", () ->
+                    new BlockItem(BOILER_BOGEY.get(), new Item.Properties().stacksTo(64)));
+
+    public static final DeferredHolder<BlockEntityType<?>,
+            BlockEntityType<com.lycoris.loconautics.content.boiler.bogey.BoilerBogeyBlockEntity>>
+            BOILER_BOGEY_BE = BLOCK_ENTITIES.register("boiler_bogey", () ->
+            BlockEntityType.Builder
+                    .of(BoilerBlocks::createBoilerBogeyBE, BOILER_BOGEY.get())
+                    .build(null));
+
     public static final DeferredHolder<Block, SmartSafetyValveBlock> SMART_SAFETY_VALVE =
             LoconauticsRegistries.BLOCKS.register("smart_safety_valve", () ->
                     new SmartSafetyValveBlock(LoconauticsBlockProperties.metallic().noOcclusion()));
@@ -314,6 +330,12 @@ public final class BoilerBlocks {
 
     static SteamTakeoffBlockEntity createSteamTakeoffBE(BlockPos pos, BlockState state) {
         return new SteamTakeoffBlockEntity(STEAM_TAKEOFF_BE.get(), pos, state);
+    }
+
+    static com.lycoris.loconautics.content.boiler.bogey.BoilerBogeyBlockEntity createBoilerBogeyBE(
+            BlockPos pos, BlockState state) {
+        return new com.lycoris.loconautics.content.boiler.bogey.BoilerBogeyBlockEntity(
+                BOILER_BOGEY_BE.get(), pos, state);
     }
 
     public static FireboxBlockEntity createFireboxBE(BlockPos pos, BlockState state) {

@@ -1,9 +1,13 @@
 package com.lycoris.loconautics.content.controls.panel;
 
 import com.lycoris.loconautics.content.combustion.SmallEngineBlockEntity;
+import com.lycoris.loconautics.content.controls.panel.target.PanelSignals;
+import com.lycoris.loconautics.content.controls.panel.target.RedstoneTarget;
+import com.lycoris.loconautics.content.controls.panel.target.RedstoneTargets;
 import com.lycoris.loconautics.content.transmission.TransmissionBlockEntity;
 import com.simibubi.create.content.redstone.link.RedstoneLinkBlockEntity;
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
@@ -44,8 +48,15 @@ public interface RedstoneLinkedPart extends PanelPart {
             driveTransmission(transmission, panel.outputSignal(slot, signal));
             return;
         }
+        RedstoneTarget target = level.isLoaded(link) ? RedstoneTargets.of(level.getBlockState(link)) : null;
+        if (target != null && level instanceof ServerLevel server) {
+            int driven = Math.round(PanelDriveBus.report(level, link, panel.outputSignal(slot, signal)));
+            PanelSignals.set(server, link, target.level(driven));
+            return;
+        }
         if (!PanelLink.stillThere(level, link)) {
             PanelDriveBus.release(level, link);
+            PanelSignals.release(level, link);
             panel.replacePart(slot, unlinked);
             return;
         }
@@ -62,6 +73,7 @@ public interface RedstoneLinkedPart extends PanelPart {
         BlockPos link = link();
         if (link == null || level == null) return;
         PanelDriveBus.release(level, link);
+        PanelSignals.release(level, link);
         if (level.getBlockEntity(link) instanceof RedstoneLinkBlockEntity receiver) receiver.setSignal(0);
         PanelLink.set(level, link, false);
     }

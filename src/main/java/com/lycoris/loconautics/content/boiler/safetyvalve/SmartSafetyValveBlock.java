@@ -2,6 +2,7 @@ package com.lycoris.loconautics.content.boiler.safetyvalve;
 
 import com.lycoris.loconautics.content.boiler.BoilerBlocks;
 import com.lycoris.loconautics.content.boiler.BoilerAttach;
+import com.lycoris.loconautics.foundation.pick.OversizeShape;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.sounds.SoundEvents;
@@ -23,7 +24,7 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
-public class SmartSafetyValveBlock extends SafetyValveBlock {
+public class SmartSafetyValveBlock extends SafetyValveBlock implements OversizeShape {
 
     public static final DirectionProperty FACING = BlockStateProperties.FACING;
 

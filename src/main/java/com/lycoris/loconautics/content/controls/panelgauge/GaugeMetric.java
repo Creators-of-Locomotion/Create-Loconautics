@@ -50,6 +50,10 @@ public enum GaugeMetric implements StringRepresentable {
     BURN_RATE(FireboxBlockEntity.class,
             be -> String.format(Locale.US, "%.2fx", be.getLastBurnRate()),
             be -> over(be.getLastBurnRate(), 4f), ChatFormatting.GOLD, 22),
+    FIRE(FireboxBlockEntity.class,
+            be -> be.getDisplayFire() > 0f ? pct(be.getDisplayFire())
+                    : Component.translatable("loconautics.gui.goggles.gauge_fire_out").getString(),
+            FireboxBlockEntity::getDisplayFire, ChatFormatting.GOLD, 22),
     FUEL_REMAINING(FireboxBlockEntity.class,
             be -> FireboxBlockEntity.formatTime(be.getDisplayRemaining()),
             be -> over(be.getDisplayRemaining(), 600f), ChatFormatting.WHITE, 32),

@@ -49,14 +49,22 @@ public final class TrainHorn {
     }
 
     public static void sound(ServerPlayer player, BlockPos whistle, boolean honk) {
+        sound(player, whistle, honk, 1f);
+    }
+
+    public static void sound(ServerPlayer player, BlockPos whistle, boolean honk, float strength) {
         if (honk) {
             AllAdvancements.TRAIN_WHISTLE.awardTo(player);
             player.level().gameEvent(player, GameEvent.RESONATE_15, player.position());
         }
-        blow(player.serverLevel(), whistle, honk);
+        blow(player.serverLevel(), whistle, honk, strength);
     }
 
     public static void blow(ServerLevel level, BlockPos whistle, boolean honk) {
-        PacketDistributor.sendToPlayersInDimension(level, new TrainHornPacket(whistle, honk));
+        blow(level, whistle, honk, 1f);
+    }
+
+    public static void blow(ServerLevel level, BlockPos whistle, boolean honk, float strength) {
+        PacketDistributor.sendToPlayersInDimension(level, new TrainHornPacket(whistle, honk, strength));
     }
 }

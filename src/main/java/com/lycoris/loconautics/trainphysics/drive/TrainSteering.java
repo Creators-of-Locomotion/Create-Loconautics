@@ -1,8 +1,6 @@
 package com.lycoris.loconautics.trainphysics.drive;
 
 import com.lycoris.loconautics.content.analogcontroller.AnalogControllerBlockEntity;
-import com.lycoris.loconautics.content.bearingaxle.BearingAxleBlock;
-import com.lycoris.loconautics.content.bearingaxle.BearingAxleBlockEntity;
 import com.lycoris.loconautics.foundation.debug.SteerTrace;
 import com.lycoris.loconautics.trainphysics.SableTrain;
 import com.lycoris.loconautics.trainphysics.SableTrain.Car;
@@ -16,9 +14,7 @@ import dev.ryanhcode.sable.api.sublevel.SubLevelContainer;
 import dev.ryanhcode.sable.sublevel.ServerSubLevel;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
-import org.joml.Vector3d;
 
 import java.util.UUID;
 
@@ -38,9 +34,9 @@ final class TrainSteering {
             return;
         }
 
-        BearingAxleBlockEntity steerAxle = TrainPropulsion.bearingAxleIn(sub);
+        TrainDriveSource steerAxle = TrainPropulsion.driveSourceIn(sub);
         int input = steerAxle == null ? 0 : steerAxle.getSteerInput();
-        Direction front = axleFront(steerAxle, sub);
+        Direction front = DriveSources.front(steerAxle, sub);
 
         for (SableTrain.Bogey bogey : car.bogeys()) {
             SteerTrace.owner(bogey.rail(), car.subLevelId());
@@ -127,23 +123,6 @@ final class TrainSteering {
         if (car.carriage() != null) {
             car.carriage().setSteerTarget(goal);
         }
-    }
-
-    static Direction axleFront(BearingAxleBlockEntity axle, ServerSubLevel sub) {
-        if (axle == null) {
-            return null;
-        }
-        BlockState state = axle.getBlockState();
-        if (!(state.getBlock() instanceof BearingAxleBlock)) {
-            return null;
-        }
-        Direction local = BearingAxleBlock.front(state);
-        Vector3d dir = new Vector3d(local.getStepX(), 0.0, local.getStepZ());
-        sub.logicalPose().transformNormal(dir, dir);
-        if (dir.x * dir.x + dir.z * dir.z < 1.0e-9) {
-            return null;
-        }
-        return Direction.getNearest(dir.x, 0.0, dir.z);
     }
 
     static boolean followAhead(SableTrain train, SableTrain ahead) {

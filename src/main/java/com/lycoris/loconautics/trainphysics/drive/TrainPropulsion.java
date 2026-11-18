@@ -143,12 +143,12 @@ public final class TrainPropulsion {
         if (!(container.getSubLevel(train.car().subLevelId()) instanceof ServerSubLevel sub) || sub.isRemoved()) {
             return null;
         }
-        BearingAxleBlockEntity axle = bearingAxleIn(sub);
-        Direction front = TrainSteering.axleFront(axle, sub);
+        TrainDriveSource axle = driveSourceIn(sub);
+        Direction front = DriveSources.front(axle, sub);
         if (axle == null || front == null) {
             return null;
         }
-        double rpm = axle.isOverStressed() ? 0.0 : axle.getSpeed();
+        double rpm = axle.effectiveRpm();
         if (Math.abs(rpm) < 1.0e-3) {
             return null;
         }
@@ -163,7 +163,7 @@ public final class TrainPropulsion {
         if (!(container.getSubLevel(train.car().subLevelId()) instanceof ServerSubLevel sub) || sub.isRemoved()) {
             return train.axleSign();
         }
-        return axleSign(train, sub, bearingAxleIn(sub));
+        return axleSign(train, sub, driveSourceIn(sub));
     }
 
     public static double axleRpm(SableTrain train) {
@@ -174,12 +174,12 @@ public final class TrainPropulsion {
         if (!(container.getSubLevel(train.car().subLevelId()) instanceof ServerSubLevel sub) || sub.isRemoved()) {
             return 0.0;
         }
-        BearingAxleBlockEntity axle = bearingAxleIn(sub);
-        return axle == null || axle.isOverStressed() ? 0.0 : axle.getSpeed();
+        TrainDriveSource axle = driveSourceIn(sub);
+        return axle == null ? 0.0 : axle.effectiveRpm();
     }
 
-    public static double axleSign(SableTrain train, ServerSubLevel sub, BearingAxleBlockEntity axle) {
-        Direction front = TrainSteering.axleFront(axle, sub);
+    public static double axleSign(SableTrain train, ServerSubLevel sub, TrainDriveSource axle) {
+        Direction front = DriveSources.front(axle, sub);
         RailCarriage rail = train.leadingBogeyRail();
         if (front == null || rail == null) {
             return train.axleSign();
@@ -283,33 +283,33 @@ public final class TrainPropulsion {
                 || !(container.getSubLevel(car.subLevelId()) instanceof ServerSubLevel sub) || sub.isRemoved()) {
             return 0.0;
         }
-        BearingAxleBlockEntity axle = bearingAxleIn(sub);
+        TrainDriveSource axle = driveSourceIn(sub);
         if (axle == null) {
             return 0.0;
         }
         if (!SableTrainDriver.anyBogeyAlive(sub, car)) {
             return 0.0;
         }
-        double rpm = axle.isOverStressed() ? 0.0 : axle.getSpeed();
+        double rpm = axle.effectiveRpm();
         double cap = speedCeilingMps() / 20.0;
         return Math.max(-cap, Math.min(cap, AxleGearing.gearedSpeed(bearingAxleCapBpt(), axle.gearRatio(), rpm)));
     }
 
-    static BearingAxleBlockEntity findBearingAxle(SableTrain train, ServerSubLevelContainer container) {
+    static TrainDriveSource findDriveSource(SableTrain train, ServerSubLevelContainer container) {
         Car car = train.car();
         if (car.subLevelId() == null
                 || !(container.getSubLevel(car.subLevelId()) instanceof ServerSubLevel sub) || sub.isRemoved()) {
             return null;
         }
-        return bearingAxleIn(sub);
+        return driveSourceIn(sub);
     }
 
     static double liveMass(ServerSubLevel sub) {
         return TrainConsist.subLevelMass(sub);
     }
 
-    static BearingAxleBlockEntity bearingAxleIn(ServerSubLevel sub) {
-        return com.lycoris.loconautics.content.bearingaxle.BearingAxleValidity.resolve(sub);
+    static TrainDriveSource driveSourceIn(ServerSubLevel sub) {
+        return DriveSources.resolve(sub);
     }
 
     private TrainPropulsion() {

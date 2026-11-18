@@ -3,6 +3,7 @@ package com.lycoris.loconautics.content.analogcontroller;
 import com.lycoris.loconautics.common.sable.SubLevelBlocks;
 import com.lycoris.loconautics.content.bearingaxle.BearingAxleBlockEntity;
 import com.lycoris.loconautics.content.bearingaxle.BearingAxleValidity;
+import com.lycoris.loconautics.content.boiler.bogey.BoilerBogeyBlockEntity;
 import com.lycoris.loconautics.content.transmission.TransmissionBlockEntity;
 import com.lycoris.loconautics.trainphysics.actors.TrainActorControls;
 import dev.ryanhcode.sable.Sable;
@@ -44,7 +45,20 @@ public final class AnalogControllerAutofill {
         Optional<TransmissionBlockEntity> transmission = firstWithFrequency(
                 SubLevelBlocks.findAll(sub, TransmissionBlockEntity.class), transmissionFrequencies());
 
+        Optional<BoilerBogeyBlockEntity> boilerBogey = firstWithFrequency(
+                SubLevelBlocks.findAll(sub, BoilerBogeyBlockEntity.class), boilerBogeyFrequencies());
+
         int rows = 0;
+        if (transmission.isEmpty() && boilerBogey.isPresent()) {
+            BoilerBogeyBlockEntity b = boilerBogey.get();
+            rows += fill(ghost, FORWARD_SLOT, b.throttleLinks().getFirstFreqA(), b.throttleLinks().getFirstFreqB());
+            rows += fill(ghost, BACKWARD_SLOT, b.throttleLinks().getSecondFreqA(), b.throttleLinks().getSecondFreqB());
+        }
+        if (axle.isEmpty() && boilerBogey.isPresent()) {
+            BoilerBogeyBlockEntity b = boilerBogey.get();
+            rows += fill(ghost, LEFT_SLOT, b.steerLinks().getFirstFreqA(), b.steerLinks().getFirstFreqB());
+            rows += fill(ghost, RIGHT_SLOT, b.steerLinks().getSecondFreqA(), b.steerLinks().getSecondFreqB());
+        }
         if (transmission.isPresent()) {
             TransmissionBlockEntity t = transmission.get();
             rows += fill(ghost, FORWARD_SLOT, t.getSpeedFreqFirst(), t.getSpeedFreqSecond());
@@ -70,6 +84,13 @@ public final class AnalogControllerAutofill {
     private static Predicate<BearingAxleBlockEntity> axleFrequencies() {
         return a -> !a.getLeftFreqFirst().isEmpty() || !a.getLeftFreqSecond().isEmpty()
                 || !a.getRightFreqFirst().isEmpty() || !a.getRightFreqSecond().isEmpty();
+    }
+
+    private static Predicate<BoilerBogeyBlockEntity> boilerBogeyFrequencies() {
+        return b -> !b.throttleLinks().getFirstFreqA().isEmpty() || !b.throttleLinks().getFirstFreqB().isEmpty()
+                || !b.throttleLinks().getSecondFreqA().isEmpty() || !b.throttleLinks().getSecondFreqB().isEmpty()
+                || !b.steerLinks().getFirstFreqA().isEmpty() || !b.steerLinks().getFirstFreqB().isEmpty()
+                || !b.steerLinks().getSecondFreqA().isEmpty() || !b.steerLinks().getSecondFreqB().isEmpty();
     }
 
     private static Predicate<TransmissionBlockEntity> transmissionFrequencies() {

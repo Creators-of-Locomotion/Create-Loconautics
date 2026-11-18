@@ -9,7 +9,7 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
-public record TrainHornPacket(BlockPos whistle, boolean honk) implements CustomPacketPayload {
+public record TrainHornPacket(BlockPos whistle, boolean honk, float strength) implements CustomPacketPayload {
 
     public static final CustomPacketPayload.Type<TrainHornPacket> TYPE =
             new CustomPacketPayload.Type<>(LoconauticsConstants.id("train_horn"));
@@ -18,6 +18,7 @@ public record TrainHornPacket(BlockPos whistle, boolean honk) implements CustomP
             StreamCodec.composite(
                     BlockPos.STREAM_CODEC, TrainHornPacket::whistle,
                     ByteBufCodecs.BOOL, TrainHornPacket::honk,
+                    ByteBufCodecs.FLOAT, TrainHornPacket::strength,
                     TrainHornPacket::new
             );
 
@@ -27,6 +28,6 @@ public record TrainHornPacket(BlockPos whistle, boolean honk) implements CustomP
     }
 
     public static void handle(TrainHornPacket packet, IPayloadContext context) {
-        context.enqueueWork(() -> WhistleHonks.honk(packet.whistle(), packet.honk()));
+        context.enqueueWork(() -> WhistleHonks.honk(packet.whistle(), packet.honk(), packet.strength()));
     }
 }

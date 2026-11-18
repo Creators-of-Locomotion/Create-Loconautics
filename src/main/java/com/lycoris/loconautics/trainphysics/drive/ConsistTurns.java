@@ -88,7 +88,7 @@ final class ConsistTurns {
             return 0;
         }
         ServerSubLevel sub = SubLevelData.resolve(train.level(), train.car().subLevelId());
-        var axle = sub == null ? null : TrainPropulsion.bearingAxleIn(sub);
+        var axle = sub == null ? null : TrainPropulsion.driveSourceIn(sub);
         return axle == null ? 0 : axle.getSteerInput();
     }
 

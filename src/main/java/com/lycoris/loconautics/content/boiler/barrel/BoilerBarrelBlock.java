@@ -4,6 +4,7 @@ import com.lycoris.loconautics.content.boiler.BoilerBlocks;
 import com.lycoris.loconautics.content.boiler.BoilerPlacement;
 import com.lycoris.loconautics.content.boiler.BoilerShapes;
 import com.lycoris.loconautics.content.boiler.firebox.FireboxBlock;
+import com.lycoris.loconautics.foundation.pick.OversizeShape;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -43,7 +44,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import java.util.function.UnaryOperator;
 
 public class BoilerBarrelBlock extends DirectionalBlock
-        implements IWrenchable, EntityBlock, BlockSubLevelCollisionShape {
+        implements IWrenchable, EntityBlock, BlockSubLevelCollisionShape, OversizeShape {
 
     public static final BooleanProperty CONNECTED_POS = BooleanProperty.create("connected_pos");
     public static final BooleanProperty CONNECTED_NEG = BooleanProperty.create("connected_neg");

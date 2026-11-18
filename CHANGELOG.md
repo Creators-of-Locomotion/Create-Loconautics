@@ -2,6 +2,12 @@
 
 ## Ver 0.1.4BETA
 
+### Bug Fixes
+- Boiler parts can be targeted on their whole shape, not only the center.
+- Railways boilers and smokeboxes now count as boiler bodies.
+- Boiler lighting and shovel sounds play where the train is.
+- A boiler with a steady water supply stays full, not a little short.
+
 ### Added
 - Boilers show a level in the goggles, set by their size and fire.
 - Fuel quality sets the boiler fire limit, wood is weakest and coal blocks strongest.
@@ -9,6 +15,16 @@
 - Boiler goggles show the power in use out of the total.
 - Sneak on a working boiler to blow the train whistle.
 - Steam whistles can sit on boiler bodies, firebox bodies and Steam n Rails boilers.
+- Whistles sit on the round boiler, extensions included.
+- Whistles on a boiler blow with redstone once it has pressure.
+- Whistle sound and steam get stronger with boiler pressure.
+- Panel parts can power any Redstone block listed in a datapack.
+- Boiler Bogey for steam trains, it does not drive yet.
+- A shovel on a lit firebox door puts the fire out.
+- Panel parts control the boiler burn, 0 burns full and 15 idles.
+- Panel gauges can show how strong the boiler fire burns.
+- A powered smart safety valve opens fully and blows off the pressure.
+- Analog controller autofill reads the frequencies of the Boiler Bogey.
 
 ### Changed
 - Steam takeoff power follows the boiler level, 16384 SU per level.
@@ -21,6 +37,17 @@
 - Boiler bodies join a firebox at its back.
 - Boiler parts like the smokestack and valve work on any side.
 - The firebox is now the Firebox Body and shows its shell as an item.
+- Smokestacks sit raised on a boiler, firebox body or Steam n Rails boiler.
+- Boiler whistles stay quiet until pressure reaches 30 percent of burst.
+- Boilers burn more fuel and lose pressure the more power is used.
+- Boilers keep steam after the fire goes out and cool down slowly.
+- Steam takeoff speed and power are always whole even numbers.
+- The safety valve hisses in one steady sound, not chuffs.
+- A venting boiler burns through its water and can run dry.
+
+### Ponder
+#### Instrument Panel
+- Added a scene for connecting panel parts to blocks.
 
 ## Ver 0.1.3BETA
 

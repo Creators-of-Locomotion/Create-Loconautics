@@ -2,8 +2,6 @@ package com.lycoris.loconautics.trainphysics.drive;
 
 import com.lycoris.loconautics.LoconauticsConstants;
 import com.lycoris.loconautics.config.LoconauticsConfig;
-import com.lycoris.loconautics.content.bearingaxle.BearingAxleBlockEntity;
-import com.lycoris.loconautics.content.bearingaxle.BearingAxleValidity;
 import com.lycoris.loconautics.trainphysics.SableTrain;
 import com.lycoris.loconautics.common.sable.SubLevelData;
 import com.lycoris.loconautics.trainphysics.TrainConsist;
@@ -138,7 +136,7 @@ public final class ConsistPower {
         PEAK_TOP.clear();
         DRIVER_BOOST.clear();
         LAST_PULL.clear();
-        BearingAxleValidity.clearCache();
+        DriveSources.clearCache();
     }
 
     public static void tick(boolean refreshMass) {
@@ -146,7 +144,7 @@ public final class ConsistPower {
         TARGETS.clear();
         MANUAL.clear();
         DRIVER_BOOST.clear();
-        BearingAxleValidity.clearCache();
+        DriveSources.clearCache();
         Map<UUID, SableTrain> bySubLevel = new HashMap<>();
         for (SableTrain train : SableTrainRegistry.all()) {
             if (train.car() != null && train.car().subLevelId() != null) {
@@ -185,7 +183,7 @@ public final class ConsistPower {
 
         Map<UUID, Integer> orientation = orientations(level, seedId, members, bySubLevel);
         List<Axle> axles = new ArrayList<>();
-        List<BearingAxleBlockEntity> entities = new ArrayList<>();
+        List<TrainDriveSource> entities = new ArrayList<>();
         Map<UUID, Map<BlockPos, Double>> driven = new LinkedHashMap<>();
         double forward = 0.0;
         double reverse = 0.0;
@@ -204,9 +202,9 @@ public final class ConsistPower {
             int flip = orientation.getOrDefault(id, 1);
             Map<BlockPos, Double> carDriven = new LinkedHashMap<>();
             double carSpeed = WheelSlip.carSpeed(member, sub);
-            List<BearingAxleBlockEntity> working = new ArrayList<>();
+            List<TrainDriveSource> working = new ArrayList<>();
             double carSigned = 0.0;
-            for (BearingAxleBlockEntity axle : BearingAxleValidity.valid(sub)) {
+            for (TrainDriveSource axle : DriveSources.valid(sub)) {
                 Axle entry = readAxle(member, sub, axle, flip);
                 if (entry == null) {
                     axle.setSlopeAngle(0.0);
@@ -321,23 +319,19 @@ public final class ConsistPower {
                 String.format("%.3f", pull.target()));
     }
 
-    private static AxleGearing.Gearing[] gearing(List<BearingAxleBlockEntity> entities, List<Axle> axles,
+    private static AxleGearing.Gearing[] gearing(List<TrainDriveSource> entities, List<Axle> axles,
                                                  Result result) {
         boolean enabled = LoconauticsConfig.GEARING_ENABLED.get();
         List<AxleGearing.Load> loads = new ArrayList<>(entities.size());
         for (int i = 0; i < entities.size(); i++) {
-            BearingAxleBlockEntity axle = entities.get(i);
             int group = axles.get(i).group();
-            loads.add(new AxleGearing.Load(axle.hasNetwork() ? axle.network : null,
-                    axle.networkCapacity(), axle.networkStress(), axle.ownNetworkStress(),
-                    axle.directImpact(result.share(group), result.isMinority(group)),
-                    enabled ? axle.gear() : 0));
+            loads.add(entities.get(i).gearingLoad(result.share(group), result.isMinority(group), enabled));
         }
         AxleGearing.Gearing[] out = AxleGearing.solve(loads, LoconauticsConfig.GEARING_OVERDRIVE_SCALE.get(),
                 TrainPropulsion.gearingCeilingRatio());
         for (int i = 0; i < entities.size(); i++) {
-            BearingAxleBlockEntity axle = entities.get(i);
-            if (enabled && !axle.hasNetwork() && axle.gear() > 0) {
+            TrainDriveSource axle = entities.get(i);
+            if (enabled && !axle.isPlumbed() && axle.gear() > 0) {
                 out[i] = new AxleGearing.Gearing(AxleGearing.gearRatio(axle.gear(), axle.maxGearRatio()),
                         axle.maxGearRatio());
             }
@@ -345,7 +339,7 @@ public final class ConsistPower {
         return out;
     }
 
-    private static void applySlope(SableTrain train, List<BearingAxleBlockEntity> working, double signedStrength) {
+    private static void applySlope(SableTrain train, List<TrainDriveSource> working, double signedStrength) {
         if (working.isEmpty()) {
             return;
         }
@@ -354,13 +348,13 @@ public final class ConsistPower {
                 && !TrainPropulsion.isMonorail(train)
                 && TrainPropulsion.isClimbing(train, signedStrength);
         double share = climbing ? TrainPropulsion.inclineDegrees(train) / working.size() : 0.0;
-        for (BearingAxleBlockEntity axle : working) {
+        for (TrainDriveSource axle : working) {
             axle.setSlopeAngle(share);
         }
     }
 
     @Nullable
-    private static Axle readAxle(SableTrain train, ServerSubLevel sub, BearingAxleBlockEntity axle, int flip) {
+    private static Axle readAxle(SableTrain train, ServerSubLevel sub, TrainDriveSource axle, int flip) {
         BlockPos bogeyWorld = axle.driverBogeyPos();
         if (bogeyWorld == null) {
             return null;
@@ -370,7 +364,7 @@ public final class ConsistPower {
             return null;
         }
         SableTrain.Bogey bogey = bogeyAt(train, bogeyLocal);
-        Direction front = TrainSteering.axleFront(axle, sub);
+        Direction front = DriveSources.front(axle, sub);
         if (bogey == null || bogey.rail() == null || front == null) {
             return null;
         }
@@ -383,13 +377,13 @@ public final class ConsistPower {
             return null;
         }
         int frontSign = alignment < 0.0 ? -1 : 1;
-        if (axle.isOverStressed() != OVERSTRESSED_SEEN.getOrDefault(axle.getBlockPos().asLong(), false)) {
-            OVERSTRESSED_SEEN.put(axle.getBlockPos().asLong(), axle.isOverStressed());
-            LoconauticsConstants.LOGGER.info("[slipdbg] axle {} overstressed {} speed {} stress {} capacity {}",
-                    axle.getBlockPos().toShortString(), axle.isOverStressed(), axle.getSpeed(),
-                    axle.networkStress(), axle.networkCapacity());
+        boolean stopped = axle.rawRpm() != 0.0 && axle.effectiveRpm() == 0.0;
+        if (stopped != OVERSTRESSED_SEEN.getOrDefault(axle.getBlockPos().asLong(), false)) {
+            OVERSTRESSED_SEEN.put(axle.getBlockPos().asLong(), stopped);
+            LoconauticsConstants.LOGGER.info("[slipdbg] drive {} stopped {} speed {}",
+                    axle.getBlockPos().toShortString(), stopped, axle.rawRpm());
         }
-        double rpm = axle.isOverStressed() ? 0.0 : axle.getSpeed();
+        double rpm = axle.effectiveRpm();
         double strength = Math.abs(rpm);
         int facing = frontSign * flip;
         int push = rpm < 0.0 ? -facing : facing;
@@ -398,7 +392,7 @@ public final class ConsistPower {
                 * frontSign;
         return new Axle(sub.getUniqueId(), axle.getBlockPos().subtract(sub.getPlot().getCenterBlock()),
                 bogeyLocal, strength, signed, strength <= 0.0 ? facing : push, railSpeed,
-                axle.hasNetwork());
+                axle.isPlumbed());
     }
 
     @Nullable

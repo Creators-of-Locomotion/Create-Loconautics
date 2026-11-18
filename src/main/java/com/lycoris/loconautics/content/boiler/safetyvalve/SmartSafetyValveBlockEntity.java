@@ -82,6 +82,10 @@ public class SmartSafetyValveBlockEntity extends SafetyValveBlockEntity {
 
     public void updateFromBoiler(float pressureFraction) {
         expireValve();
+        if (level != null && level.hasNeighborSignal(worldPosition)) {
+            setOpening(1f);
+            return;
+        }
         float over = pressureFraction - threshold;
         setOpening(over <= 0f ? 0f : Math.min(1f, over / RAMP_BAND));
     }
