@@ -37,7 +37,7 @@ public final class FireboxGroups {
 
         if (!(level.getBlockEntity(pos) instanceof FireboxBlockEntity be)) return null;
         BlockPos owner = be.getControllerPos();
-        if (owner == null) return null;
+        if (owner == null || !near(pos, owner)) return null;
 
         BlockState ownerState = level.getBlockState(owner);
         if (!ownerState.is(BoilerTags.BOILER_FIREBOX)) return null;
@@ -64,7 +64,16 @@ public final class FireboxGroups {
         BlockState state = level.getBlockState(pos);
         if (!state.is(BoilerTags.BOILER_FIREBOX)) return null;
         if (!state.getValue(FireboxBlock.EXTENSION)) return pos.immutable();
-        return level.getBlockEntity(pos) instanceof FireboxBlockEntity be ? be.getControllerPos() : null;
+        if (!(level.getBlockEntity(pos) instanceof FireboxBlockEntity be)) return null;
+        BlockPos owner = be.getControllerPos();
+        return owner != null && near(pos, owner) ? owner : null;
+    }
+
+    // a stored owner from another plot is far away, and the chunk renderer only holds the chunks around the block
+    private static boolean near(BlockPos pos, BlockPos owner) {
+        return Math.abs(owner.getX() - pos.getX()) <= MAX_RUN
+                && Math.abs(owner.getY() - pos.getY()) <= MAX_RUN
+                && Math.abs(owner.getZ() - pos.getZ()) <= MAX_RUN;
     }
 
     public static Set<BlockPos> members(BlockGetter level, BlockPos controller) {

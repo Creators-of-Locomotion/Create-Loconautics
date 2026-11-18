@@ -34,7 +34,7 @@ public final class TrainPropulsion {
                 * Math.pow(massRatio, MASS_EXPONENT);
         double limit = Math.max(MIN_ACCELERATION,
                 Math.min(scaled, MAX_ACCELERATION));
-        double boosted = limit * ConsistPower.driverBoost(train);
+        double boosted = limit * ConsistPower.driverBoost(train) * drivePowerFraction(train);
         return isMonorail(train) ? boosted * MONORAIL_TRACTION_BOOST : boosted;
     }
 
@@ -164,6 +164,18 @@ public final class TrainPropulsion {
             return train.axleSign();
         }
         return axleSign(train, sub, driveSourceIn(sub));
+    }
+
+    static double drivePowerFraction(SableTrain train) {
+        ServerSubLevelContainer container = SubLevelContainer.getContainer(train.level());
+        if (container == null || train.car() == null || train.car().subLevelId() == null) {
+            return 1.0;
+        }
+        if (!(container.getSubLevel(train.car().subLevelId()) instanceof ServerSubLevel sub) || sub.isRemoved()) {
+            return 1.0;
+        }
+        TrainDriveSource axle = driveSourceIn(sub);
+        return axle == null ? 1.0 : axle.powerFraction();
     }
 
     public static double axleRpm(SableTrain train) {

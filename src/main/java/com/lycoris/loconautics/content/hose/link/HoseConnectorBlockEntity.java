@@ -1,11 +1,13 @@
 package com.lycoris.loconautics.content.hose.link;
 
 import com.lycoris.loconautics.content.hose.flow.HoseFlowSink;
+import com.lycoris.loconautics.content.hose.flow.HoseOpenEnds;
 import com.lycoris.loconautics.content.hose.flow.HosePipeSink;
 import com.lycoris.loconautics.content.hose.flow.HosePressure;
 import com.lycoris.loconautics.content.hose.flow.HoseSourceProbe;
 import com.lycoris.loconautics.content.hose.flow.PressureProbe;
 import com.lycoris.loconautics.content.steelcable.SteelCableHolderBehaviour;
+import com.simibubi.create.content.fluids.FluidPropagator;
 import com.simibubi.create.foundation.blockEntity.SmartBlockEntity;
 import com.simibubi.create.foundation.blockEntity.behaviour.BlockEntityBehaviour;
 import net.minecraft.core.BlockPos;
@@ -66,8 +68,12 @@ public class HoseConnectorBlockEntity extends SmartBlockEntity
         if (HosePipeSink.isPipe(level, getBlockPos().relative(plate))) {
             return new HosePipeSink(level, getBlockPos(), plate);
         }
-        return level.getCapability(Capabilities.FluidHandler.BLOCK, getBlockPos().relative(plate),
+        IFluidHandler handler = level.getCapability(Capabilities.FluidHandler.BLOCK, getBlockPos().relative(plate),
                 plate.getOpposite());
+        if (handler == null && FluidPropagator.isOpenEnd(level, getBlockPos(), plate)) {
+            return HoseOpenEnds.handler(level, getBlockPos(), plate);
+        }
+        return handler;
     }
 
     @Override

@@ -3,6 +3,8 @@ package com.lycoris.loconautics.content.frequency;
 import com.lycoris.loconautics.LoconauticsConstants;
 import com.lycoris.loconautics.content.analogcontroller.AnalogControllerBlockEntity;
 import com.lycoris.loconautics.content.bearingaxle.BearingAxleBlockEntity;
+import com.lycoris.loconautics.content.boiler.BoilerBlocks;
+import com.lycoris.loconautics.content.boiler.bogey.BoilerBogeyBlockEntity;
 import com.lycoris.loconautics.content.transmission.TransmissionBlockEntity;
 import com.lycoris.loconautics.registry.LoconauticsRegistries;
 import net.minecraft.ChatFormatting;
@@ -45,7 +47,8 @@ public final class FrequencyCopyInteraction {
         boolean heldAnalog = isAnalogController(item);
         boolean heldAxle = item == LoconauticsRegistries.BEARING_AXLE_ITEM.get();
         boolean heldTrans = item == LoconauticsRegistries.TRANSMISSION_ITEM.get();
-        if (!heldAnalog && !heldAxle && !heldTrans)
+        boolean heldBogey = item == BoilerBlocks.BOILER_BOGEY_ITEM.get();
+        if (!heldAnalog && !heldAxle && !heldTrans && !heldBogey)
             return;
 
         Level level = event.getLevel();
@@ -63,11 +66,23 @@ public final class FrequencyCopyInteraction {
                 pairs = List.of(
                         new FrequencyBindUtil.Pair("Speed", analog.getFrequencyFirst(), analog.getFrequencySecond()),
                         new FrequencyBindUtil.Pair("Direction", analog.getFrequencyBackFirst(), analog.getFrequencyBackSecond()));
+            } else if (heldBogey) {
+                pairs = List.of(
+                        new FrequencyBindUtil.Pair("Speed", analog.getFrequencyFirst(), analog.getFrequencySecond()),
+                        new FrequencyBindUtil.Pair("Direction", analog.getFrequencyBackFirst(), analog.getFrequencyBackSecond()),
+                        new FrequencyBindUtil.Pair("Left", analog.getFrequencyLeftFirst(), analog.getFrequencyLeftSecond()),
+                        new FrequencyBindUtil.Pair("Right", analog.getFrequencyRightFirst(), analog.getFrequencyRightSecond()));
             }
         } else if (be instanceof BearingAxleBlockEntity axle && heldAnalog) {
             pairs = List.of(
                     new FrequencyBindUtil.Pair("Left", axle.getLeftFreqFirst(), axle.getLeftFreqSecond()),
                     new FrequencyBindUtil.Pair("Right", axle.getRightFreqFirst(), axle.getRightFreqSecond()));
+        } else if (be instanceof BoilerBogeyBlockEntity bogey && heldAnalog) {
+            pairs = List.of(
+                    new FrequencyBindUtil.Pair("Speed", bogey.throttleLinks().getFirstFreqA(), bogey.throttleLinks().getFirstFreqB()),
+                    new FrequencyBindUtil.Pair("Direction", bogey.throttleLinks().getSecondFreqA(), bogey.throttleLinks().getSecondFreqB()),
+                    new FrequencyBindUtil.Pair("Left", bogey.steerLinks().getFirstFreqA(), bogey.steerLinks().getFirstFreqB()),
+                    new FrequencyBindUtil.Pair("Right", bogey.steerLinks().getSecondFreqA(), bogey.steerLinks().getSecondFreqB()));
         } else if (be instanceof TransmissionBlockEntity trans && heldAnalog) {
             pairs = List.of(
                     new FrequencyBindUtil.Pair("Speed", trans.getSpeedFreqFirst(), trans.getSpeedFreqSecond()),
@@ -111,7 +126,8 @@ public final class FrequencyCopyInteraction {
         Item item = held.getItem();
         if (!isAnalogController(item)
                 && item != LoconauticsRegistries.BEARING_AXLE_ITEM.get()
-                && item != LoconauticsRegistries.TRANSMISSION_ITEM.get())
+                && item != LoconauticsRegistries.TRANSMISSION_ITEM.get()
+                && item != BoilerBlocks.BOILER_BOGEY_ITEM.get())
             return;
         if (!FrequencyBindUtil.isBound(held) && !FrequencyBindUtil.hasGlint(held))
             return;

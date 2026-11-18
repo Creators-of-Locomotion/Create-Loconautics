@@ -18,6 +18,9 @@ public final class LoconauticsSounds {
     public static final DeferredHolder<SoundEvent, SoundEvent> SMALL_ENGINE_LOOP = SOUND_EVENTS.register(
             "small_engine_loop", () -> SoundEvent.createVariableRangeEvent(LoconauticsConstants.id("small_engine_loop")));
 
+    public static final DeferredHolder<SoundEvent, SoundEvent> SAFETY_VALVE_HISS = SOUND_EVENTS.register(
+            "safety_valve_hiss", () -> SoundEvent.createVariableRangeEvent(LoconauticsConstants.id("safety_valve_hiss")));
+
     private LoconauticsSounds() {
     }
 

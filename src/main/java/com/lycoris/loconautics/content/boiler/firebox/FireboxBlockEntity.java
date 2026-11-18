@@ -6,6 +6,12 @@ import com.lycoris.loconautics.common.strand.StrandTemplates;
 import com.lycoris.loconautics.common.signal.SignalSpeed;
 import com.lycoris.loconautics.content.analogcontroller.TrainHorn;
 import com.lycoris.loconautics.config.LoconauticsConfig;
+import com.lycoris.loconautics.common.sable.SubLevelBlocks;
+import com.lycoris.loconautics.content.boiler.BoilerStopAlert;
+import com.lycoris.loconautics.content.boiler.BoilerSummary;
+import com.lycoris.loconautics.content.boiler.bogey.BoilerBogeyBlockEntity;
+import com.lycoris.loconautics.trainphysics.SableTrain;
+import com.lycoris.loconautics.trainphysics.state.SableTrainRegistry;
 import com.lycoris.loconautics.trainphysics.drive.DriveSources;
 import com.lycoris.loconautics.trainphysics.drive.TrainDriveSource;
 import com.lycoris.loconautics.content.controls.panel.PanelDriveBus;
@@ -44,7 +50,9 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
+import com.lycoris.loconautics.content.boiler.BoilerGoggleBars;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
@@ -52,7 +60,10 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.core.particles.ParticleOptions;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.RandomSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.Containers;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -146,6 +157,8 @@ public class FireboxBlockEntity extends BlockEntity implements IHaveGoggleInform
 
     private int dryTicks;
     private int wasteGas;
+    private boolean doorsOpenNow;
+    private int doorCheck;
     private boolean ignited;
     @Nullable
     private BlockPos whistleHeld;
@@ -156,11 +169,16 @@ public class FireboxBlockEntity extends BlockEntity implements IHaveGoggleInform
     private FailureCause lastFailure;
 
     private static final float POOL_DRAW_MULTIPLIER = 2.5f;
+    private static final float BOGEY_TARGET_PRESSURE = 0.7f;
+    private static final float BOGEY_TRIM_PER_TICK = 0.0008f;
+    private static final float BOGEY_TRIM_EASE = 0.05f;
     private static final float COAST_RISE_MULTIPLIER = 2f;
     private static final int COOLING_STEAM_COLOR = 0xD6D6D6;
 
     private static final float BLOCKED_SMOKE_MIN_DENSITY = 0.5f;
     private static final float BLOCKED_SMOKE_SCALE = 0.35f;
+    private static final int DOOR_FUME_RELEASE = 6;
+    private static final int DOOR_CHECK_TICKS = 5;
     private static final int BLOCKED_SMOKE_COLOR = 0x2A2622;
 
     private static final float LOW_WATER_RISE_BOOST = 1.0f;
@@ -187,6 +205,7 @@ public class FireboxBlockEntity extends BlockEntity implements IHaveGoggleInform
     @Nullable private String missingKey;
 
     public static final int DISPLAY_TICKS = 20;
+    private static final int AWAY_TICKS = DISPLAY_TICKS * 4;
 
     private int displayCooldown;
     private int jitterCooldown;
@@ -204,7 +223,13 @@ public class FireboxBlockEntity extends BlockEntity implements IHaveGoggleInform
     private float dispMaxSu;
     private float dispBogeyDemand;
     private float dispFire;
+    private boolean dispNoStack;
     private int dispWaterCapacity;
+    private int dispSizeLevels;
+    private int dispFireLevels;
+    private int dispLevel;
+    private int dispMaxLevel = 12;
+    private boolean dispBogeys;
     @Nullable private String dispStep;
     @Nullable private String dispOptionalStep;
 
@@ -212,6 +237,7 @@ public class FireboxBlockEntity extends BlockEntity implements IHaveGoggleInform
     private boolean lastBurning;
     private float lastBurnRate;
     private float lastVented;
+    private int scheduleSignal;
     private float lastStressRatio;
     private double lastTrainMass = NO_TRAIN;
     private int lastWaterDrawn;
@@ -250,8 +276,82 @@ public class FireboxBlockEntity extends BlockEntity implements IHaveGoggleInform
         return manualDoorsOpen;
     }
 
+    // the blaze burner's campfire crackle, quiet while it lights, loud when hot, weak when starved
+    // animateTick never runs for blocks on a train, so the block entity does it
+    private void tickCrackle() {
+        if (!getBlockState().getValue(BlockStateProperties.LIT) || dispFire <= 0f) return;
+        int rarity;
+        float loudness;
+        float lowPitch;
+        float highPitch;
+        switch (boilerState) {
+            case COLD -> { rarity = 40; loudness = 0.3f; lowPitch = 0.5f; highPitch = 0.8f; }
+            case WARMING -> { rarity = 30; loudness = 0.6f; lowPitch = 0.6f; highPitch = 1.1f; }
+            case HOT -> { rarity = 18; loudness = 0.9f; lowPitch = 0.8f; highPitch = 1.3f; }
+            default -> { rarity = 48; loudness = 0.3f; lowPitch = 0.5f; highPitch = 0.7f; }
+        }
+        RandomSource random = level.random;
+        if (random.nextInt(rarity) != 0) return;
+        Vec3 at = Sable.HELPER.projectOutOfSubLevel(level, Vec3.atCenterOf(worldPosition));
+        level.playLocalSound(at.x, at.y, at.z, SoundEvents.CAMPFIRE_CRACKLE, SoundSource.BLOCKS,
+                (loudness + random.nextFloat() * 0.5f) * (0.4f + 0.6f * dispFire),
+                lowPitch + random.nextFloat() * (highPitch - lowPitch), false);
+    }
+
+    // the blaze burner's flames, kept inside the body, they show through the open door
+    // plot space positions on purpose, sable glues these to the body so they ride along with the train
+    private void spawnFlames() {
+        BlockState state = getBlockState();
+        if (!state.getValue(BlockStateProperties.LIT) || dispFire <= 0f) return;
+        boolean open = doorOpenTime > DOOR_SWING_TICKS * 0.3f;
+        float base;
+        switch (boilerState) {
+            case COLD -> base = 0.6f;
+            case WARMING -> base = 1.4f;
+            case HOT -> base = 2.6f;
+            default -> base = 0.4f;
+        }
+        RandomSource random = level.random;
+        // behind a shut door nobody sees them, so only a few
+        float expected = base * (0.3f + 0.7f * dispFire) * (open ? 1f : 0.2f);
+        int count = (int) expected + (random.nextFloat() < expected - (int) expected ? 1 : 0);
+        Direction face = state.getValue(BlockStateProperties.HORIZONTAL_FACING);
+        Direction side = face.getClockWise();
+        Vec3 center = Vec3.atCenterOf(worldPosition);
+        if (PortalCutsClient.hiddenAtPlot(center.x, center.y, center.z)) return;
+        for (int i = 0; i < count; i++) {
+            double along = (random.nextDouble() - 0.5) * 0.7;
+            double across = (random.nextDouble() - 0.5) * 0.55;
+            double up = -0.32 + random.nextDouble() * 0.25;
+            ParticleOptions type = random.nextFloat() < 0.6f ? ParticleTypes.FLAME : ParticleTypes.SMALL_FLAME;
+            level.addParticle(type,
+                    center.x + face.getStepX() * along + side.getStepX() * across, center.y + up,
+                    center.z + face.getStepZ() * along + side.getStepZ() * across,
+                    (random.nextDouble() - 0.5) * 0.01, 0.02 + random.nextDouble() * 0.03,
+                    (random.nextDouble() - 0.5) * 0.01);
+        }
+        if (!open) return;
+        if (random.nextInt(4) == 0) {
+            // thrown out of the door in a loose fan so they do not pile up at the sill
+            double lateral = (random.nextDouble() - 0.5) * 0.3;
+            double out = 0.05 + random.nextDouble() * 0.12;
+            double spread = (random.nextDouble() - 0.5) * 0.08;
+            level.addParticle(ParticleTypes.LAVA,
+                    center.x + face.getStepX() * 0.42 + side.getStepX() * lateral, center.y - 0.25 + random.nextDouble() * 0.2,
+                    center.z + face.getStepZ() * 0.42 + side.getStepZ() * lateral,
+                    face.getStepX() * out + side.getStepX() * spread, 0.04 + random.nextDouble() * 0.1,
+                    face.getStepZ() * out + side.getStepZ() * spread);
+        }
+        if (random.nextInt(6) == 0) {
+            level.addParticle(ParticleTypes.SMOKE, center.x + (random.nextDouble() - 0.5) * 0.4, center.y + 0.2,
+                    center.z + (random.nextDouble() - 0.5) * 0.4, 0.0, 0.015, 0.0);
+        }
+    }
+
     public void clientTick() {
         if (level == null) return;
+        tickCrackle();
+        spawnFlames();
 
         if (--jitterCooldown <= 0) {
             jitterCooldown = DISPLAY_TICKS;
@@ -272,11 +372,18 @@ public class FireboxBlockEntity extends BlockEntity implements IHaveGoggleInform
         doorOpenTime = Math.max(0f, Math.min(DOOR_SWING_TICKS, doorOpenTime + dir * DOOR_SWING_SPEED));
     }
 
+    // shut doors leak a little, open doors let the fumes out, and the first burst is what piled up inside
     private void spewSmoke() {
         BlockState state = getBlockState();
-        if (!state.getValue(BlockStateProperties.LIT) || dispWasteGas <= 0) return;
+        if (!state.getValue(BlockStateProperties.LIT) || !dispNoStack) return;
+        boolean open = doorOpenTime > DOOR_SWING_TICKS * 0.3f;
+        if (!open && dispWasteGas <= 0) return;
         float choke = Math.min(1f, dispWasteGas / (float) LoconauticsConfig.DRAFT_CHOKE_TICKS.get());
-        float density = BLOCKED_SMOKE_MIN_DENSITY + (1f - BLOCKED_SMOKE_MIN_DENSITY) * choke;
+        float density = open ? 1f : BLOCKED_SMOKE_MIN_DENSITY + (1f - BLOCKED_SMOKE_MIN_DENSITY) * choke;
+        int count = open ? 2 + Math.round(choke * 6f) : 2;
+        float scale = BLOCKED_SMOKE_SCALE * (open ? 1f + choke * 1.5f : 1f);
+        double push = open ? 0.04 + 0.08 * choke : 0.03;
+        double rise = open ? 0.01 + 0.03 * choke : 0.0;
         Direction face = state.getValue(BlockStateProperties.HORIZONTAL_FACING);
         Vec3 mouth = Vec3.atCenterOf(worldPosition).add(face.getStepX() * 0.6, -0.1, face.getStepZ() * 0.6);
         if (PortalCutsClient.hiddenAtPlot(mouth.x, mouth.y, mouth.z)) {
@@ -285,13 +392,13 @@ public class FireboxBlockEntity extends BlockEntity implements IHaveGoggleInform
         Vec3 world = Sable.HELPER.projectOutOfSubLevel(level, mouth);
         Vec3 outward = Sable.HELPER.projectOutOfSubLevel(level, mouth.add(face.getStepX(), 0.0, face.getStepZ()))
                 .subtract(world);
-        for (int i = 0; i < 2; i++) {
+        for (int i = 0; i < count; i++) {
             if (level.random.nextFloat() > density) continue;
-            ParticleWorldLock.addParticle(level, new SmokeOptions(BLOCKED_SMOKE_COLOR, SmokeStyle.LEAK, BLOCKED_SMOKE_SCALE),
+            ParticleWorldLock.addParticle(level, new SmokeOptions(BLOCKED_SMOKE_COLOR, SmokeStyle.LEAK, scale),
                     world.x + (level.random.nextDouble() - 0.5) * 0.3,
                     world.y + level.random.nextDouble() * 0.3,
                     world.z + (level.random.nextDouble() - 0.5) * 0.3,
-                    outward.x * 0.03, 0.0, outward.z * 0.03);
+                    outward.x * push, rise, outward.z * push);
         }
     }
 
@@ -440,11 +547,12 @@ public class FireboxBlockEntity extends BlockEntity implements IHaveGoggleInform
     private String computeNextStep() {
         if (structure == null) return missingKey == null ? "add_boiler_body" : missingKey;
         if (!structure.hasWaterInlet()) return "add_water_inlet";
-        if (!structure.hasTakeoff()) return "add_steam_takeoff";
+        if (!structure.hasTakeoff() && bogeyDemands.isEmpty()) return "add_output";
         if (!structure.hasStack()) return "add_smokestack";
         BoilerWaterSource injector = water();
         if (injector == null || injector.getWaterAmount() <= 0) return "add_water";
         if (burnTimeRemaining <= 0f && firstFuelSlot() < 0) return "add_fuel";
+        if (!ignited) return "light_fire";
         return null;
     }
 
@@ -548,7 +656,10 @@ public class FireboxBlockEntity extends BlockEntity implements IHaveGoggleInform
     private boolean tickPressure(boolean fed, boolean watered) {
         float burst = (float) (double) LoconauticsConfig.BURST_PRESSURE.get();
         SafetyValveBlockEntity valve = safetyValve();
-        if (valve != null) valve.setVenting(steamPressure > 0f);
+        if (valve != null) {
+            valve.boilerSeen();
+            valve.setVenting(steamPressure > 0f);
+        }
         if (valve instanceof SmartSafetyValveBlockEntity smart) {
             smart.updateFromBoiler(burst <= 0f ? 0f : steamPressure / burst);
         }
@@ -559,7 +670,7 @@ public class FireboxBlockEntity extends BlockEntity implements IHaveGoggleInform
                 : coastRise(watered);
         float vent = (float) PRESSURE_VENT_PER_TICK * valveOpening();
         float bleed = fed ? 0f : idleBleed() * (1f - temperatureFraction());
-        float draw = poolDraw();
+        float draw = poolDraw() + bogeyTrim(burst);
         float before = steamPressure;
         lastVented = Math.min(vent, steamPressure + rise);
         steamPressure = Math.max(0f, steamPressure + rise - vent - bleed - draw);
@@ -594,6 +705,12 @@ public class FireboxBlockEntity extends BlockEntity implements IHaveGoggleInform
     private float poolUsedFraction() {
         float outputUsed = suOutput() * Math.max(0f, Math.min(1f, lastStressRatio));
         return new BoilerPool(poolMax(), bogeyDemand(), outputUsed).usedFraction();
+    }
+
+    private float bogeyTrim(float burst) {
+        if (pool().bogeyDraw() <= 0f) return 0f;
+        float excess = steamPressure - BOGEY_TARGET_PRESSURE * burst;
+        return Math.max(0f, Math.min(excess * BOGEY_TRIM_EASE, BOGEY_TRIM_PER_TICK));
     }
 
     private float poolDraw() {
@@ -631,8 +748,16 @@ public class FireboxBlockEntity extends BlockEntity implements IHaveGoggleInform
         sendData();
     }
 
+    // a schedule can only raise the burn signal, 0 leaves it to the redstone and the panel parts
+    public void setScheduleSignal(int signal) {
+        int clamped = Mth.clamp(signal, 0, SignalSpeed.OFF_SIGNAL);
+        if (clamped == scheduleSignal) return;
+        scheduleSignal = clamped;
+        setChanged();
+    }
+
     private int masterSignal() {
-        int signal = Math.round(PanelDriveBus.report(level, worldPosition, 0f));
+        int signal = Math.max(scheduleSignal, Math.round(PanelDriveBus.report(level, worldPosition, 0f)));
         if (structure != null) {
             for (BlockPos pos : structure.fireboxPositions()) {
                 signal = Math.max(signal, level.getBestNeighborSignal(pos));
@@ -646,7 +771,8 @@ public class FireboxBlockEntity extends BlockEntity implements IHaveGoggleInform
     }
 
     private float burnRate() {
-        return (1f + poolUsedFraction()) * structure.burnMultiplier() * masterFraction();
+        return (1f + poolUsedFraction()) * structure.burnMultiplier() * masterFraction()
+                * (float) (double) LoconauticsConfig.BURN_RATE_SCALE.get();
     }
 
     private boolean consumeFuel() {
@@ -853,7 +979,20 @@ public class FireboxBlockEntity extends BlockEntity implements IHaveGoggleInform
             if (isFuel(fuel)) queued += (float) fuel.getBurnTime(RecipeType.SMELTING) * fuel.getCount();
         }
         float ticks = (burnTimeRemaining + queued) / lastBurnRate;
-        return Math.round(ticks / 20f);
+        int fuelSeconds = Math.round(ticks / 20f);
+        int waterSeconds = waterSecondsLeft();
+        return waterSeconds < 0 ? fuelSeconds : Math.min(fuelSeconds, waterSeconds);
+    }
+
+    // minus one when the water is no limit, a supply that keeps filling the tank never runs it dry
+    private int waterSecondsLeft() {
+        BoilerWaterSource injector = water();
+        if (injector == null || inflowCooldown > 0) return -1;
+        float steamLeaving = Math.max(outputFraction(), ventedFraction());
+        float net = structure.boilerCapacity() * (float) WATER_PER_BODY_PER_TICK * steamLeaving
+                * (1f - (float) WATER_RECYCLE_FRACTION);
+        if (net <= 0f) return -1;
+        return Math.round(injector.getWaterAmount() / net / 20f);
     }
 
     public static String formatTime(int sec) {
@@ -959,6 +1098,10 @@ public class FireboxBlockEntity extends BlockEntity implements IHaveGoggleInform
     public boolean isDisplayValid() { return dispValid; }
     public float getDisplayPressure() { return dispPressure; }
     public float getDisplayMaxSu() { return dispMaxSu; }
+    public boolean isIgnited() { return ignited; }
+    public int getDisplayLevel() { return dispLevel; }
+    public int getDisplayMaxLevel() { return dispMaxLevel; }
+    public float getDisplayBogeyDemand() { return dispBogeyDemand; }
     public float getDisplaySu() { return dispSu; }
     public float getDisplayRpm() { return dispRpm; }
     public float getDisplayEfficiency() { return dispEfficiency; }
@@ -979,12 +1122,25 @@ public class FireboxBlockEntity extends BlockEntity implements IHaveGoggleInform
         return quantize2(outputSuPerRpm() * shaftRpm());
     }
 
+    // with no smokestack the fumes pile up inside, open doors let them out
     private void tickWasteGas(boolean burning) {
         if (burning && !hasStack()) {
-            wasteGas = Math.min(wasteGas + 1, LoconauticsConfig.DRAFT_CHOKE_TICKS.get());
+            if (doorsOpen()) {
+                wasteGas = Math.max(0, wasteGas - DOOR_FUME_RELEASE);
+            } else {
+                wasteGas = Math.min(wasteGas + 1, LoconauticsConfig.DRAFT_CHOKE_TICKS.get());
+            }
         } else {
             ventWasteGas();
         }
+    }
+
+    private boolean doorsOpen() {
+        if (--doorCheck <= 0) {
+            doorCheck = DOOR_CHECK_TICKS;
+            doorsOpenNow = manualDoorsOpen || stoker() != null;
+        }
+        return doorsOpenNow;
     }
 
     private void ventWasteGas() {
@@ -994,6 +1150,7 @@ public class FireboxBlockEntity extends BlockEntity implements IHaveGoggleInform
     private void tickDisplay() {
         if (--displayCooldown > 0) return;
         displayCooldown = DISPLAY_TICKS;
+        syncTrainSummary();
 
         BoilerWaterSource injector = water();
 
@@ -1013,12 +1170,100 @@ public class FireboxBlockEntity extends BlockEntity implements IHaveGoggleInform
         dispMaxSu = maxPossibleSu();
         dispBogeyDemand = bogeyDemand();
         dispFire = lastBurning ? masterFraction() : 0f;
+        dispNoStack = structure != null && !structure.hasStack();
         dispWaterCapacity = structure == null ? 0 : structure.waterCapacity();
+        dispSizeLevels = structure == null ? 0 : structure.sizeLevels();
+        dispFireLevels = structure == null ? 0 : structure.fireLevels(fireGrade());
+        dispLevel = structure == null ? 0 : structure.level(fireGrade());
+        dispMaxLevel = LoconauticsConfig.BOILER_MAX_LEVEL.get();
+        bogeyDemand();
+        dispBogeys = !bogeyDemands.isEmpty();
 
         pushTakeoff();
         pushSmokestack();
         setChanged();
         sendData();
+    }
+
+    // a train that is unloaded keeps what is left of the fuel and the water, the loaded boiler hands it over
+    private int summaryLogs;
+
+    private void syncTrainSummary() {
+        if (!(Sable.HELPER.getContaining(this) instanceof ServerSubLevel sub)) return;
+        SableTrain train = SableTrainRegistry.bySubLevel(sub.getUniqueId());
+        if (train == null) return;
+        boolean hasBogey = !SubLevelBlocks.findAll(sub, BoilerBogeyBlockEntity.class).isEmpty();
+        if (++summaryLogs % 10 == 0) LoconauticsConstants.LOGGER.warn("[boilerghost] sync train={} bogey={} ignited={} fuel={} water={}",
+                train.id(), hasBogey, ignited, fuelLeft(), water() == null ? -1 : water().getWaterAmount());
+        if (!hasBogey) {
+            train.setBoilerSummary(null);
+            return;
+        }
+        BoilerSummary old = train.boilerSummary();
+        if (old != null) {
+            long away = old.ticksAway(level.getGameTime());
+            float cooling = away - old.burnedTicks();
+            if (old.hasSpent()) {
+                LoconauticsConstants.LOGGER.warn("[boilerghost] load back train={} {}", train.id(), old.describe());
+                applySpent(old.takeSpentFuel(), old.takeSpentWater());
+            }
+            if (away > AWAY_TICKS && old.fireOut()) coolWhileAway(cooling);
+        }
+        BoilerSummary fresh = new BoilerSummary(ignited, fuelLeft(), lastBurnRate,
+                water() == null ? 0 : water().getWaterAmount(), netWaterPerTick());
+        fresh.stamp(level.getGameTime());
+        train.setBoilerSummary(fresh);
+        BoilerStopAlert.check(train, BoilerStopAlert.rake(train), fresh, steamPressure);
+    }
+
+    private void coolWhileAway(float ticks) {
+        if (ticks <= 0f || warmupTicks <= 0) return;
+        warmupTicks = Math.max(0, warmupTicks - Math.round(ticks));
+        if (warmupTicks == 0) boilerState = BoilerState.COLD;
+        steamPressure = Math.min(steamPressure, temperatureFraction());
+        LoconauticsConstants.LOGGER.warn("[boilerghost] cooled away={} warmup={} pressure={}", ticks, warmupTicks, steamPressure);
+        setChanged();
+    }
+
+    private float fuelLeft() {
+        float queued = 0f;
+        for (int slot = 0; slot < inventory.getSlots(); slot++) {
+            ItemStack fuel = inventory.getStackInSlot(slot);
+            if (isFuel(fuel)) queued += (float) fuel.getBurnTime(RecipeType.SMELTING) * fuel.getCount();
+        }
+        return burnTimeRemaining + queued;
+    }
+
+    private float netWaterPerTick() {
+        if (structure == null) return 0f;
+        float steamLeaving = Math.max(outputFraction(), ventedFraction());
+        return structure.boilerCapacity() * (float) WATER_PER_BODY_PER_TICK * steamLeaving
+                * (1f - (float) WATER_RECYCLE_FRACTION);
+    }
+
+    // the same burn and water the loaded tick would have used, taken in one go when the car loads back in
+    private void applySpent(float burn, int waterUsed) {
+        while (burn > 0f) {
+            if (burnTimeRemaining > 0f) {
+                float used = Math.min(burn, burnTimeRemaining);
+                burnTimeRemaining -= used;
+                burn -= used;
+                continue;
+            }
+            int slot = firstFuelSlot();
+            if (slot < 0) {
+                ignited = false;
+                break;
+            }
+            int burnTime = inventory.getStackInSlot(slot).getBurnTime(RecipeType.SMELTING);
+            burningGrade = FuelGrades.of(inventory.getStackInSlot(slot));
+            burnTimeRemaining = burnTime <= 0 ? 1600 : burnTime;
+            inventory.extractItem(slot, 1, false);
+        }
+        if (burnTimeRemaining <= 0f && firstFuelSlot() < 0) ignited = false;
+        BoilerWaterSource injector = water();
+        if (injector != null && waterUsed > 0) injector.drawWater(waterUsed);
+        setChanged();
     }
 
     private boolean hasStack() {
@@ -1163,7 +1408,9 @@ public class FireboxBlockEntity extends BlockEntity implements IHaveGoggleInform
             if (igniter.isDamageableItem()) {
                 igniter.hurtAndBreak(1, player, LivingEntity.getSlotForHand(player.getUsedItemHand()));
             } else {
+                ItemStack remainder = igniter.getCraftingRemainingItem();
                 igniter.shrink(1);
+                if (!remainder.isEmpty()) player.getInventory().placeItemBackInInventory(remainder);
             }
         }
         playAt(SoundEvents.FLINTANDSTEEL_USE, 1f);
@@ -1409,39 +1656,52 @@ public class FireboxBlockEntity extends BlockEntity implements IHaveGoggleInform
                 return owner.addToGoggleTooltip(tooltip, isPlayerSneaking);
             }
         }
-        LoconauticsLang.translate("gui.goggles.boiler_stats").forGoggles(tooltip);
-        addFuelSlot(tooltip);
-        addFailureWarning(tooltip);
-
         if (!dispValid) {
+            LoconauticsLang.translate("gui.goggles.boiler_stats").forGoggles(tooltip);
+            addFuelSlot(tooltip);
+            addFailureWarning(tooltip);
             LoconauticsLang.translate("gui.goggles.boiler_incomplete")
                     .style(ChatFormatting.RED).forGoggles(tooltip);
             addNextStep(tooltip);
             return true;
         }
 
-        if (structure != null) {
-            LoconauticsLang.translate("gui.goggles.boiler_level").style(ChatFormatting.GRAY).forGoggles(tooltip);
-            int boilerLevel = structure.level(fireGrade());
-            LoconauticsLang.builder().text(String.valueOf(boilerLevel))
-                    .style(boilerLevel > 0 ? ChatFormatting.GOLD : ChatFormatting.DARK_GRAY)
-                    .text(" ").add(LoconauticsLang.translate("gui.goggles.boiler_level_limits",
-                            structure.sizeLevels(), structure.fireLevels(fireGrade())).style(ChatFormatting.DARK_GRAY))
-                    .forGoggles(tooltip, 1);
+        int sizeLevels = dispSizeLevels;
+        int fireLevels = ignited ? dispFireLevels : 0;
+        int waterLevels = dispWaterCapacity <= 0 ? 0 : Math.round((float) dispMaxLevel * dispWater / dispWaterCapacity);
+        int boilerLevel = ignited ? dispLevel : 0;
+        boolean producing = ignited || dispPressure > 0f || dispSu > 0f;
+
+        boolean fireOut = boilerState == BoilerState.COLD;
+        MutableComponent status;
+        if (fireOut && lastFailure != null) {
+            status = LoconauticsLang.translate("gui.goggles.boiler_state_cold").component().withStyle(ChatFormatting.RED);
+        } else if (!producing) {
+            status = LoconauticsLang.translate("gui.goggles.boiler_idle").component().withStyle(ChatFormatting.GRAY);
+        } else if (fireOut || boilerLevel <= 0) {
+            status = LoconauticsLang.translate("gui.goggles.boiler_state_cold").component().withStyle(ChatFormatting.GRAY);
+        } else {
+            MutableComponent level = boilerLevel >= dispMaxLevel
+                    ? LoconauticsLang.translate("gui.goggles.boiler_max").component()
+                    : LoconauticsLang.translate("gui.goggles.boiler_lvl", boilerLevel).component();
+            status = LoconauticsLang.translate("gui.goggles.boiler_state_" + boilerState.name().toLowerCase(Locale.ROOT))
+                    .component().withStyle(stateColor())
+                    .append(Component.literal("  ").append(level).withStyle(ChatFormatting.DARK_GRAY));
         }
+        LoconauticsLang.translate("gui.goggles.boiler_status", status).forGoggles(tooltip);
 
-        BoilerPool pool = new BoilerPool(dispMaxSu, dispBogeyDemand, dispSu * Math.min(1f, lastStressRatio));
-        LoconauticsLang.translate("gui.goggles.boiler_pool").style(ChatFormatting.GRAY).forGoggles(tooltip);
-        LoconauticsLang.translate("gui.goggles.boiler_pool_used", Math.round(pool.used()), Math.round(pool.max()))
-                .style(pool.usedFraction() > 0.9f ? ChatFormatting.RED : ChatFormatting.AQUA).forGoggles(tooltip, 1);
+        BoilerGoggleBars bars = new BoilerGoggleBars(dispMaxLevel, sizeLevels, fireLevels, waterLevels);
+        LoconauticsLang.builder().add(bars.row("size", sizeLevels)).forGoggles(tooltip, 1);
+        LoconauticsLang.builder().add(bars.row("water", waterLevels)).forGoggles(tooltip, 1);
+        LoconauticsLang.builder().add(bars.row("fire", fireLevels)).forGoggles(tooltip, 1);
 
-        LoconauticsLang.translate("gui.goggles.boiler_state").style(ChatFormatting.GRAY).forGoggles(tooltip);
-        LoconauticsLang.translate("gui.goggles.boiler_state_" + boilerState.name().toLowerCase(Locale.ROOT))
-                .style(stateColor()).forGoggles(tooltip, 1);
+        addFuelSlot(tooltip);
+        addFailureWarning(tooltip);
 
-        LoconauticsLang.translate("gui.goggles.gauge_temperature").style(ChatFormatting.GRAY).forGoggles(tooltip);
-        LoconauticsLang.translate("gui.goggles.boiler_feel_" + temperatureFeelKey())
-                .style(ChatFormatting.GOLD).forGoggles(tooltip, 1);
+        if (dispBogeys) {
+            LoconauticsLang.translate("gui.goggles.boiler_bar_bogey").style(ChatFormatting.WHITE).forGoggles(tooltip);
+            LoconauticsLang.builder().add(bars.powerRow("power", dispBogeyDemand, dispMaxSu)).forGoggles(tooltip, 1);
+        }
 
         addNextStep(tooltip);
         addOptionalStep(tooltip);
@@ -1449,7 +1709,7 @@ public class FireboxBlockEntity extends BlockEntity implements IHaveGoggleInform
     }
 
     private void addFuelSlot(List<Component> tooltip) {
-        LoconauticsLang.translate("gui.goggles.boiler_fuel").style(ChatFormatting.GRAY).forGoggles(tooltip);
+        LoconauticsLang.translate("gui.goggles.boiler_fuel").style(ChatFormatting.WHITE).forGoggles(tooltip);
         if (firstFuel().isEmpty()) {
             LoconauticsLang.translate("gui.goggles.boiler_fuel_empty")
                     .style(ChatFormatting.DARK_GRAY).forGoggles(tooltip, 1);
@@ -1565,6 +1825,7 @@ public class FireboxBlockEntity extends BlockEntity implements IHaveGoggleInform
         tag.putFloat("BurnTimeRemaining", burnTimeRemaining);
         tag.putString("BurningGrade", burningGrade.name());
         tag.putBoolean("Ignited", ignited);
+        tag.putInt("ScheduleSignal", scheduleSignal);
         tag.putInt("DryTicks", dryTicks);
         tag.putInt("WasteGas", wasteGas);
         tag.putString("LastFailure", lastFailure == null ? "" : lastFailure.name());
@@ -1583,7 +1844,13 @@ public class FireboxBlockEntity extends BlockEntity implements IHaveGoggleInform
         tag.putFloat("DispMaxSu", dispMaxSu);
         tag.putFloat("DispBogeyDemand", dispBogeyDemand);
         tag.putFloat("DispFire", dispFire);
+        tag.putBoolean("DispNoStack", dispNoStack);
         tag.putInt("DispWaterCapacity", dispWaterCapacity);
+        tag.putInt("DispSizeLevels", dispSizeLevels);
+        tag.putInt("DispFireLevels", dispFireLevels);
+        tag.putInt("DispLevel", dispLevel);
+        tag.putInt("DispMaxLevel", dispMaxLevel);
+        tag.putBoolean("DispBogeys", dispBogeys);
         tag.putFloat("DispBurnRate", lastBurnRate);
         tag.putFloat("DispStress", lastStressRatio);
         tag.putDouble("DispMass", lastTrainMass);
@@ -1626,6 +1893,7 @@ public class FireboxBlockEntity extends BlockEntity implements IHaveGoggleInform
         }
         dryTicks = tag.getInt("DryTicks");
         ignited = tag.contains("Ignited") ? tag.getBoolean("Ignited") : burnTimeRemaining > 0f;
+        scheduleSignal = tag.getInt("ScheduleSignal");
         wasteGas = tag.getInt("WasteGas");
         lastFailure = readFailure(tag.getString("LastFailure"));
         dispValid = tag.getBoolean("DispValid");
@@ -1643,7 +1911,13 @@ public class FireboxBlockEntity extends BlockEntity implements IHaveGoggleInform
         dispMaxSu = tag.getFloat("DispMaxSu");
         dispBogeyDemand = tag.getFloat("DispBogeyDemand");
         dispFire = tag.getFloat("DispFire");
+        dispNoStack = tag.getBoolean("DispNoStack");
         dispWaterCapacity = tag.getInt("DispWaterCapacity");
+        dispSizeLevels = tag.getInt("DispSizeLevels");
+        dispFireLevels = tag.getInt("DispFireLevels");
+        dispLevel = tag.getInt("DispLevel");
+        dispMaxLevel = tag.contains("DispMaxLevel") ? tag.getInt("DispMaxLevel") : 12;
+        dispBogeys = tag.getBoolean("DispBogeys");
         lastBurnRate = tag.getFloat("DispBurnRate");
         lastStressRatio = tag.getFloat("DispStress");
         lastTrainMass = tag.contains("DispMass") ? tag.getDouble("DispMass") : NO_TRAIN;

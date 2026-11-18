@@ -51,6 +51,7 @@ public final class LoconauticsConfig {
     public static ModConfigSpec.IntValue WARMUP_PER_SIZE_LEVEL_TICKS;
     public static ModConfigSpec.DoubleValue SU_PER_LEVEL;
     public static ModConfigSpec.DoubleValue BANKED_BURN_FRACTION;
+    public static ModConfigSpec.DoubleValue BURN_RATE_SCALE;
 
     public static ModConfigSpec.IntValue BOILER_MAX_LENGTH;
     public static ModConfigSpec.IntValue BOILER_MAX_LEVEL;
@@ -303,6 +304,10 @@ public final class LoconauticsConfig {
         BANKED_BURN_FRACTION = BUILDER
                 .comment("Share of full burn a lit boiler keeps when its master signal is 15.")
                 .defineInRange("bankedBurnFraction", 0.05, 0.0, 1.0);
+
+        BURN_RATE_SCALE = BUILDER
+                .comment("Multiplies how fast a lit boiler burns fuel. Water use and pressure are not changed.")
+                .defineInRange("burnRateScale", 1.0, 0.05, 20.0);
 
         BOILER_MAX_LENGTH = BUILDER
                 .comment("Most body blocks a boiler may span along its length before it stops working.",

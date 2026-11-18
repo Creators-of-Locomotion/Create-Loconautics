@@ -7,6 +7,13 @@
 - Railways boilers and smokeboxes now count as boiler bodies.
 - Boiler lighting and shovel sounds play where the train is.
 - A boiler with a steady water supply stays full, not a little short.
+- Scheduled steam trains no longer report no steam right after loading.
+- Slow starts no longer play the wheel grinding sound.
+- Safety valves stop blowing when their boiler is broken or gone.
+- Steam Takeoff no longer darkens the blocks around it, untested.
+- Pumps now pull water through a hose from an open pipe end.
+- Pipes show moving fluid when a hose carries it.
+- Raised smokestacks no longer turn black next to full blocks.
 
 ### Added
 - Boilers show a level in the goggles, set by their size and fire.
@@ -25,6 +32,18 @@
 - Panel gauges can show how strong the boiler fire burns.
 - A powered smart safety valve opens fully and blows off the pressure.
 - Analog controller autofill reads the frequencies of the Boiler Bogey.
+- Shift right click copies frequencies between the controller and the Boiler Bogey.
+- Schedules run on trains driven by a Boiler Bogey.
+- The firebox crackles like a blaze burner, and the sound follows its state.
+- Schedules get a boiler fire entry that sets the burn.
+- Fumes pile up in a firebox with no smokestack and burst out when the door opens.
+- Flames burn inside the firebox and sparks fly out of the open door.
+- Unloaded steam trains on a schedule stop when the fuel runs out, the owner gets told.
+- Datapacks can set the fuel grade of any item.
+- Lava buckets, blaze rods and blaze powder light the boiler.
+- A config option scales how fast boilers burn fuel.
+- Cold boilers lose their heat while the train is unloaded.
+- Gauges can show the boiler level and the bogey power.
 
 ### Changed
 - Steam takeoff power follows the boiler level, 16384 SU per level.
@@ -44,6 +63,10 @@
 - Steam takeoff speed and power are always whole even numbers.
 - The safety valve hisses in one steady sound, not chuffs.
 - A venting boiler burns through its water and can run dry.
+- Burns for shows the shorter of the fuel time and the water time.
+- Boiler bogeys pull less when the steam pressure is low.
+- Boiler goggles show level bars like Create, on any boiler body.
+- Boiler goggles tell you to light the fire and add an output.
 
 ### Ponder
 #### Instrument Panel

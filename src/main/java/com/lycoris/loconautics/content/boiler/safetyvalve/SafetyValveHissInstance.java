@@ -1,6 +1,6 @@
 package com.lycoris.loconautics.content.boiler.safetyvalve;
 
-import com.simibubi.create.AllSoundEvents;
+import com.lycoris.loconautics.registry.LoconauticsSounds;
 import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.sounds.SoundSource;
@@ -11,15 +11,16 @@ import net.neoforged.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
 public class SafetyValveHissInstance extends AbstractTickableSoundInstance {
 
-    private static final float QUIET = 0.25f;
-    private static final float LOUD = 0.8f;
-    private static final float LOW_PITCH = 0.75f;
-    private static final float HIGH_PITCH = 1.1f;
+    private static final float HALF_OPEN = 0.5f;
+    private static final float QUIET = 0.2f;
+    private static final float LOUD = 1.0f;
+    private static final float LOW_PITCH = 0.9f;
+    private static final float HIGH_PITCH = 1.05f;
 
     private final SafetyValveBlockEntity valve;
 
     public SafetyValveHissInstance(SafetyValveBlockEntity valve) {
-        super(AllSoundEvents.STEAM.getMainEvent(), SoundSource.BLOCKS, SoundInstance.createUnseededRandom());
+        super(LoconauticsSounds.SAFETY_VALVE_HISS.get(), SoundSource.BLOCKS, SoundInstance.createUnseededRandom());
         this.valve = valve;
         this.looping = true;
         this.delay = 0;
@@ -34,7 +35,9 @@ public class SafetyValveHissInstance extends AbstractTickableSoundInstance {
             return;
         }
         float opening = valve.opening();
-        volume = QUIET + (LOUD - QUIET) * opening;
+        volume = opening < HALF_OPEN
+                ? QUIET * opening / HALF_OPEN
+                : QUIET + (LOUD - QUIET) * (opening - HALF_OPEN) / (1f - HALF_OPEN);
         pitch = LOW_PITCH + (HIGH_PITCH - LOW_PITCH) * opening;
         place();
     }

@@ -11,9 +11,11 @@ import net.neoforged.neoforge.fluids.capability.IFluidHandler;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayDeque;
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Queue;
-import java.util.Set;
 
 // pipes have no fluid handler, so we fill the open ends of the network
 public final class HosePipeSink implements IFluidHandler {
@@ -21,14 +23,31 @@ public final class HosePipeSink implements IFluidHandler {
     private record Step(BlockPos pos, int pipes) {
     }
 
+    private record Entry(@Nullable BlockPos from, Direction enterSide) {
+    }
+
+    private record PipeSide(BlockPos pos, Direction side, boolean inbound) {
+    }
+
+    private record End(IFluidHandler handler, List<PipeSide> path) {
+
+        void drive(Level level, FluidStack fluid, boolean reversed) {
+            for (PipeSide s : path) {
+                HosePipeFlow.drive(level, s.pos(), s.side(), s.inbound() != reversed, fluid);
+            }
+        }
+    }
+
     private final Level level;
     private final BlockPos endpoint;
     private final BlockPos firstPipe;
+    private final Direction plateSide;
 
     public HosePipeSink(Level level, BlockPos endpoint, Direction plateSide) {
         this.level = level;
         this.endpoint = endpoint;
         this.firstPipe = endpoint.relative(plateSide);
+        this.plateSide = plateSide;
     }
 
     public static boolean isPipe(Level level, BlockPos pos) {
@@ -61,32 +80,53 @@ public final class HosePipeSink implements IFluidHandler {
             return 0;
         }
         int left = resource.getAmount();
-        for (IFluidHandler end : openEnds()) {
+        for (End end : openEnds()) {
             if (left <= 0) {
                 break;
             }
-            left -= end.fill(resource.copyWithAmount(left), action);
+            int moved = end.handler().fill(resource.copyWithAmount(left), action);
+            if (moved > 0 && action.execute()) {
+                end.drive(level, resource, false);
+            }
+            left -= moved;
         }
         return resource.getAmount() - left;
     }
 
     @Override
     public FluidStack drain(FluidStack resource, FluidAction action) {
-        return FluidStack.EMPTY;
+        return take(resource, resource.getAmount(), action);
     }
 
     @Override
     public FluidStack drain(int maxDrain, FluidAction action) {
+        return take(null, maxDrain, action);
+    }
+
+    private FluidStack take(@Nullable FluidStack wanted, int amount, FluidAction action) {
+        if (amount <= 0) {
+            return FluidStack.EMPTY;
+        }
+        for (End end : openEnds()) {
+            FluidStack out = wanted == null ? end.handler().drain(amount, action)
+                    : end.handler().drain(wanted.copyWithAmount(amount), action);
+            if (!out.isEmpty()) {
+                if (action.execute()) {
+                    end.drive(level, out, true);
+                }
+                return out;
+            }
+        }
         return FluidStack.EMPTY;
     }
 
-    private java.util.List<IFluidHandler> openEnds() {
-        java.util.List<IFluidHandler> ends = new java.util.ArrayList<>();
+    private List<End> openEnds() {
+        List<End> ends = new ArrayList<>();
         Queue<Step> queue = new ArrayDeque<>();
-        Set<BlockPos> seen = new HashSet<>();
+        Map<BlockPos, Entry> entries = new HashMap<>();
         int limit = FluidPropagator.getPumpRange();
         queue.add(new Step(firstPipe, 1));
-        seen.add(firstPipe);
+        entries.put(firstPipe, new Entry(null, plateSide.getOpposite()));
         while (!queue.isEmpty()) {
             Step step = queue.poll();
             FluidTransportBehaviour pipe = FluidPropagator.getPipe(level, step.pos());
@@ -95,22 +135,41 @@ public final class HosePipeSink implements IFluidHandler {
             }
             for (Direction d : FluidPropagator.getPipeConnections(level.getBlockState(step.pos()), pipe)) {
                 BlockPos next = step.pos().relative(d);
-                if (next.equals(endpoint) || !level.isLoaded(next) || !seen.add(next)) {
+                if (next.equals(endpoint) || !level.isLoaded(next)) {
                     continue;
                 }
                 if (FluidPropagator.getPipe(level, next) != null) {
-                    if (step.pipes() < limit) {
+                    if (step.pipes() < limit && !entries.containsKey(next)) {
+                        entries.put(next, new Entry(step.pos(), d.getOpposite()));
                         queue.add(new Step(next, step.pipes() + 1));
                     }
                     continue;
                 }
                 IFluidHandler handler = handlerAt(next, d.getOpposite());
+                if (handler == null && FluidPropagator.isOpenEnd(level, step.pos(), d)) {
+                    handler = HoseOpenEnds.handler(level, step.pos(), d);
+                }
                 if (handler != null) {
-                    ends.add(handler);
+                    ends.add(new End(handler, pathTo(entries, step.pos(), d)));
                 }
             }
         }
         return ends;
+    }
+
+    private static List<PipeSide> pathTo(Map<BlockPos, Entry> entries, BlockPos last, Direction exit) {
+        List<PipeSide> path = new ArrayList<>();
+        path.add(new PipeSide(last, exit, false));
+        BlockPos at = last;
+        while (at != null) {
+            Entry entry = entries.get(at);
+            path.add(new PipeSide(at, entry.enterSide(), true));
+            at = entry.from();
+            if (at != null) {
+                path.add(new PipeSide(at, entry.enterSide().getOpposite(), false));
+            }
+        }
+        return path;
     }
 
     @Nullable

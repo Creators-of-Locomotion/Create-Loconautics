@@ -181,6 +181,7 @@ public final class LoconauticsClient {
         com.lycoris.loconautics.content.controls.panellever.LeverHoldInteraction.registered();
         LoconauticsConstants.LOGGER.info("Loconautics client setup");
         LoconauticsPartialModels.init();
+        com.lycoris.loconautics.client.BoilerBogeyPartials.init();
         LoconauticsSpriteShifts.init();
 
         com.simibubi.create.foundation.item.render.CustomRenderedItems.register(

@@ -1,5 +1,6 @@
 {
     "render_type": "minecraft:cutout",
+    "ambientocclusion": false,
     "texture_size": [64, 64],
     "textures": {
         "0": "loconautics:block/smokestack/smokestack",

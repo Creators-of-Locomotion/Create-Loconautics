@@ -3,6 +3,7 @@ package com.lycoris.loconautics.trainphysics.teleport;
 import com.lycoris.loconautics.LoconauticsConstants;
 import com.lycoris.loconautics.common.sable.SableTeleportation;
 import com.lycoris.loconautics.content.analogcontroller.AnalogControllerBlockEntity;
+import com.lycoris.loconautics.content.boiler.firebox.FireboxBlockEntity;
 import com.lycoris.loconautics.content.knuckle.KnuckleBlockEntity;
 import com.lycoris.loconautics.network.packets.train.SableTrainSyncPacket;
 import com.lycoris.loconautics.trainphysics.SableTrain;
@@ -356,6 +357,15 @@ public final class TrainTeleporter {
                 if (partnerShift != null && matePos != null) {
                     knuckle.movePartnerPos(partnerShift.apply(matePos));
                 }
+            }
+            // a firebox keeps its controller and barrel positions in plot coordinates, the new plot is at another x and z
+            TeleportStrands.Shift own = shifts.get(landing.sub().getUniqueId());
+            if (own == null) {
+                continue;
+            }
+            BlockPos plotShift = own.apply(BlockPos.ZERO);
+            for (FireboxBlockEntity firebox : SubLevelBlocks.findAll(moved, FireboxBlockEntity.class)) {
+                firebox.shiftReferences(plotShift);
             }
         }
     }

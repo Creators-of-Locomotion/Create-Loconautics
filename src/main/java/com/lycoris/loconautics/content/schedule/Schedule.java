@@ -11,6 +11,7 @@ import com.lycoris.loconautics.content.schedule.condition.StationPoweredConditio
 import com.lycoris.loconautics.content.schedule.condition.StationUnloadedCondition;
 import com.lycoris.loconautics.content.schedule.condition.TimeOfDayCondition;
 import com.lycoris.loconautics.LoconauticsConstants;
+import com.lycoris.loconautics.content.schedule.destination.ChangeFireInstruction;
 import com.lycoris.loconautics.content.schedule.destination.ChangeThrottleInstruction;
 import com.lycoris.loconautics.content.schedule.destination.CoupleInstruction;
 import com.lycoris.loconautics.content.schedule.destination.DecoupleInstruction;
@@ -44,6 +45,7 @@ public class Schedule {
 		registerInstruction("throttle", ChangeThrottleInstruction::new);
 		registerInstruction("package_delivery", DeliverPackagesInstruction::new);
 		registerInstruction("package_retrieval", FetchPackagesInstruction::new);
+		registerOwnInstruction("fire", ChangeFireInstruction::new);
 		registerOwnInstruction("decouple", DecoupleInstruction::new);
 		registerOwnInstruction("maneuver", ManeuverInstruction::new);
 		registerOwnInstruction("couple", CoupleInstruction::new);

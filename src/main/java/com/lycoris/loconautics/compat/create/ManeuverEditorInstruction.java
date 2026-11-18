@@ -2,6 +2,7 @@ package com.lycoris.loconautics.compat.create;
 
 import com.google.common.collect.ImmutableList;
 import com.lycoris.loconautics.LoconauticsConstants;
+import com.lycoris.loconautics.content.boiler.BoilerBlocks;
 import com.lycoris.loconautics.foundation.LoconauticsLang;
 import com.lycoris.loconautics.registry.LoconauticsRegistries;
 import com.simibubi.create.AllBlocks;
@@ -28,6 +29,7 @@ import java.util.List;
 public class ManeuverEditorInstruction extends ScheduleInstruction {
 
     public enum Kind {
+        FIRE("fire", true, 0, 0, 16, 1, 3, ""),
         DECOUPLE("decouple", true, 1, 1, 65, 1, 1, ""),
         MANEUVER("maneuver", true, LoconauticsConstants.MANEUVER_DEFAULT_PERCENT, 1,
                 LoconauticsConstants.MANEUVER_MAX_PERCENT + 1, 1, 5, "%"),
@@ -146,6 +148,7 @@ public class ManeuverEditorInstruction extends ScheduleInstruction {
     private ItemStack icon() {
         return switch (kind) {
             case MANEUVER -> AllBlocks.TRAIN_CONTROLS.asStack();
+            case FIRE -> new ItemStack(BoilerBlocks.FIREBOX_ITEM.get());
             case DECOUPLE -> new ItemStack(LoconauticsRegistries.KNUCKLE_ITEM.get());
             case COUPLE -> {
                 ItemStack open = new ItemStack(LoconauticsRegistries.KNUCKLE_ITEM.get());

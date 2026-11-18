@@ -80,6 +80,11 @@ public class SmartSafetyValveBlockEntity extends SafetyValveBlockEntity {
         sendData();
     }
 
+    @Override
+    protected void releaseOpening() {
+        if (!valveDriven) setOpening(0f);
+    }
+
     public void updateFromBoiler(float pressureFraction) {
         expireValve();
         if (level != null && level.hasNeighborSignal(worldPosition)) {

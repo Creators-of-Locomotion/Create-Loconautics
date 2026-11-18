@@ -4,6 +4,7 @@ import com.lycoris.loconautics.content.analogcontroller.AnalogControllerBlockEnt
 import com.lycoris.loconautics.content.bearingaxle.BearingAxleBlock;
 import com.lycoris.loconautics.content.bearingaxle.BearingAxleBlockEntity;
 import com.lycoris.loconautics.content.bearingaxle.BearingAxleValidity;
+import com.lycoris.loconautics.content.boiler.bogey.BoilerBogeyBlockEntity;
 import com.lycoris.loconautics.content.transmission.TransmissionBlockEntity;
 import com.lycoris.loconautics.common.sable.SubLevelBlocks;
 import com.simibubi.create.content.redstone.link.RedstoneLinkNetworkHandler.Frequency;
@@ -12,6 +13,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
@@ -93,7 +96,40 @@ public final class LocomotiveHardware {
         return new Drivetrain(linkKey(link(transmission, first)), transmission, first);
     }
 
+    // a boiler bogey takes the place of the transmission and the bearing axle
+    @Nullable
+    public static BoilerBogeyBlockEntity boilerBogey(ServerSubLevel sub, AnalogControllerBlockEntity controller) {
+        if (!SubLevelBlocks.findAll(sub, TransmissionBlockEntity.class).isEmpty()) {
+            return null;
+        }
+        List<BoilerBogeyBlockEntity> bogeys = SubLevelBlocks.findAll(sub, BoilerBogeyBlockEntity.class);
+        for (BoilerBogeyBlockEntity bogey : bogeys) {
+            if (validate(controller, bogey).ok()) {
+                return bogey;
+            }
+        }
+        return bogeys.isEmpty() ? null : bogeys.get(0);
+    }
+
+    public static Result validate(AnalogControllerBlockEntity controller, BoilerBogeyBlockEntity bogey) {
+        if (!pairMatches(controller.getFrequencyFirst(), controller.getFrequencySecond(),
+                bogey.throttleLinks().getFirstFreqA(), bogey.throttleLinks().getFirstFreqB())
+                || !pairMatches(controller.getFrequencyBackFirst(), controller.getFrequencyBackSecond(),
+                bogey.throttleLinks().getSecondFreqA(), bogey.throttleLinks().getSecondFreqB())
+                || !pairMatches(controller.getFrequencyLeftFirst(), controller.getFrequencyLeftSecond(),
+                bogey.steerLinks().getFirstFreqA(), bogey.steerLinks().getFirstFreqB())
+                || !pairMatches(controller.getFrequencyRightFirst(), controller.getFrequencyRightSecond(),
+                bogey.steerLinks().getSecondFreqA(), bogey.steerLinks().getSecondFreqB())) {
+            return Result.fail("boiler_bogey_mismatch");
+        }
+        return Result.pass();
+    }
+
     public static Result validate(ServerSubLevel sub, AnalogControllerBlockEntity controller) {
+        BoilerBogeyBlockEntity boilerBogey = boilerBogey(sub, controller);
+        if (boilerBogey != null) {
+            return validate(controller, boilerBogey);
+        }
         java.util.List<TransmissionBlockEntity> transmissions =
                 SubLevelBlocks.findAll(sub, TransmissionBlockEntity.class);
         if (transmissions.isEmpty()) {
@@ -119,6 +155,14 @@ public final class LocomotiveHardware {
                     transmission.getSpeedFreqFirst(), transmission.getSpeedFreqSecond())
                     && pairMatches(controller.getFrequencyBackFirst(), controller.getFrequencyBackSecond(),
                     transmission.getDirFreqFirst(), transmission.getDirFreqSecond())) {
+                return true;
+            }
+        }
+        for (BoilerBogeyBlockEntity bogey : SubLevelBlocks.findAll(sub, BoilerBogeyBlockEntity.class)) {
+            if (pairMatches(controller.getFrequencyFirst(), controller.getFrequencySecond(),
+                    bogey.throttleLinks().getFirstFreqA(), bogey.throttleLinks().getFirstFreqB())
+                    && pairMatches(controller.getFrequencyBackFirst(), controller.getFrequencyBackSecond(),
+                    bogey.throttleLinks().getSecondFreqA(), bogey.throttleLinks().getSecondFreqB())) {
                 return true;
             }
         }

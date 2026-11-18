@@ -315,6 +315,7 @@ public final class TrainResidency {
         if (split) {
             leader.setTargetSpeed(0.0);
         }
+        com.lycoris.loconautics.content.boiler.BoilerGhost.step(leader, group);
         leader.tickMotion();
         double[] sense = new double[group.size()];
         for (int i = 0; i < group.size(); i++) {

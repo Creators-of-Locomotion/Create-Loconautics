@@ -19,6 +19,10 @@ public final class LoconauticsCCPlugin {
                 (transmission, side) -> TransmissionPeripheral.of(transmission));
         event.registerBlockEntity(
                 PeripheralCapability.get(),
+                com.lycoris.loconautics.content.boiler.BoilerBlocks.FIREBOX_BE.get(),
+                (firebox, side) -> FireboxPeripheral.of(firebox));
+        event.registerBlockEntity(
+                PeripheralCapability.get(),
                 LoconauticsRegistries.TURNTABLE_BEARING_BE.get(),
                 (bearing, side) -> TurntableBearingPeripheral.of(bearing));
     }
