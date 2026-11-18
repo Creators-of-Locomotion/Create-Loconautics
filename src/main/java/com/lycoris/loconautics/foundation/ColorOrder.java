@@ -2,19 +2,17 @@ package com.lycoris.loconautics.foundation;
 
 import net.minecraft.world.item.DyeColor;
 
+import java.util.Arrays;
 import java.util.List;
 
 public final class ColorOrder {
-
-    public static final List<DyeColor> ORDER = List.of(
-            DyeColor.WHITE, DyeColor.LIGHT_GRAY, DyeColor.GRAY, DyeColor.BLACK,
-            DyeColor.BROWN, DyeColor.RED, DyeColor.ORANGE, DyeColor.YELLOW,
-            DyeColor.LIME, DyeColor.GREEN, DyeColor.CYAN, DyeColor.LIGHT_BLUE,
-            DyeColor.BLUE, DyeColor.PURPLE, DyeColor.MAGENTA, DyeColor.PINK);
+    //remember when I said that depot adds its custom colors to the vanilla list? this is what I meant.
+    //you can straight up(not that I am) use the vanilla list :D
+    public static final List<DyeColor> ORDER = Arrays.stream(DyeColor.values()).toList();
 
     public static final List<String> EXTRA = List.of("industrial", "andesite", "brass", "copper", "zinc");
 
-    public static final int EXTRA_START = 16;
+    public static final int EXTRA_START = ORDER.size();
 
     public static final int COUNT = EXTRA_START + EXTRA.size();
 

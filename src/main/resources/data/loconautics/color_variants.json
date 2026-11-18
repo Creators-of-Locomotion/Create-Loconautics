@@ -114,6 +114,27 @@
       ]
     },
     {
+      "path": "data/loconautics/recipe/depot_compat/{color}_buffer_with_dye.json",
+      "parent": "amber",
+      "colors": [
+        "aqua",
+        "beige",
+        "coral",
+        "forest",
+        "ginger",
+        "indigo",
+        "maroon",
+        "mint",
+        "navy",
+        "olive",
+        "rose",
+        "slate",
+        "tan",
+        "teal",
+        "verdant"
+      ]
+    },
+    {
       "path": "data/loconautics/recipe/{color}_ribbed_boiler_body_with_dye.json",
       "parent": "black",
       "colors": [
@@ -132,6 +153,27 @@
         "brown",
         "green",
         "red"
+      ]
+    },
+    {
+      "path": "data/loconautics/recipe/depot_compat/{color}_ribbed_boiler_body_with_dye.json",
+      "parent": "amber",
+      "colors": [
+      "aqua",
+      "beige",
+      "coral",
+      "forest",
+      "ginger",
+      "indigo",
+      "maroon",
+      "mint",
+      "navy",
+      "olive",
+      "rose",
+      "slate",
+      "tan",
+      "teal",
+      "verdant"
       ]
     },
     {
@@ -156,6 +198,27 @@
       ]
     },
     {
+      "path": "data/loconautics/recipe/depot_compat/{color}_paneled_boiler_body_with_dye.json",
+      "parent": "amber",
+      "colors": [
+        "aqua",
+        "beige",
+        "coral",
+        "forest",
+        "ginger",
+        "indigo",
+        "maroon",
+        "mint",
+        "navy",
+        "olive",
+        "rose",
+        "slate",
+        "tan",
+        "teal",
+        "verdant"
+      ]
+    },
+    {
       "path": "data/loconautics/recipe/{color}_plated_boiler_body_with_dye.json",
       "parent": "black",
       "colors": [
@@ -174,6 +237,27 @@
         "brown",
         "green",
         "red"
+      ]
+    },
+    {
+      "path": "data/loconautics/recipe/depot_compat/{color}_plated_boiler_body_with_dye.json",
+      "parent": "amber",
+      "colors": [
+        "aqua",
+        "beige",
+        "coral",
+        "forest",
+        "ginger",
+        "indigo",
+        "maroon",
+        "mint",
+        "navy",
+        "olive",
+        "rose",
+        "slate",
+        "tan",
+        "teal",
+        "verdant"
       ]
     },
     {
@@ -198,6 +282,27 @@
       ]
     },
     {
+      "path": "data/loconautics/recipe/depot_compat/{color}_framed_boiler_body_with_dye.json",
+      "parent": "amber",
+      "colors": [
+        "aqua",
+        "beige",
+        "coral",
+        "forest",
+        "ginger",
+        "indigo",
+        "maroon",
+        "mint",
+        "navy",
+        "olive",
+        "rose",
+        "slate",
+        "tan",
+        "teal",
+        "verdant"
+      ]
+    },
+    {
       "path": "data/loconautics/recipe/{color}_slatted_boiler_body_with_dye.json",
       "parent": "black",
       "colors": [
@@ -219,10 +324,52 @@
       ]
     },
     {
+      "path": "data/loconautics/recipe/depot_compat/{color}_slatted_boiler_body_with_dye.json",
+      "parent": "amber",
+      "colors": [
+        "aqua",
+        "beige",
+        "coral",
+        "forest",
+        "ginger",
+        "indigo",
+        "maroon",
+        "mint",
+        "navy",
+        "olive",
+        "rose",
+        "slate",
+        "tan",
+        "teal",
+        "verdant"
+      ]
+    },
+    {
       "path": "data/loconautics/recipe/{color}_conductors_goggles.json"
     },
     {
       "path": "data/loconautics/recipe/{color}_small_combustion_engine_with_dye.json"
+    },
+    {
+      "path": "data/loconautics/recipe/depot_compat/{color}_small_combustion_engine_with_dye.json",
+      "parent": "amber",
+      "colors": [
+        "aqua",
+        "beige",
+        "coral",
+        "forest",
+        "ginger",
+        "indigo",
+        "maroon",
+        "mint",
+        "navy",
+        "olive",
+        "rose",
+        "slate",
+        "tan",
+        "teal",
+        "verdant"
+      ]
     },
     {
       "path": "assets/loconautics/blockstates/{color}_ribbed_boiler_body.json"

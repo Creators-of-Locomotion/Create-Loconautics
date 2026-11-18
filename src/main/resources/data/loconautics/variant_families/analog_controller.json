@@ -15,6 +15,22 @@
     "loconautics:blue_analog_controller",
     "loconautics:purple_analog_controller",
     "loconautics:magenta_analog_controller",
-    "loconautics:pink_analog_controller"
+    "loconautics:pink_analog_controller",
+    "loconautics:amber_analog_controller",
+    "loconautics:aqua_analog_controller",
+    "loconautics:beige_analog_controller",
+    "loconautics:coral_analog_controller",
+    "loconautics:forest_analog_controller",
+    "loconautics:ginger_analog_controller",
+    "loconautics:indigo_analog_controller",
+    "loconautics:maroon_analog_controller",
+    "loconautics:mint_analog_controller",
+    "loconautics:navy_analog_controller",
+    "loconautics:olive_analog_controller",
+    "loconautics:rose_analog_controller",
+    "loconautics:slate_analog_controller",
+    "loconautics:tan_analog_controller",
+    "loconautics:teal_analog_controller",
+    "loconautics:verdant_analog_controller"
   ]
 }

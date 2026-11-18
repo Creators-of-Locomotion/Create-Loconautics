@@ -15,6 +15,22 @@
     "loconautics:blue_buffer",
     "loconautics:purple_buffer",
     "loconautics:magenta_buffer",
-    "loconautics:pink_buffer"
+    "loconautics:pink_buffer",
+    "loconautics:amber_buffer",
+    "loconautics:aqua_buffer",
+    "loconautics:beige_buffer",
+    "loconautics:coral_buffer",
+    "loconautics:forest_buffer",
+    "loconautics:ginger_buffer",
+    "loconautics:indigo_buffer",
+    "loconautics:maroon_buffer",
+    "loconautics:mint_buffer",
+    "loconautics:navy_buffer",
+    "loconautics:olive_buffer",
+    "loconautics:rose_buffer",
+    "loconautics:slate_buffer",
+    "loconautics:tan_buffer",
+    "loconautics:teal_buffer",
+    "loconautics:verdant_buffer"
   ]
 }

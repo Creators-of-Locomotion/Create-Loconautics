@@ -45,6 +45,13 @@ repositories {
         }
     }
 
+    maven {
+        url = uri("https://registry.somethingcatchy.net/repository/maven-public/")
+        content {
+            includeGroup("com.possible-triangle")
+        }
+    }
+
     exclusiveContent {
         forRepository { maven { name = "Modrinth"; url = "https://api.modrinth.com/maven" } }
         filter { includeGroup("maven.modrinth") }
@@ -167,6 +174,8 @@ dependencies {
 
     implementation("com.tterrag.registrate:Registrate:${registrate_version}")
 
+    //just so depot loads in development
+    implementation("com.possible-triangle:dye_depot-$minecraft_version-neoforge:$dye_depot_version")
     // Lyc I'm going to kill you
     implementation("dev.ryanhcode.sable:sable-neoforge-${minecraft_version}:${sable_version}") {
         exclude group: 'com.tterrag.registrate', module: 'Registrate'

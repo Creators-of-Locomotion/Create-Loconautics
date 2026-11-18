@@ -1,5 +1,4 @@
 {
-  "replace": false,
   "values": [
     "loconautics:white_dashboard",
     "loconautics:orange_dashboard",
@@ -16,6 +15,22 @@
     "loconautics:brown_dashboard",
     "loconautics:green_dashboard",
     "loconautics:red_dashboard",
-    "loconautics:black_dashboard"
+    "loconautics:black_dashboard",
+    "loconautics:amber_dashboard",
+    "loconautics:aqua_dashboard",
+    "loconautics:beige_dashboard",
+    "loconautics:coral_dashboard",
+    "loconautics:forest_dashboard",
+    "loconautics:ginger_dashboard",
+    "loconautics:indigo_dashboard",
+    "loconautics:maroon_dashboard",
+    "loconautics:mint_dashboard",
+    "loconautics:navy_dashboard",
+    "loconautics:olive_dashboard",
+    "loconautics:rose_dashboard",
+    "loconautics:slate_dashboard",
+    "loconautics:tan_dashboard",
+    "loconautics:teal_dashboard",
+    "loconautics:verdant_dashboard"
   ]
 }

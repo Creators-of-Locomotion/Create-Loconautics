@@ -15,6 +15,22 @@
     "loconautics:blue_dashboard",
     "loconautics:purple_dashboard",
     "loconautics:magenta_dashboard",
-    "loconautics:pink_dashboard"
+    "loconautics:pink_dashboard",
+    "loconautics:amber_dashboard",
+    "loconautics:aqua_dashboard",
+    "loconautics:beige_dashboard",
+    "loconautics:coral_dashboard",
+    "loconautics:forest_dashboard",
+    "loconautics:ginger_dashboard",
+    "loconautics:indigo_dashboard",
+    "loconautics:maroon_dashboard",
+    "loconautics:mint_dashboard",
+    "loconautics:navy_dashboard",
+    "loconautics:olive_dashboard",
+    "loconautics:rose_dashboard",
+    "loconautics:slate_dashboard",
+    "loconautics:tan_dashboard",
+    "loconautics:teal_dashboard",
+    "loconautics:verdant_dashboard"
   ]
 }

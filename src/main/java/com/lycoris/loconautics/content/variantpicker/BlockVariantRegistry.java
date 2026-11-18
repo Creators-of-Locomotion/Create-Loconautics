@@ -17,8 +17,8 @@ import java.util.Map;
 public final class BlockVariantRegistry {
 
     public static final int COLOR_COUNT = ColorOrder.COUNT;
-    public static final int COLORLESS_INDEX = 16;
-    public static final int MAX_TYPES = 16;
+    public static final int COLORLESS_INDEX = ColorOrder.EXTRA_START;
+    public static final int MAX_TYPES = ColorOrder.EXTRA_START;
     public static final int MAX_WRAPPINGS = 8;
 
     public record VariantType(String translationKey, Block[] colorVariants, Block[][] wrapped, int materialCount) {
