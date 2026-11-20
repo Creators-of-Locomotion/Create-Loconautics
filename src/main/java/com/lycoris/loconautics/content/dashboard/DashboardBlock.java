@@ -270,6 +270,18 @@ public class DashboardBlock extends HorizontalDirectionalBlock
         return length;
     }
 
+    public static List<BlockPos> runPositions(BlockGetter level, BlockPos pos) {
+        BlockState state = level.getBlockState(pos);
+        if (!(state.getBlock() instanceof DashboardBlock dashboard)) return List.of();
+        BlockPos anchor = dashboard.runAnchor(level, state, pos);
+        BlockState anchorState = level.getBlockState(anchor);
+        int length = dashboard.runLength(level, anchor, anchorState);
+        Direction facing = anchorState.getValue(FACING);
+        List<BlockPos> positions = new ArrayList<>(length);
+        for (int i = 0; i < length; i++) positions.add(anchor.relative(facing.getClockWise(), i));
+        return positions;
+    }
+
     private int freeEndLength(BlockGetter level, BlockPos pos, Direction facing, BooleanProperty towardUs) {
         BlockState state = level.getBlockState(pos);
         if (!matches(state, facing) || state.getValue(towardUs)) return 0;
