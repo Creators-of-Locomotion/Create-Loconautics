@@ -132,7 +132,7 @@ public final class SableTrainClientRegistry {
         boolean fresh = old == null || now - old.tick() > LEAN_STALE_TICKS;
         Quaternionf from = fresh ? new Quaternionf() : old.current();
         if (fresh || turn.angle() < 1.0e-3f) {
-            LoconauticsConstants.LOGGER.warn("[bogeyroll] sub={} lean {} deg {}", subLevelId.toString().substring(0, 8),
+            LoconauticsConstants.TRACE.warn("[bogeyroll] sub={} lean {} deg {}", subLevelId.toString().substring(0, 8),
                     Math.toDegrees(turn.angle()), fresh ? "starts" : "back to level");
         }
         LEANS.put(subLevelId, new Lean(from, turn, now));

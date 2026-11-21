@@ -1,6 +1,7 @@
 package com.lycoris.loconautics.content.analogcontroller;
 
 import com.simibubi.create.content.equipment.wrench.IWrenchable;
+import com.lycoris.loconautics.LoconauticsConstants;
 import com.lycoris.loconautics.common.DyedBlock;
 import com.lycoris.loconautics.common.ShiftPlacement;
 import com.mojang.serialization.MapCodec;
@@ -32,12 +33,8 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class AnalogControllerBlock extends HorizontalDirectionalBlock implements IWrenchable, DyedBlock, EntityBlock {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger("AnalogControllerBlock");
 
     public static final IntegerProperty POWER = BlockStateProperties.POWER;
 
@@ -153,7 +150,7 @@ public class AnalogControllerBlock extends HorizontalDirectionalBlock implements
             be = subLevel.getLevel().getBlockEntity(pos);
             if (be instanceof AnalogControllerBlockEntity ace) return ace;
         }
-        LOGGER.warn("[analog-block] resolveBlockEntity returned null for pos={}", pos);
+        LoconauticsConstants.TRACE.warn("[analog-block] resolveBlockEntity returned null for pos={}", pos);
         return null;
     }
 

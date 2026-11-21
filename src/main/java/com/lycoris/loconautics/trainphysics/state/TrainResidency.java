@@ -95,7 +95,7 @@ public final class TrainResidency {
         if (state.phase == next) {
             return;
         }
-        LoconauticsConstants.LOGGER.warn("[residency] train={} phase {} to {} why={}", shortId(train.id()), state.phase, next, why);
+        LoconauticsConstants.TRACE.warn("[residency] train={} phase {} to {} why={}", shortId(train.id()), state.phase, next, why);
         state.phase = next;
     }
 
@@ -404,7 +404,7 @@ public final class TrainResidency {
             LoconauticsConstants.LOGGER.warn("[residency] body {} of train {} was not found in any of {} candidate "
                     + "holding chunks, pointer {}, bodyChunk {}, holdingKnown={}, misses={}", shortId(subId),
                     shortId(train.id()), candidates.size(), pointer, train.bodyChunk(), holding != null, misses);
-            LoconauticsConstants.LOGGER.warn("[ghostedge] miss train={} candidates={} storedBounds={} grownBounds={}",
+            LoconauticsConstants.TRACE.warn("[ghostedge] miss train={} candidates={} storedBounds={} grownBounds={}",
                     shortId(train.id()), candidates,
                     holding == null ? "none" : boundsText(holding.data().bounds(), 0.0),
                     holding == null ? "none" : boundsText(holding.data().bounds(), 1.0));
@@ -751,7 +751,7 @@ public final class TrainResidency {
             return Target.PROCEED;
         }
         // like a create carriage outside ticking chunks, the body goes back to disk until its spot is active
-        LoconauticsConstants.LOGGER.warn("[ghostedge] embody refused train={} body={} target={} reason=target chunks "
+        LoconauticsConstants.TRACE.warn("[ghostedge] embody refused train={} body={} target={} reason=target chunks "
                 + "not loaded, parked where it is", shortId(train.id()), shortId(sub), v3(origin));
         state.snatchCooldown = SNATCH_RETRY_TICKS;
         setPhase(train, Phase.PARKING, "embody refused, target not loaded");

@@ -1,5 +1,6 @@
 package com.lycoris.loconautics.trainphysics.drive;
 
+import com.lycoris.loconautics.trainphysics.DerailReason;
 import com.lycoris.loconautics.common.impact.TrainKnockback;
 import com.lycoris.loconautics.common.train.TrainStatusChat;
 import com.lycoris.loconautics.trainphysics.debug.GhostConsistTrace;
@@ -76,6 +77,8 @@ public final class SableTrainDriver {
     static final double MAX_SUBSTEP_SLIDE = 2.0;
 
     static final java.util.Set<UUID> DEAD_END = new java.util.HashSet<>();
+    // the sign of the speed that carried the car into the buffer, the drive may only pull it back out
+    static final java.util.Map<UUID, Integer> BUFFER_HELD = new java.util.HashMap<>();
     // block scan is pricey and a buffered car stays ended anyway, so every few substeps is enough
     static final java.util.Map<UUID, Integer> HOP_SCAN = new java.util.HashMap<>();
     static final int HOP_SCAN_STEPS = 5;
@@ -225,7 +228,8 @@ public final class SableTrainDriver {
 
     public static boolean endPending(UUID bodyId) {
         return LoconauticsConfig.DERAIL_AT_TRACK_END.get()
-                && (DEAD_END.contains(bodyId) || DEAD_END_MISS.containsKey(bodyId));
+                && (DEAD_END.contains(bodyId) || DEAD_END_MISS.containsKey(bodyId))
+                && !BUFFER_HELD.containsKey(bodyId);
     }
 
     static void updateDeadEnd(ServerSubLevel bodySub, Car car, SableTrain train) {
@@ -254,6 +258,40 @@ public final class SableTrainDriver {
                 DEAD_END.add(bodyId);
             }
         }
+    }
+
+    // released in the substep that finds the end, a game tick later the glue has already carried the car past it
+    private static boolean ranOffEnd(ServerSubLevel bodySub, Car car, SableTrain train) {
+        UUID bodyId = bodySub.getUniqueId();
+        if (!DEAD_END.contains(bodyId)) {
+            if (BUFFER_HELD.remove(bodyId) != null) {
+                TrainStatusChat.trackOK(train);
+            }
+            return false;
+        }
+        if (BUFFER_HELD.containsKey(bodyId)) {
+            return false;
+        }
+        double speed = train.speed();
+        if (!LoconauticsConfig.DERAIL_AT_TRACK_END.get()
+                || Math.abs(speed) * 20.0 < LoconauticsConfig.BUFFER_STOP_SPEED.get()) {
+            double into = speed != 0.0 ? speed : train.targetSpeed();
+            BUFFER_HELD.put(bodyId, into < 0.0 ? -1 : 1);
+            TrainStatusChat.endOfTrack(train);
+            return false;
+        }
+        if (!TrainDerailment.runOffEnd(train, car)) {
+            return false;
+        }
+        if (train.isDerailed()) {
+            RailGlue.releaseConstraint(bodySub.getUniqueId());
+        }
+        return true;
+    }
+
+    private static boolean pushesIntoBuffer(UUID bodyId, SableTrain train) {
+        Integer into = BUFFER_HELD.get(bodyId);
+        return into != null && train.targetSpeed() * into >= 0.0;
     }
 
     static void driveConstraintGlued(PhysicsPipeline pipeline, ServerSubLevel bodySub,
@@ -289,6 +327,12 @@ public final class SableTrainDriver {
         GhostConsistTrace.noteSubstep(train, bodySub, "glued", dt, slide);
 
         updateDeadEnd(bodySub, car, train);
+        if (ranOffEnd(bodySub, car, train)) {
+            if (!train.isDerailed()) {
+                driveConstraintPivot(pipeline, bodySub, car, dt, train);
+            }
+            return;
+        }
 
         Quaterniond q;
         ref = TrainRailAdvance.bogeyReference(bodySub, car);
@@ -339,13 +383,13 @@ public final class SableTrainDriver {
             }
         } else if (!RailGlue.glueBody(pipeline, bodySub, localAnchor, railPoint, tangent,
                 RailGlue.limitGlueRotation(bodyId, q), RailGlue.GlueMode.RIGID, trackSub)) {
-            train.setDerailed(true, "glue_refused");
+            train.setDerailed(true, DerailReason.GLUE_REFUSED);
             CarriageRoll.noteLock(bodyId, "released");
             return;
         }
         CarriageRoll.noteLock(bodyId, lock);
 
-        if (train.isPowered() || train.servoBrake()) {
+        if ((train.isPowered() || train.servoBrake()) && !pushesIntoBuffer(bodyId, train)) {
             applyTangentialDrive(pipeline, bodySub, trackSub, railPoint, tangent, dt, train);
         }
 
@@ -370,7 +414,7 @@ public final class SableTrainDriver {
         if (!RailGlue.glueBody(pipeline, bodySub, pivotLocal, pivotRail, frame.tangent, frame.up, seats.level().orientation(),
                 ExternalForceDerail.holdDownForStaff(bodySub) ? RailGlue.GlueMode.ROLLING_HELD : RailGlue.GlueMode.ROLLING,
                 trackSub)) {
-            train.setDerailed(true, "glue_refused");
+            train.setDerailed(true, DerailReason.GLUE_REFUSED);
             return RollOutcome.DERAILED;
         }
         if (RailGlue.glueModeOf(bodySub).equals("none")) {
@@ -453,6 +497,9 @@ public final class SableTrainDriver {
         railed.rail().setSpeed(slide);
         railed.rail().tick();
         updateDeadEnd(bodySub, car, train);
+        if (ranOffEnd(bodySub, car, train)) {
+            return;
+        }
 
         railPoint = railed.rail().center();
         tangent = TrainRailAdvance.railTangentOf(railed);
@@ -464,17 +511,26 @@ public final class SableTrainDriver {
         if (!RailGlue.glueBody(pipeline, bodySub, localAnchor, railPoint, tangent,
                 new Quaterniond(bodySub.logicalPose().orientation()), RailGlue.GlueMode.PIVOT,
                 pivotTrackSub)) {
-            train.setDerailed(true, "glue_refused");
+            train.setDerailed(true, DerailReason.GLUE_REFUSED);
             return;
         }
 
         // braking cuts the axle, which reads as unpowered, so a commanded brake has to open this gate too
         boolean runningOff = train.derailedAtTrackEnd();
-        if (!runningOff && (train.isPowered() || train.servoBrake())) {
+        if (!runningOff && (train.isPowered() || train.servoBrake())
+                && !pushesIntoBuffer(bodySub.getUniqueId(), train)) {
             applyTangentialDrive(pipeline, bodySub, pivotTrackSub, railPoint, tangent, dt, train);
         }
+        // only the wheels still on the rail drag, the loose end hangs and scrapes on its own contacts
+        int railedCount = 0;
+        for (SableTrain.Bogey bogey : bogeys) {
+            if (!train.isBogeyOffTrack(bogey.localPos())) {
+                railedCount++;
+            }
+        }
+        double railedShare = (double) railedCount / bogeys.size();
         TrainBrakes.applyResistance(bodySub, pivotTrackSub, railPoint, tangent, dt,
-                train.isBraked() ? train.brakeScale() : TrainBrakes.rollingScale(train, bodySub),
+                railedShare * (train.isBraked() ? train.brakeScale() : TrainBrakes.rollingScale(train, bodySub)),
                 train.isBraked() ? ForceSource.BRAKE : ForceSource.ROLLING);
         if (!runningOff) {
             TrainBrakes.relieveSlopeGravity(bodySub, railPoint, tangent, dt);
@@ -662,6 +718,7 @@ public final class SableTrainDriver {
         java.util.Set<UUID> live = RailGlue.sweepStaleConstraints();
         RailSnap.retain(live);
         DEAD_END.retainAll(live);
+        BUFFER_HELD.keySet().retainAll(live);
         DEAD_END_MISS.keySet().retainAll(live);
         HOP_SCAN.keySet().retainAll(live);
         SeatBlend.retain(live);
@@ -686,6 +743,7 @@ public final class SableTrainDriver {
 
     static void clearCrossState(UUID id) {
         DEAD_END.remove(id);
+        BUFFER_HELD.remove(id);
         DEAD_END_MISS.remove(id);
         HOP_SCAN.remove(id);
         LAST_TRACTION_V.remove(id);

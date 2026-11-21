@@ -36,7 +36,7 @@ final class GhostKnuckles {
             }
             double gap = knuckle.signedHingeGap(sub, partner, mate);
             if (Math.abs(gap - KnuckleTuning.REST_LENGTH) > LoconauticsConstants.GHOSTCREATE_HINGE_TOLERANCE_BLOCKS) {
-                LoconauticsConstants.LOGGER.warn("{} reengage skipped car={} partner={} signedGap={} rest={}",
+                LoconauticsConstants.TRACE.warn("{} reengage skipped car={} partner={} signedGap={} rest={}",
                         LoconauticsConstants.GHOSTCREATE_TAG, shortId(train.id()), shortId(partner.getUniqueId()),
                         String.format(Locale.ROOT, "%.3f", gap), KnuckleTuning.REST_LENGTH);
                 continue;

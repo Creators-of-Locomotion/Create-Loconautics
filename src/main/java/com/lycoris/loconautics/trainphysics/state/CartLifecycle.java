@@ -20,7 +20,7 @@ public final class CartLifecycle {
     private static final int ROUTE_WATCH_NEAR_TICKS = 40;
     private static final int ROUTE_WATCH_FAR_TICKS = 200;
 
-    private static volatile boolean watching;
+    private static volatile boolean watching = com.lycoris.loconautics.config.LoconauticsConfig.DEBUG;
 
     private CartLifecycle() {
     }
@@ -55,7 +55,7 @@ public final class CartLifecycle {
         if (event.moved()) {
             train.beginPoseSettle(TrainResidency.POSE_SETTLE_TICKS);
         }
-        LoconauticsConstants.LOGGER.warn("[cartreset] cart={} event={} held={}", id, event, held);
+        LoconauticsConstants.TRACE.warn("[cartreset] cart={} event={} held={}", id, event, held);
         if (watching) {
             for (String stale : holders(id, subId, true, event)) {
                 LoconauticsConstants.LOGGER.warn("[cartstate] stale {} after {}: {}", stale, event,
@@ -116,7 +116,7 @@ public final class CartLifecycle {
     private static void logRoute(SableTrain train, String when) {
         SableScheduleRuntime runtime = SableScheduleRuntime.get(train.id());
         GlobalStation target = runtime == null ? null : runtime.targetStation();
-        LoconauticsConstants.LOGGER.warn("[relocreset] cart={} {} target={} runtimeState={} heldReason={} "
+        LoconauticsConstants.TRACE.warn("[relocreset] cart={} {} target={} runtimeState={} heldReason={} "
                         + "signalHeld={} signalGroups={} stationState={}", train.id(), when,
                 target == null ? "none" : target.name, runtime == null ? "none" : runtime.state,
                 runtime == null ? "none" : runtime.heldReason(), TrainSignals.isHeld(train.id()),

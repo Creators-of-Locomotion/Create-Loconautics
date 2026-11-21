@@ -8,7 +8,6 @@ import com.lycoris.loconautics.trainphysics.state.CartEvent;
 import com.lycoris.loconautics.trainphysics.state.CartLifecycle;
 import com.lycoris.loconautics.trainphysics.state.SableTrainPersistence;
 import com.lycoris.loconautics.trainphysics.state.SableTrainRegistry;
-import com.lycoris.loconautics.trainphysics.wheels.GhostWheelBodies;
 import dev.ryanhcode.sable.api.physics.PhysicsPipeline;
 import dev.ryanhcode.sable.api.sublevel.SubLevelContainer;
 import dev.ryanhcode.sable.sublevel.ServerSubLevel;
@@ -214,9 +213,8 @@ public final class SubLevelMergeWatcher {
         if (gone == null) {
             return;
         }
-        GhostWheelBodies.releaseAll(gone);
+        CartLifecycle.fire(gone, CartEvent.REMOVED);
         SableTrainRegistry.remove(gone.id());
-        RerailApproach.forget(gone.id());
         if (level.getServer() != null) {
             SableTrainPersistence.unpersist(level.getServer(), gone.id());
         }

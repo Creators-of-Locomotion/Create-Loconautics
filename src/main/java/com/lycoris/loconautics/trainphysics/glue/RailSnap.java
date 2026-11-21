@@ -1,5 +1,6 @@
 package com.lycoris.loconautics.trainphysics.glue;
 
+import com.lycoris.loconautics.trainphysics.DerailReason;
 import com.lycoris.loconautics.LoconauticsConstants;
 import com.lycoris.loconautics.config.LoconauticsConfig;
 import com.lycoris.loconautics.trainphysics.PoseTweak;
@@ -311,7 +312,7 @@ public final class RailSnap {
                 omegaWritten = omegaR * phi > 0.0 ? 0.0 : omegaR;
                 if (!roll.curveClamped) {
                     roll.curveClamped = true;
-                    LoconauticsConstants.LOGGER.warn("[rocktrace] car={} curve clamp phi {} -> {} deg curvature={} speed={}",
+                    LoconauticsConstants.TRACE.warn("[rocktrace] car={} curve clamp phi {} -> {} deg curvature={} speed={}",
                             shortId(sub), f(Math.toDegrees(phi)), f(Math.toDegrees(written)), f(roll.curvature),
                             f(new Vector3d(vel).sub(railVel).dot(frame.tangent)));
                 }
@@ -419,7 +420,8 @@ public final class RailSnap {
         roll.speed = vTan;
         long now = sub.getLevel().getGameTime();
         // unglue uses the measured phi on purpose, the log shows the damped one
-        if (settling || train.isDerailed()) {
+        if (settling || train.isDerailed()
+                || curveGrace && !LoconauticsConfig.DERAIL_ON_CURVE.get() && !ExternalForceDerail.holdsLift(sub, train)) {
             roll.rolledOff.reset();
             roll.liftedOff.reset();
             return;
@@ -427,15 +429,15 @@ public final class RailSnap {
         boolean rolledHeld = roll.rolledOff.update(Math.abs(phi) > unglue, now);
         boolean liftedHeld = roll.liftedOff.update(roll.allBeyondFlange(), now);
         if (rolledHeld) {
-            LoconauticsConstants.LOGGER.warn(
+            LoconauticsConstants.TRACE.warn(
                     "[rocktrace] car={} unglue rolled_off phi={} deg limit={} deg tip={} deg speed={} curvature={} grace={} relief={}",
                     shortId(sub), f(Math.toDegrees(phi)), f(Math.toDegrees(unglue)), f(Math.toDegrees(tip)), f(vTan),
                     f(roll.curvature), curveGrace, f(roll.relief));
-            train.setDerailed(true, "rolled_off");
+            train.setDerailed(true, DerailReason.ROLLED_OFF);
         } else if (liftedHeld) {
-            LoconauticsConstants.LOGGER.warn("[rocktrace] car={} unglue lifted_off wheels={} rise={} curvature={}",
+            LoconauticsConstants.TRACE.warn("[rocktrace] car={} unglue lifted_off wheels={} rise={} curvature={}",
                     shortId(sub), java.util.Arrays.toString(roll.y), f(rise), f(roll.curvature));
-            train.setDerailed(true, "lifted_off");
+            train.setDerailed(true, DerailReason.LIFTED_OFF);
         }
     }
 }

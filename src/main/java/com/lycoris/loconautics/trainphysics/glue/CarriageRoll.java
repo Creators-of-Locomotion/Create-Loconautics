@@ -40,7 +40,7 @@ public final class CarriageRoll {
         public void forget(SableTrain train, UUID subId, CartEvent event) {
             if (clears(event)) {
                 if (STATE.containsKey(subId)) {
-                    LoconauticsConstants.LOGGER.warn("[rocktrace] car={} motion state released by {}",
+                    LoconauticsConstants.TRACE.warn("[rocktrace] car={} motion state released by {}",
                             subId.toString().substring(0, 8), event);
                 }
                 release(subId);
@@ -286,7 +286,7 @@ public final class CarriageRoll {
         Roll roll = of(id);
         String next = reason == null ? "none" : reason;
         if (!next.equals(roll.lock)) {
-            LoconauticsConstants.LOGGER.warn("[rocktrace] car={} lock {} -> {}", id.toString().substring(0, 8),
+            LoconauticsConstants.TRACE.warn("[rocktrace] car={} lock {} -> {}", id.toString().substring(0, 8),
                     roll.lock, next);
             roll.lock = next;
         }

@@ -1,6 +1,7 @@
 package com.lycoris.loconautics.trainphysics.spawn;
 
 import com.lycoris.loconautics.common.sable.SubLevelData;
+import com.lycoris.loconautics.LoconauticsConstants;
 import com.lycoris.loconautics.common.train.TrainStatusChat;
 import com.lycoris.loconautics.trainphysics.SableTrain;
 import com.lycoris.loconautics.trainphysics.state.CartEvent;
@@ -150,11 +151,6 @@ public final class RerailBalance {
         AUTO_RERAILED.put(train.id(), gameTime);
     }
 
-    // a hand placed rerail starts the count over
-    public static void noteManualRerail(SableTrain train) {
-        forget(train.id());
-    }
-
     // the second roll off soon after an auto rerail ends the auto rerails
     private static void noteRolledOff(ServerSubLevel sub, SableTrain train) {
         UUID id = train.id();
@@ -172,6 +168,9 @@ public final class RerailBalance {
         if (md != null && !md.isInvalid()) {
             LOOPING.put(id, new Snapshot(md.getMass(), new Vector3d(md.getCenterOfMass())));
         }
+        LoconauticsConstants.TRACE.warn("[rerailwire] loop guard tripped car {} after {} roll offs, {} ticks after the rerail",
+                id, loops, now - rerailedAt);
+        TrainStatusChat.tooLopsided(train);
         RerailApproach.giveUp(train, now);
     }
 

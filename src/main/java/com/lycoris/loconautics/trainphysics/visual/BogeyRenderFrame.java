@@ -60,7 +60,7 @@ public final class BogeyRenderFrame {
                     (float) walked.forward().y, (float) walked.forward().z), new Vector3f());
             boolean backwards = (axisX ? forwardCar.x : forwardCar.z) < 0.0f;
             if (backwards ? RAILED_BACKWARDS.add(be) : RAILED_BACKWARDS.remove(be)) {
-                LoconauticsConstants.LOGGER.warn("[bogeyroll] bogey={} now faces {} along its axis", be.getBlockPos(),
+                LoconauticsConstants.TRACE.warn("[bogeyroll] bogey={} now faces {} along its axis", be.getBlockPos(),
                         backwards ? "backwards" : "forwards");
             }
             Vector3f up = new Vector3f((float) walked.up().x, (float) walked.up().y, (float) walked.up().z);

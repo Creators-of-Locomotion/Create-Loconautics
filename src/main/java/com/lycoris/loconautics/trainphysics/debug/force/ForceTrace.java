@@ -266,20 +266,20 @@ public final class ForceTrace {
                 shortId(sub.getUniqueId()), f(ledger.tickStart.length()),
                 f(new Vector3d(ledger.tickStart).add(total).length()), f(spin.length()), ledger.tick.size());
         say(sub, head);
-        LoconauticsConstants.LOGGER.warn("[force] ANOMALY {}", head);
+        LoconauticsConstants.TRACE.warn("[force] ANOMALY {}", head);
         List<Entry> worst = new ArrayList<>(ledger.tick);
         worst.sort((a, b) -> Double.compare(b.magnitude(), a.magnitude()));
         for (Entry entry : worst.subList(0, Math.min(DUMP_LINES, worst.size()))) {
             String line = describe(entry);
             say(sub, "  " + line);
-            LoconauticsConstants.LOGGER.warn("[force]   {}", line);
+            LoconauticsConstants.TRACE.warn("[force]   {}", line);
         }
         for (Map.Entry<ForceSource, Vector3d> hit : bySource.entrySet()) {
-            LoconauticsConstants.LOGGER.warn("[force]   total {} dv={} dir={}",
+            LoconauticsConstants.TRACE.warn("[force]   total {} dv={} dir={}",
                     hit.getKey().label(), f(hit.getValue().length()), dir(hit.getValue()));
         }
         if (train != null) {
-            LoconauticsConstants.LOGGER.warn("[force]   train={} derailed={} powered={} braked={} target={} b/s "
+            LoconauticsConstants.TRACE.warn("[force]   train={} derailed={} powered={} braked={} target={} b/s "
                             + "offTrack={}",
                     shortId(train.id()), train.isDerailed(), train.isPowered(), train.isBraked(),
                     f(train.targetSpeed() * 20.0), train.offTrackBogeyCount());

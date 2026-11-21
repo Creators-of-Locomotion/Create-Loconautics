@@ -2,6 +2,7 @@ package com.lycoris.loconautics.config;
 
 import com.lycoris.loconautics.LoconauticsConstants;
 import net.neoforged.fml.ModList;
+import net.neoforged.fml.loading.FMLLoader;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 public final class LoconauticsConfig {
@@ -35,8 +36,11 @@ public final class LoconauticsConfig {
 
     public static ModConfigSpec.DoubleValue DERAIL_MAX_TILT_DEGREES;
     public static ModConfigSpec.BooleanValue DERAIL_ON_EXTERNAL_FORCE;
+    public static ModConfigSpec.DoubleValue DERAIL_EXTERNAL_LIFT_RATIO;
+    public static ModConfigSpec.DoubleValue DERAIL_STAFF_LIFT_RATIO;
     public static ModConfigSpec.BooleanValue DERAIL_ON_CURVE;
     public static ModConfigSpec.BooleanValue DERAIL_AT_TRACK_END;
+    public static ModConfigSpec.DoubleValue BUFFER_STOP_SPEED;
     public static ModConfigSpec.DoubleValue DERAILED_SLIP_FACTOR;
     public static ModConfigSpec.DoubleValue DERAIL_COLLISION_SPEED;
     public static ModConfigSpec.BooleanValue DERAIL_COUPLED_COLLISION;
@@ -88,7 +92,7 @@ public final class LoconauticsConfig {
     public static ModConfigSpec.DoubleValue EXPLOSION_SUBLEVEL_PUSH_STRENGTH;
     public static ModConfigSpec.DoubleValue EXPLOSION_SUBLEVEL_PUSH_UPWARD;
 
-    public static final boolean DEBUG = false;
+    public static final boolean DEBUG = !FMLLoader.isProduction();
 
     public static ModConfigSpec.BooleanValue CBC_DERAIL_ENABLED;
     public static ModConfigSpec.BooleanValue CBC_RECOIL_ENABLED;
@@ -243,6 +247,16 @@ public final class LoconauticsConfig {
                 .translation(TRANSLATION_PREFIX + "track.derailment.derailOnExternalForce")
                 .define("derailOnExternalForce", true);
 
+        DERAIL_EXTERNAL_LIFT_RATIO = BUILDER
+                .comment("How many times its own weight an upward pull such as a rope must lift a Carriage with, for 5 ticks, before it leaves the rail.")
+                .translation(TRANSLATION_PREFIX + "track.derailment.externalLiftRatio")
+                .defineInRange("externalLiftRatio", 100.0, 1.0, 1000.0);
+
+        DERAIL_STAFF_LIFT_RATIO = BUILDER
+                .comment("The same limit while the Physics Staff drags a Carriage. At 0 the Physics Staff never lifts a Carriage off the rail.")
+                .translation(TRANSLATION_PREFIX + "track.derailment.staffLiftRatio")
+                .defineInRange("staffLiftRatio", 25.0, 0.0, 1000.0);
+
         DERAIL_ON_CURVE = BUILDER
                 .comment("Off, a car leans outward on its springs in a curve and its wheels stay on the rail. On, the wheels lift from the real overturning force and a car taken too fast tips off.")
                 .define("derailOnCurve", false);
@@ -250,6 +264,11 @@ public final class LoconauticsConfig {
         DERAIL_AT_TRACK_END = BUILDER
                 .translation(TRANSLATION_PREFIX + "track.derailment.derailAtTrackEnd")
                 .define("derailAtTrackEnd", true);
+
+        BUFFER_STOP_SPEED = BUILDER
+                .comment("A Carriage reaching a track end slower than this, in blocks per second, stops at the end like a Create Train. Faster, it runs off.")
+                .translation(TRANSLATION_PREFIX + "track.derailment.bufferStopSpeed")
+                .defineInRange("bufferStopSpeed", 2.0, 0.0, 100.0);
 
         DERAILED_SLIP_FACTOR = BUILDER
                 .translation(TRANSLATION_PREFIX + "track.derailment.derailedSlipFactor")

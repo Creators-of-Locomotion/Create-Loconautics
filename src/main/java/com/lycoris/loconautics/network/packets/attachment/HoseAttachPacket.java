@@ -136,7 +136,7 @@ public record HoseAttachPacket(BlockPos winchPos, @Nullable UUID farSubLevelId, 
     }
 
     private static void reject(ServerPlayer player, String reason, String detail) {
-        LoconauticsConstants.LOGGER.warn("[hoseattach] refused, {}", detail);
+        LoconauticsConstants.TRACE.warn("[hoseattach] refused, {}", detail);
         player.displayClientMessage(
                 net.minecraft.network.chat.Component.translatable("message.loconautics.hose.failed." + reason), true);
     }

@@ -1,5 +1,6 @@
 package com.lycoris.loconautics.trainphysics.drive;
 
+import com.lycoris.loconautics.trainphysics.DerailReason;
 import com.lycoris.loconautics.trainphysics.glue.CarriageRoll;
 import com.lycoris.loconautics.trainphysics.glue.RailGlue;
 import com.lycoris.loconautics.trainphysics.debug.force.ForceSource;
@@ -35,7 +36,6 @@ import static com.lycoris.loconautics.foundation.LogFormat.shortId;
 import static com.lycoris.loconautics.foundation.math.VecMath.perpendicularUp;
 
 public final class ExternalForceDerail {
-    static final double ROLLING_LIFT_RATIO = 25.0;
 
 
     private ExternalForceDerail() {
@@ -55,6 +55,7 @@ public final class ExternalForceDerail {
             PLUNGER_PEAK.remove(subId);
             PLUNGER_PULL.remove(subId);
             LIFTED.remove(train.id());
+            PLUNGER_LIFTED.remove(train.id());
             REGRIP.remove(train.id());
             RELEASED.remove(train.id());
         }
@@ -71,6 +72,7 @@ public final class ExternalForceDerail {
             note(out, "plungerPeak", PLUNGER_PEAK.containsKey(subId));
             note(out, "plungerPull", PLUNGER_PULL.containsKey(subId));
             note(out, "lifted", LIFTED.containsKey(trainId));
+            note(out, "plungerLifted", PLUNGER_LIFTED.containsKey(trainId));
             note(out, "regrip", REGRIP.containsKey(trainId));
             note(out, "released", RELEASED.containsKey(trainId));
             return out.toString().trim();
@@ -90,7 +92,6 @@ public final class ExternalForceDerail {
     };
 
     private static final int LIFT_TICKS = 5;
-    private static final double LIFT_RATIO = 100.0;
     private static final double NOISE = 1.0e-6;
     private static final long STALE_TICKS = 1;
     private static final int REGRIP_TICKS = 40;
@@ -112,9 +113,13 @@ public final class ExternalForceDerail {
     private static final Map<UUID, Push> PLUNGER_PEAK = new HashMap<>();
     private static final Map<UUID, Push> PEAK = new HashMap<>();
     private static final Map<UUID, Integer> LIFTED = new HashMap<>();
+    private static final Map<UUID, Integer> PLUNGER_LIFTED = new HashMap<>();
     private static final Map<UUID, Long> REGRIP = new HashMap<>();
     private static final Map<UUID, Long> TRACED = new HashMap<>();
-    private static final Map<UUID, Long> RELEASED = new HashMap<>();
+    private static final Map<UUID, Release> RELEASED = new HashMap<>();
+
+    private record Release(long until, Vector3d linear, Vector3d angular) {
+    }
     private static final int RELEASE_TICKS = 10;
     private static final double RELEASE_SPEED = 4.0;
     private static final double RELEASE_SPIN = 2.0;
@@ -152,6 +157,11 @@ public final class ExternalForceDerail {
         }
         long now = sub.getLevel().getGameTime();
         boolean dragged = staffDrags(sub);
+        Vector3d[] ref = TrainRailAdvance.bogeyReference(car);
+        Vector3d tangent = ref != null ? ref[1] : SableTrainDriver.railTangent(car);
+        if (tangent != null) {
+            samplePlunger(sub, train, tangent, now);
+        }
         if (CarriageRoll.isRolling(sub.getUniqueId()) && (!dragged || liftRatio(sub) <= 0.0)) {
             PEAK.remove(sub.getUniqueId());
             traceSkip(sub, train, "rolling car, the wheel hinge owns the lift", now);
@@ -163,7 +173,7 @@ public final class ExternalForceDerail {
             return;
         }
         if (staffHolds(sub) && !dragged) {
-            forget(train.id());
+            clearLiftCount(train.id());
             PEAK.remove(sub.getUniqueId());
             traceSkip(sub, train, "held by the physics staff", now);
             return;
@@ -173,15 +183,12 @@ public final class ExternalForceDerail {
             traceSkip(sub, train, "no mass", now);
             return;
         }
-        Vector3d[] ref = TrainRailAdvance.bogeyReference(car);
-        Vector3d tangent = ref != null ? ref[1] : SableTrainDriver.railTangent(car);
         if (tangent == null) {
             traceSkip(sub, train, "no rail tangent", now);
             return;
         }
         Vector3d up = perpendicularUp(tangent);
         Vector3d where = ref != null ? ref[0] : SubLevelData.position(sub);
-        samplePlunger(sub, train, tangent, now);
 
         double lift = 0.0;
         Vector3d push = queuedPush(sub);
@@ -201,7 +208,8 @@ public final class ExternalForceDerail {
         }
 
         double gravity = DimensionPhysicsData.getGravity(sub.getLevel()).length();
-        if (lift > gravity * liftRatio(sub)) {
+        double ratio = liftRatio(sub);
+        if (ratio > 0.0 && lift > gravity * ratio) {
             REGRIP.put(train.id(), now + REGRIP_TICKS);
         }
         Push seen = PEAK.get(sub.getUniqueId());
@@ -244,12 +252,13 @@ public final class ExternalForceDerail {
         REGRIP.put(train.id(), now + REGRIP_TICKS);
     }
 
+    // only what the rope stored against the glue is taken off, the speed the car already had stays
     public static void dampRelease(ServerSubLevel sub, SableTrain train) {
-        Long until = RELEASED.get(train.id());
-        if (until == null) {
+        Release release = RELEASED.get(train.id());
+        if (release == null) {
             return;
         }
-        if (sub.getLevel().getGameTime() > until) {
+        if (sub.getLevel().getGameTime() > release.until()) {
             RELEASED.remove(train.id());
             return;
         }
@@ -257,8 +266,8 @@ public final class ExternalForceDerail {
         if (handle == null) {
             return;
         }
-        Vector3d slowLinear = overspill(handle.getLinearVelocity(new Vector3d()), RELEASE_SPEED);
-        Vector3d slowAngular = overspill(handle.getAngularVelocity(new Vector3d()), RELEASE_SPIN);
+        Vector3d slowLinear = overspill(handle.getLinearVelocity(new Vector3d()).sub(release.linear()), RELEASE_SPEED);
+        Vector3d slowAngular = overspill(handle.getAngularVelocity(new Vector3d()).sub(release.angular()), RELEASE_SPIN);
         if (slowLinear.lengthSquared() > NOISE || slowAngular.lengthSquared() > NOISE) {
             handle.addLinearAndAngularVelocity(slowLinear, slowAngular);
         }
@@ -273,9 +282,10 @@ public final class ExternalForceDerail {
         return PEAK.containsKey(sub.getUniqueId()) || LIFTED.containsKey(train.id());
     }
 
-    // a rolling car leaves its height free, so while the staff drags it the guide holds it down and the lift guard has a force to read
+    // a rolling car leaves its height free, so while the staff drags it the guide holds it down and the lift guard has a force to read.
+    // with the lift guard off it still holds, or the drag alone lifts the wheels past the flange and the roll check throws the car off
     static boolean holdDownForStaff(ServerSubLevel sub) {
-        return LoconauticsConfig.DERAIL_ON_EXTERNAL_FORCE.get() && staffDrags(sub);
+        return staffDrags(sub);
     }
 
     static boolean staffDrags(ServerSubLevel sub) {
@@ -374,46 +384,66 @@ public final class ExternalForceDerail {
 
     static boolean check(SableTrain train, ServerSubLevel sub) {
         Push plunger = PLUNGER_PEAK.remove(sub.getUniqueId());
-        if (plunger != null && !TrainPropulsion.isMonorail(train)
-                && sub.getLevel().getGameTime() - plunger.gameTime() <= STALE_TICKS
-                && checkLift(train, plunger, DimensionPhysicsData.getGravity(sub.getLevel()).length() * PLUNGER_RATIO)) {
+        if (plunger == null || TrainPropulsion.isMonorail(train)
+                || sub.getLevel().getGameTime() - plunger.gameTime() > STALE_TICKS) {
+            PLUNGER_LIFTED.remove(train.id());
+        } else if (checkLift(PLUNGER_LIFTED, train, plunger,
+                DimensionPhysicsData.getGravity(sub.getLevel()).length() * PLUNGER_RATIO)) {
             PEAK.remove(sub.getUniqueId());
+            noteRelease(sub, train);
             return true;
         }
         Push push = PEAK.remove(sub.getUniqueId());
         if (push == null || TrainPropulsion.isMonorail(train)
                 || sub.getLevel().getGameTime() - push.gameTime() > STALE_TICKS) {
-            forget(train.id());
-            return false;
-        }
-        double gravity = DimensionPhysicsData.getGravity(sub.getLevel()).length();
-        return checkLift(train, push, gravity * liftRatio(sub));
-    }
-
-    private static double liftRatio(ServerSubLevel sub) {
-        return CarriageRoll.isRolling(sub.getUniqueId()) ? ROLLING_LIFT_RATIO : LIFT_RATIO;
-    }
-
-    private static boolean checkLift(SableTrain train, Push push, double limit) {
-        if (push.lift() <= limit) {
             LIFTED.remove(train.id());
             return false;
         }
-        if (LIFTED.merge(train.id(), 1, Integer::sum) < LIFT_TICKS) {
+        double ratio = liftRatio(sub);
+        if (ratio <= 0.0) {
+            LIFTED.remove(train.id());
             return false;
         }
-        forget(train.id());
-        train.setDerailed(true, "lifted_off");
-        if (train.level() != null) {
-            RELEASED.put(train.id(), train.level().getGameTime() + RELEASE_TICKS);
+        double gravity = DimensionPhysicsData.getGravity(sub.getLevel()).length();
+        if (!checkLift(LIFTED, train, push, gravity * ratio)) {
+            return false;
         }
+        noteRelease(sub, train);
+        return true;
+    }
+
+    private static void noteRelease(ServerSubLevel sub, SableTrain train) {
+        RigidBodyHandle handle = RigidBodyHandle.of(sub);
+        if (handle == null) {
+            return;
+        }
+        RELEASED.put(train.id(), new Release(sub.getLevel().getGameTime() + RELEASE_TICKS,
+                handle.getLinearVelocity(new Vector3d()), handle.getAngularVelocity(new Vector3d())));
+    }
+
+    private static double liftRatio(ServerSubLevel sub) {
+        return staffDrags(sub) ? LoconauticsConfig.DERAIL_STAFF_LIFT_RATIO.get()
+                : LoconauticsConfig.DERAIL_EXTERNAL_LIFT_RATIO.get();
+    }
+
+    private static boolean checkLift(Map<UUID, Integer> counter, SableTrain train, Push push, double limit) {
+        if (push.lift() <= limit) {
+            counter.remove(train.id());
+            return false;
+        }
+        if (counter.merge(train.id(), 1, Integer::sum) < LIFT_TICKS) {
+            return false;
+        }
+        clearLiftCount(train.id());
+        train.setDerailed(true, DerailReason.LIFTED_OFF);
         LoconauticsConstants.LOGGER.info("[sabletrain] car {} was lifted off the rail, {} b/s2 up against {}",
                 train.id(), SableTrainDriver.f(push.lift()), SableTrainDriver.f(limit));
         return true;
     }
 
-    private static void forget(UUID trainId) {
+    private static void clearLiftCount(UUID trainId) {
         LIFTED.remove(trainId);
+        PLUNGER_LIFTED.remove(trainId);
     }
 
     static void retain(Set<UUID> liveTrains, Set<UUID> liveSubLevels) {
@@ -421,6 +451,7 @@ public final class ExternalForceDerail {
         PLUNGER_PEAK.keySet().retainAll(liveSubLevels);
         PLUNGER_PULL.keySet().retainAll(liveSubLevels);
         LIFTED.keySet().retainAll(liveTrains);
+        PLUNGER_LIFTED.keySet().retainAll(liveTrains);
         REGRIP.keySet().retainAll(liveTrains);
         TRACED.keySet().retainAll(liveSubLevels);
         RELEASED.keySet().retainAll(liveTrains);

@@ -3,6 +3,7 @@ package com.lycoris.loconautics;
 import com.mojang.logging.LogUtils;
 import net.minecraft.resources.ResourceLocation;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class LoconauticsConstants {
 
@@ -12,6 +13,8 @@ public final class LoconauticsConstants {
     public static final String MOD_ID = "loconautics";
 
     public static final Logger LOGGER = LogUtils.getLogger();
+
+    public static final Logger TRACE = LoggerFactory.getLogger("com.lycoris.loconautics.trace");
 
     public static final int NETWORK_VERSION = 85;
 

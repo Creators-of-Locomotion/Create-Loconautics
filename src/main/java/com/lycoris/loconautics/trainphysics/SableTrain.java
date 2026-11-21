@@ -55,7 +55,7 @@ public final class SableTrain {
     private double handbrake;
     private boolean powered;
     private boolean derailed;
-    private String derailReason = "";
+    private DerailReason derailReason;
     private Residency residency = Residency.EMBODIED;
     // only readable while the body is live, so it is grabbed at unload and persisted, without it a ghost cannot find its body again
     private GlobalSavedSubLevelPointer bodyPointer;
@@ -137,7 +137,6 @@ public final class SableTrain {
     }
 
     public void reseat(RailCarriage newCarriage, List<Bogey> newBogeys) {
-        traceBogeyDrop("reseat", newBogeys.size());
         swapRails(newCarriage, newBogeys, car.localLead(), car.localTrail());
     }
 
@@ -146,10 +145,10 @@ public final class SableTrain {
         // a bogey that left with a split island would otherwise stay flagged here, smoking and failing to rerail forever
         offTrackBogeys.removeIf(pos -> !hasBogeyAt(newBogeys, pos));
         offTrackSince.keySet().removeIf(pos -> !hasBogeyAt(newBogeys, pos));
+        dropReasonWhenRailed();
     }
 
     private void relocate(RailCarriage newCarriage, List<Bogey> newBogeys, Vector3dc lead, Vector3dc trail) {
-        traceBogeyDrop("relocate", newBogeys.size());
         swapRails(newCarriage, newBogeys, lead, trail);
         this.speed = 0.0;
         this.targetSpeed = 0.0;
@@ -159,26 +158,15 @@ public final class SableTrain {
         this.currentStation = null;
     }
 
-    private void traceBogeyDrop(String how, int newCount) {
-        if (car == null || newCount >= car.bogeys().size()) {
-            return;
-        }
-        StringBuilder callers = new StringBuilder();
-        StackWalker.getInstance().walk(frames -> frames.skip(2).limit(5).map(f -> f.getClassName()
-                .substring(f.getClassName().lastIndexOf('.') + 1) + "." + f.getMethodName() + ":" + f.getLineNumber())
-                .toList()).forEach(s -> callers.append(s).append(" < "));
-    }
-
     public void replaceCar(Car newCar) {
-        traceBogeyDrop("replaceCar", newCar.bogeys().size());
         this.car = newCar;
     }
 
     public void setBogeys(List<Bogey> newBogeys) {
-        traceBogeyDrop("setBogeys", newBogeys.size());
         this.car = new Car(car.subLevelId(), car.carriage(), newBogeys, car.localLead(), car.localTrail());
         offTrackBogeys.removeIf(pos -> !hasBogeyAt(newBogeys, pos));
         bogeyFront.keySet().removeIf(pos -> !hasBogeyAt(newBogeys, pos));
+        dropReasonWhenRailed();
     }
 
     private static boolean hasBogeyAt(List<Bogey> bogeys, BlockPos localPos) {
@@ -259,17 +247,13 @@ public final class SableTrain {
         return car != null && car.carriage() == null;
     }
 
-    public void setDerailed(boolean derailed) {
-        setDerailed(derailed, "track_missing");
-    }
-
-    public void setDerailed(boolean derailed, String statusKey) {
+    public void setDerailed(boolean derailed, DerailReason reason) {
         if (!setDerailedQuiet(derailed)) {
             return;
         }
-        derailReason = derailed ? statusKey : "";
+        derailReason = derailed ? reason : null;
         if (derailed) {
-            TrainStatusChat.derailed(this, statusKey);
+            TrainStatusChat.derailed(this, reason.statusKey());
             com.lycoris.loconautics.trainphysics.state.CartLifecycle.fire(this,
                     com.lycoris.loconautics.trainphysics.state.CartEvent.DERAILED);
         } else {
@@ -278,16 +262,16 @@ public final class SableTrain {
         CcEvents.queue(this, derailed ? "train_derailed" : "train_rerailed");
     }
 
-    public void setDerailReason(String reason) {
+    public void setDerailReason(DerailReason reason) {
         derailReason = reason;
     }
 
     public boolean derailedAtTrackEnd() {
-        return "end_of_track".equals(derailReason);
+        return derailReason == DerailReason.END_OF_TRACK;
     }
 
     public boolean derailedByLift() {
-        return "rolled_off".equals(derailReason) || "lifted_off".equals(derailReason);
+        return derailReason == DerailReason.ROLLED_OFF || derailReason == DerailReason.LIFTED_OFF;
     }
 
     public boolean setDerailedQuiet(boolean derailed) {
@@ -323,11 +307,6 @@ public final class SableTrain {
         return offTrackBogeys.add(localPos);
     }
 
-    public void markBogeyAwaitingRail(BlockPos localPos) {
-        offTrackSince.remove(localPos);
-        offTrackBogeys.add(localPos);
-    }
-
     public boolean bogeyRerailReady(BlockPos localPos, int cooldownTicks) {
         Long since = offTrackSince.get(localPos);
         return since == null || level == null || level.getGameTime() - since >= cooldownTicks;
@@ -336,10 +315,20 @@ public final class SableTrain {
 
     public void clearOffTrackBogeys() {
         offTrackBogeys.clear();
+        dropReasonWhenRailed();
     }
 
     public boolean clearOffTrackBogey(BlockPos localPos) {
-        return offTrackBogeys.remove(localPos);
+        boolean removed = offTrackBogeys.remove(localPos);
+        dropReasonWhenRailed();
+        return removed;
+    }
+
+    // a reason left over from a bogey that already landed would brand the next loose one with it
+    private void dropReasonWhenRailed() {
+        if (!derailed && offTrackBogeys.isEmpty()) {
+            derailReason = null;
+        }
     }
 
     public net.minecraft.core.Direction bogeyFrontOverride(BlockPos localPos) {

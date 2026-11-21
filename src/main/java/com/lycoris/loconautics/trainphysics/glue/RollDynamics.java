@@ -178,7 +178,7 @@ public final class RollDynamics {
             double tipGravity = Math.max(0.0, -gravity(s).dot(frame.up));
             double tipSpeed = Math.sqrt(tipGravity * Math.max(0.0, frame.half - Math.abs(roll.offset))
                     / (Math.abs(curvature) * Math.max(roll.height, 0.05)));
-            LoconauticsConstants.LOGGER.warn("[rocktrace] car={} curve open k={} speed={} tipSpeed={} mode={}",
+            LoconauticsConstants.TRACE.warn("[rocktrace] car={} curve open k={} speed={} tipSpeed={} mode={}",
                     shortId(s.sub().getUniqueId()), f(curvature), f(speed), f(tipSpeed),
                     derailOnCurve ? "real overturn" : "lean out");
         }

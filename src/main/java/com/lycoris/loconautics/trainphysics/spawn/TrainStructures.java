@@ -14,7 +14,8 @@ import com.lycoris.loconautics.trainphysics.drive.SableTrainDriver;
 import com.lycoris.loconautics.trainphysics.rail.RailPick;
 import com.lycoris.loconautics.trainphysics.state.SableTrainPersistence;
 import com.lycoris.loconautics.trainphysics.state.SableTrainRegistry;
-import com.lycoris.loconautics.trainphysics.wheels.GhostWheelBodies;
+import com.lycoris.loconautics.trainphysics.state.CartEvent;
+import com.lycoris.loconautics.trainphysics.state.CartLifecycle;
 import com.simibubi.create.AllBlocks;
 import com.simibubi.create.content.trains.graph.TrackGraphLocation;
 import com.simibubi.create.content.trains.track.ITrackBlock;
@@ -88,9 +89,8 @@ public final class TrainStructures {
 
     public static void removeBody(ServerLevel level, SableTrain train) {
         UUID subId = train.car().subLevelId();
-        GhostWheelBodies.releaseAll(train);
+        CartLifecycle.fire(train, CartEvent.REMOVED);
         SableTrainRegistry.remove(train.id());
-        RerailApproach.forget(train.id());
         SableTrainPersistence.unpersist(level.getServer(), train.id());
         SableTrainSyncPacket.broadcastRemoval(subId);
         ServerSubLevel sub = SubLevelData.resolve(level, subId);

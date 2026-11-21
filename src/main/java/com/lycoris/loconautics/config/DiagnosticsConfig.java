@@ -25,7 +25,7 @@ public final class DiagnosticsConfig {
         }
 
         private void define(ModConfigSpec.Builder builder) {
-            value = builder.define(key, alwaysOn);
+            value = builder.define(key, true);
         }
 
         public boolean enabled() {

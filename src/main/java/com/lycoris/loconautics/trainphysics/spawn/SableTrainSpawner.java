@@ -1,5 +1,6 @@
 package com.lycoris.loconautics.trainphysics.spawn;
 
+import com.lycoris.loconautics.trainphysics.DerailReason;
 import com.lycoris.loconautics.LoconauticsConstants;
 import com.lycoris.loconautics.common.SubLevelAssemblyUtil;
 import com.lycoris.loconautics.common.sable.SableTeleportation;
@@ -126,7 +127,7 @@ public final class SableTrainSpawner {
                                         @Nullable String name) {
         TrackHit track = findRailBelow(level, anchor, railDir);
         if (track == null) {
-            LoconauticsConstants.LOGGER.info("[sabletrain] assemble ABORT: no rail under {}", anchor);
+            LoconauticsConstants.LOGGER.warn("[sabletrain] assemble ABORT: no rail under {}", anchor);
             return null;
         }
         int railY = track.railY();
@@ -134,18 +135,18 @@ public final class SableTrainSpawner {
                 (from, fromState, cand, candState, dir) ->
                         cand.getY() > railY && !(candState.getBlock() instanceof ITrackBlock));
         if (gather.assemblyState() != GatherResult.State.SUCCESS || gather.blocks() == null) {
-            LoconauticsConstants.LOGGER.info("[sabletrain] assemble ABORT: gather at {} came back {}", anchor,
+            LoconauticsConstants.LOGGER.warn("[sabletrain] assemble ABORT: gather at {} came back {}", anchor,
                     gather.assemblyState());
             return null;
         }
         if (!hasBogey(level, gather.boundingBox(), railY)) {
-            LoconauticsConstants.LOGGER.info("[sabletrain] assemble ABORT: no bogey in the {} blocks gathered at {}",
+            LoconauticsConstants.LOGGER.warn("[sabletrain] assemble ABORT: no bogey in the {} blocks gathered at {}",
                     gather.blocks().size(), anchor);
             return null;
         }
         SableTrain.Car car = seatCar(level, gather.blocks(), gather.boundingBox(), railDir, anchor);
         if (car == null) {
-            LoconauticsConstants.LOGGER.info("[sabletrain] assemble ABORT: seatCar refused {} blocks at {}",
+            LoconauticsConstants.LOGGER.warn("[sabletrain] assemble ABORT: seatCar refused {} blocks at {}",
                     gather.blocks().size(), anchor);
             return null;
         }
@@ -331,7 +332,7 @@ public final class SableTrainSpawner {
     }
 
     public static void remove(SableTrain train) {
-        com.lycoris.loconautics.trainphysics.wheels.GhostWheelBodies.releaseAll(train);
+        CartLifecycle.fire(train, CartEvent.REMOVED);
         ServerSubLevelContainer container = SubLevelContainer.getContainer(train.level());
         if (container != null) {
             SableTrain.Car car = train.car();
@@ -573,7 +574,7 @@ public final class SableTrainSpawner {
             return false;
         }
         // squaring up rebuilds ghost wheels, so they get stripped after, not before
-        com.lycoris.loconautics.trainphysics.wheels.GhostWheelBodies.releaseAll(train);
+        CartLifecycle.fire(train, CartEvent.REMOVED);
 
         BlockPos anchor = sub.getPlot().getCenterBlock();
         ServerSubLevel host = train.car().carriage() == null ? null : train.car().carriage().activeSub();
@@ -590,7 +591,6 @@ public final class SableTrainSpawner {
         SimAssemblyHelper.disassembleSubLevel(level, sub, anchor, goal, rotation, true);
 
         SableTrainRegistry.remove(train.id());
-        RerailApproach.forget(train.id());
         SableTrainPersistence.unpersist(level.getServer(), train.id());
         SableTrainSyncPacket.broadcastRemoval(subId);
         // emptying the plot marks the husk removed but leaves it ticking, and a pending heat map split then crashes
@@ -712,7 +712,7 @@ public final class SableTrainSpawner {
             msg(player, "that cart is already off the rails");
             return 0;
         }
-        best.setDerailed(true);
+        best.setDerailed(true, DerailReason.COMMAND);
         SableTrainPersistence.persist(best);
         SableTrainSyncPacket.broadcast(best);
         msg(player, "derailed cart " + best.id().toString().substring(0, 8) + ", released from the rail");
@@ -735,7 +735,7 @@ public final class SableTrainSpawner {
         if (!speak) {
             return;
         }
-        LoconauticsConstants.LOGGER.info("[sabletrain] relocate ABORT: {}", reason);
+        LoconauticsConstants.LOGGER.warn("[sabletrain] relocate ABORT: {}", reason);
         if (say != null) {
             msg(player, say);
         }
@@ -960,7 +960,7 @@ public final class SableTrainSpawner {
             prev = car;
             TrackGraphLocation carLoc = locationBack(front, upNormal, lookAngle, cursor, true);
             if (carLoc == null) {
-                LoconauticsConstants.LOGGER.info(
+                LoconauticsConstants.LOGGER.warn(
                         "[sabletrain] chain ABORT: track too short, car {} of {} ran off the rail at cursor {}",
                         spots.size() + 1, cars.size(), cursor);
                 return null;
@@ -1203,7 +1203,7 @@ public final class SableTrainSpawner {
         }
 
         train.relocate(carriage, bogeys);
-        train.setDerailed(false);
+        train.setDerailed(false, null);
         train.setSpeed(0.0);
         train.setTargetSpeed(0.0);
         train.setStationState(SableTrain.StationState.RUNNING);
@@ -1283,14 +1283,14 @@ public final class SableTrainSpawner {
         for (int i : order) {
             TrackGraphLocation spot = locationBack(loc, upNormal, lookAngle, -offsets[i]);
             if (spot == null) {
-                LoconauticsConstants.LOGGER.info(
+                LoconauticsConstants.LOGGER.warn(
                         "[sabletrain] relocate ABORT: track runs out {} blocks from the click, bogey {} of {}",
                         String.format("%.2f", offsets[i]), bogeys.size() + 1, n);
                 return null;
             }
             RailCarriage rail = RailCarriage.at(spot, upNormal, 1.0, 0.0);
             if (rail == null) {
-                LoconauticsConstants.LOGGER.info("[sabletrain] relocate ABORT: no follower seat for bogey {} of {}",
+                LoconauticsConstants.LOGGER.warn("[sabletrain] relocate ABORT: no follower seat for bogey {} of {}",
                         bogeys.size() + 1, n);
                 return null;
             }
@@ -1386,6 +1386,26 @@ public final class SableTrainSpawner {
         out.edge = net.createmod.catnip.data.Couple.create(p.node1.getLocation(), p.node2.getLocation());
         out.position = p.position;
         return out;
+    }
+
+    public static boolean trackUnderRailedBogey(SableTrain train, ServerSubLevel sub) {
+        Vec3 fwd = train.car().carriage().forward();
+        if (train.car().bogeys().isEmpty()) {
+            Vector3dc p = sub.logicalPose().position();
+            return findRailBelow(train.level(), BlockPos.containing(p.x(), p.y(), p.z()), fwd) != null;
+        }
+        for (SableTrain.Bogey bogey : train.car().bogeys()) {
+            if (train.isBogeyOffTrack(bogey.localPos())) {
+                continue;
+            }
+            BlockPos at = sub.getPlot().getCenterBlock().offset(bogey.localPos());
+            Vector3d w = sub.logicalPose().transformPosition(
+                    new Vector3d(at.getX() + 0.5, at.getY() + 0.5, at.getZ() + 0.5), new Vector3d());
+            if (findRailBelow(train.level(), BlockPos.containing(w.x, w.y, w.z), fwd) != null) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static boolean reseatOnRail(SableTrain train, ServerSubLevel sub) {
@@ -1494,11 +1514,23 @@ public final class SableTrainSpawner {
                 updated.add(bogey);
                 continue;
             }
+            SableTrain.Bogey landed = new SableTrain.Bogey(bogey.localPos(), rail);
+            RerailApproach.LandingGap landGap = RerailApproach.landingGap(sub, train, landed);
+            if (landGap == null || !landGap.gentle()) {
+                if (level.getGameTime() % 20L == 0L) {
+                    LoconauticsConstants.TRACE.warn("[rerailwire] bogey landing refused car {} bogey {} gap {}",
+                            train.id(), bogey.localPos().toShortString(), landGap);
+                }
+                updated.add(bogey);
+                continue;
+            }
             if (!GhostWheelBodies.alignToRail(train, bogey.localPos(), rail.chordFrameQuaternion())) {
                 updated.add(bogey);
                 continue;
             }
-            updated.add(new SableTrain.Bogey(bogey.localPos(), rail));
+            LoconauticsConstants.TRACE.warn("[rerailwire] bogey landed car {} bogey {} gap {}", train.id(),
+                    bogey.localPos().toShortString(), landGap);
+            updated.add(landed);
             train.clearOffTrackBogey(bogey.localPos());
             anyRecovered = true;
             LoconauticsConstants.LOGGER.info("[sabletrain] car {} bogey {} found rail again, back on track",

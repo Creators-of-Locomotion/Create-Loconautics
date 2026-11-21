@@ -13,6 +13,7 @@ import org.apache.logging.log4j.core.filter.AbstractFilter;
 public final class DebugLogFilter extends AbstractFilter {
 
     private static final String PACKAGE = "com.lycoris.loconautics";
+    private static final String TRACE = PACKAGE + ".trace";
 
     private DebugLogFilter() {
     }
@@ -32,9 +33,12 @@ public final class DebugLogFilter extends AbstractFilter {
     @Override
     public Result filter(LogEvent event) {
         String name = event.getLoggerName();
-        if (name == null || !name.startsWith(PACKAGE) || event.getLevel().isMoreSpecificThan(Level.WARN)) {
+        if (name == null || !name.startsWith(PACKAGE) || DiagnosticsConfig.debugOutput()) {
             return Result.NEUTRAL;
         }
-        return DiagnosticsConfig.debugOutput() ? Result.NEUTRAL : Result.DENY;
+        if (name.startsWith(TRACE)) {
+            return Result.DENY;
+        }
+        return event.getLevel().isMoreSpecificThan(Level.WARN) ? Result.NEUTRAL : Result.DENY;
     }
 }

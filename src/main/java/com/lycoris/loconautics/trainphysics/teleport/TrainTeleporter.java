@@ -1,5 +1,6 @@
 package com.lycoris.loconautics.trainphysics.teleport;
 
+import com.lycoris.loconautics.trainphysics.DerailReason;
 import com.lycoris.loconautics.LoconauticsConstants;
 import com.lycoris.loconautics.common.sable.SableTeleportation;
 import com.lycoris.loconautics.content.analogcontroller.AnalogControllerBlockEntity;
@@ -395,12 +396,12 @@ public final class TrainTeleporter {
         if (mode == Mode.RAIL) {
             double speed = Math.abs(train.speed()) * landing.railTravelSign();
             train.relocate(landing.seat().carriage(), landing.seat().bogeys());
-            train.setDerailed(false);
+            train.setDerailed(false, null);
             train.setSpeed(speed);
         } else if (mode != Mode.HANDOVER) {
             train.setSpeed(0.0);
             train.setTargetSpeed(0.0);
-            train.setDerailed(true, "teleport");
+            train.setDerailed(true, DerailReason.TELEPORT);
         }
     }
 

@@ -454,7 +454,7 @@ public final class GhostCreateStep {
             return;
         }
         WARNED.put(id, now);
-        LoconauticsConstants.LOGGER.warn(LoconauticsConstants.GHOSTCREATE_TAG + " " + message, args);
+        LoconauticsConstants.TRACE.warn(LoconauticsConstants.GHOSTCREATE_TAG + " " + message, args);
     }
 
     private static String gaps(Train shadow) {

@@ -23,7 +23,7 @@ import static com.lycoris.loconautics.foundation.LogFormat.shortId;
 // ridingbody is temporary, it goes with the fix for a heavy body sliding off a car
 public final class RidingBodyTrace {
 
-    public static final boolean TRACE = true;
+    public static final boolean TRACE = com.lycoris.loconautics.config.LoconauticsConfig.DEBUG;
     private static final long EVERY_TICKS = 10L;
     private static final Vector3d RESTING_PROBE = new Vector3d(0.0, -0.1, 0.0);
 

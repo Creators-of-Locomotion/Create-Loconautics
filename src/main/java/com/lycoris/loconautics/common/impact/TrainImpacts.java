@@ -1,5 +1,6 @@
 package com.lycoris.loconautics.common.impact;
 
+import com.lycoris.loconautics.trainphysics.DerailReason;
 import com.lycoris.loconautics.common.advancement.TrainAdvancements;
 import com.lycoris.loconautics.config.LoconauticsConfig;
 import com.lycoris.loconautics.trainphysics.SableTrain;
@@ -82,7 +83,7 @@ public final class TrainImpacts {
         if (TrainPropulsion.isMonorail(train)) {
             return;
         }
-        train.setDerailed(true, "collision");
+        train.setDerailed(true, DerailReason.COLLISION);
         TrainAdvancements.crashed(sub, train);
         TrainKnockback.applyKnockbackNow(train, deltaV);
     }

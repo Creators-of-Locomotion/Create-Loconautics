@@ -92,8 +92,14 @@ public final class SableTrainSounds {
     private float slipPitchJitter;
     private Vector3d lastPos;
     private int tick;
+    private static final int IMPACT_WAIT_TICKS = 100;
+    private static final double LANDING_FALL = 0.08;
+
     private boolean wasDerailed;
     private int lastOffTrackBogeys;
+    private boolean crashed;
+    private int impactWait;
+    private double lastFall;
 
     private SableTrainSounds(UUID id) {
         this.pitchModifier = (float) (Math.abs(id.hashCode()) * 10 % 13) / 36.0f;
@@ -123,11 +129,12 @@ public final class SableTrainSounds {
         float effSpeed = (float) Math.min(rawSpeed * SPEED_SCALE, 2.0);
         int offTrack = marker != null ? marker.offTrackBogeys() : 0;
 
+        tickImpact(mc, sub, motion.y);
         if (marker != null && marker.derailed()) {
             if (!wasDerailed) {
                 wasDerailed = true;
                 stopLoops();
-                playCrash(mc, pos, marker.endOfTrack());
+                crash(mc, pos, marker.endOfTrack());
             }
             lastOffTrackBogeys = offTrack;
             double sliding = motion.length();
@@ -139,7 +146,9 @@ public final class SableTrainSounds {
         }
         wasDerailed = false;
         if (offTrack > lastOffTrackBogeys) {
-            playCrash(mc, pos, marker != null && marker.endOfTrack());
+            crash(mc, pos, marker != null && marker.endOfTrack());
+        } else if (offTrack == 0) {
+            crashed = false;
         }
         lastOffTrackBogeys = offTrack;
 
@@ -184,7 +193,12 @@ public final class SableTrainSounds {
         wheelSound.setVolume(wheelVolume * 1.5f);
     }
 
-    private void playCrash(Minecraft mc, Vector3dc at, boolean endOfTrack) {
+    // the first bogey off and the full derail a moment later are one run off, so one crash
+    private void crash(Minecraft mc, Vector3dc at, boolean endOfTrack) {
+        if (crashed) {
+            return;
+        }
+        crashed = true;
         if (!endOfTrack) {
             mc.level.playLocalSound(at.x(), at.y(), at.z(),
                     SoundEvents.NETHERITE_BLOCK_BREAK, SoundSource.NEUTRAL, 0.4f, 0.85f, false);
@@ -192,10 +206,31 @@ public final class SableTrainSounds {
             return;
         }
         mc.level.playLocalSound(at.x(), at.y(), at.z(),
-                SoundEvents.ANVIL_LAND, SoundSource.NEUTRAL, 1.0f, 0.55f, false);
-        mc.level.playLocalSound(at.x(), at.y(), at.z(),
                 SoundEvents.NETHERITE_BLOCK_BREAK, SoundSource.NEUTRAL, 1.0f, 0.7f, false);
         AllSoundEvents.STEAM.playAt(mc.level, new Vec3(at.x(), at.y(), at.z()), 1.0f, 0.6f, false);
+        impactWait = IMPACT_WAIT_TICKS;
+    }
+
+    // the car has to be falling and then stop falling, a bogey still sitting on the last rail is not an impact
+    private void tickImpact(Minecraft mc, ClientSubLevel sub, double fall) {
+        double before = lastFall;
+        lastFall = fall;
+        if (impactWait <= 0) {
+            return;
+        }
+        impactWait--;
+        if (before > -LANDING_FALL || fall < before * 0.5) {
+            return;
+        }
+        for (AbstractBogeyBlockEntity be : BogeyWheelAnimator.bogeysOf(sub)) {
+            Vec3 c = sub.renderPose().transformPosition(Vec3.atCenterOf(be.getBlockPos()));
+            if (BogeyWheelAnimator.isGroundedAt(sub.getLevel(), c.x, c.y, c.z, BogeyWheelAnimator.railSide(be))) {
+                mc.level.playLocalSound(c.x, c.y, c.z, SoundEvents.ANVIL_LAND, SoundSource.NEUTRAL, 1.0f, 0.55f,
+                        false);
+                impactWait = 0;
+                return;
+            }
+        }
     }
 
     private void grindAtGroundedBogeys(Minecraft mc, ClientSubLevel sub, float intensity, float pitch) {

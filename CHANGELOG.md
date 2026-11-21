@@ -50,6 +50,17 @@
 - A car with one loose bogey no longer fully derails when the track under that bogey breaks.
 - Lopsided cars stop retrying the rerail after two quick roll offs, even after nearby track edits.
 - Rerailed cars turn into place over a second instead of snapping the last few degrees.
+- Derailed cars no longer rerail with one bogey left off the track.
+- Chat says a car left a portal with no track instead of a raw text key.
+- A strong plunger pull can lift a car off the rail again.
+- A bogey that slips off later no longer loses its pull as if it ran off a track end.
+- Cars lifted off the rail keep the speed they had instead of nearly stopping.
+- The Physics Staff no longer throws cars off the rail with external force derail off.
+- With curve derail off, cars no longer roll off the rail in curves.
+- Cars drop off a track end right away instead of floating past it first.
+- Breaking the track under a moving car drops it at once instead of two seconds later.
+- A derail plays one crash, and the heavy thud waits until the car hits the ground.
+- Chat says a car lost its bogeys instead of claiming the track is missing.
 
 ### Added
 - Boilers show a level in the goggles, set by their size and fire.
@@ -124,6 +135,8 @@
 - Boilers count 3 fireboxes and 9 body blocks, extra ones are decorative.
 - Boilers use more water when the bogeys draw more of the pool.
 - Bound panel parts glint and name their block, shift right click unbinds them.
+- Rope and Physics Staff lift limits are configs again, the staff one can be 0.
+- A slow car stops at a track end like a Create train instead of running off.
 
 ### Ponder
 #### Instrument Panel

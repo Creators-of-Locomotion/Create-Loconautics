@@ -1,5 +1,6 @@
 package com.lycoris.loconautics.trainphysics.spawn;
 
+import com.lycoris.loconautics.trainphysics.DerailReason;
 import com.lycoris.loconautics.LoconauticsConstants;
 import com.lycoris.loconautics.network.packets.train.SableTrainSyncPacket;
 import com.lycoris.loconautics.trainphysics.SableTrain;
@@ -497,7 +498,7 @@ public final class SubLevelSplitWatcher {
         } else if (scanBogeyPlotPositions(sub.getPlot()).isEmpty()) {
             SubLevelMergeWatcher.dropTrain(level, originalTrain);
         } else if (!originalTrain.isDerailed()) {
-            originalTrain.setDerailed(true);
+            originalTrain.setDerailed(true, DerailReason.BOGEYS_LOST);
             SableTrainPersistence.persist(originalTrain);
             SableTrainSyncPacket.broadcast(originalTrain);
             LoconauticsConstants.LOGGER.info(
@@ -905,9 +906,8 @@ public final class SubLevelSplitWatcher {
         com.lycoris.loconautics.common.sable.TrackHostFrameSync.onRemoved(removedId);
         for (SableTrain train : SableTrainRegistry.all()) {
             if (removedId.equals(train.car().subLevelId())) {
-                com.lycoris.loconautics.trainphysics.wheels.GhostWheelBodies.releaseAll(train);
+                CartLifecycle.fire(train, CartEvent.REMOVED);
                 SableTrainRegistry.remove(train.id());
-                RerailApproach.forget(train.id());
                 SableTrainPersistence.unpersist(train.level().getServer(), train.id());
                 SableTrainSyncPacket.broadcastRemoval(removedId);
             }
