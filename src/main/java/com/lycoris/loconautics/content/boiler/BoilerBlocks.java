@@ -1,7 +1,6 @@
 package com.lycoris.loconautics.content.boiler;
 
 import com.lycoris.loconautics.LoconauticsConstants;
-import com.lycoris.loconautics.content.boiler.barrel.BoilerBarrelItem;
 import com.lycoris.loconautics.content.boiler.barrel.DyedBoilerBarrelBlock;
 import com.lycoris.loconautics.content.boiler.firebox.FireboxBlock;
 import com.lycoris.loconautics.content.boiler.firebox.FireboxBlockEntity;
@@ -162,7 +161,7 @@ public final class BoilerBlocks {
             Map<String, DeferredHolder<Item, BlockItem>> byKind = new LinkedHashMap<>();
             for (String kind : BODY_KINDS) {
                 byKind.put(kind, LoconauticsRegistries.ITEMS.register(extraName(color, kind), () ->
-                        new BoilerBarrelItem(EXTRA_BODIES.get(color).get(kind).get(),
+                        new BlockItem(EXTRA_BODIES.get(color).get(kind).get(),
                                 new Item.Properties().stacksTo(64))));
             }
             all.put(color, Collections.unmodifiableMap(byKind));
@@ -189,7 +188,7 @@ public final class BoilerBlocks {
             Map<DyeColor, DeferredHolder<Item, BlockItem>> byColor = new LinkedHashMap<>();
             for (DyeColor color : BODY_COLORS) {
                 byColor.put(color, LoconauticsRegistries.ITEMS.register(bodyName(color, kind), () ->
-                        new BoilerBarrelItem(DYED_BODIES.get(kind).get(color).get(),
+                        new BlockItem(DYED_BODIES.get(kind).get(color).get(),
                                 new Item.Properties().stacksTo(64))));
             }
             all.put(kind, Collections.unmodifiableMap(byColor));

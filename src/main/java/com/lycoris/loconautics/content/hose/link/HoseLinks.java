@@ -123,7 +123,7 @@ public final class HoseLinks {
         SubLevel sub = Sable.HELPER.getContaining(level, be.getBlockPos());
         UUID subId = sub == null ? null : sub.getUniqueId();
         long winchCount = winchHoses.all().stream()
-                .filter(s -> Objects.equals(s.nozzleSubLevelId, subId) && be.getBlockPos().equals(s.nozzleLocalPos))
+                .filter(s -> s.dimension.equals(level.dimension()) && Objects.equals(s.nozzleSubLevelId, subId) && be.getBlockPos().equals(s.nozzleLocalPos))
                 .count();
         int limit = be instanceof HoseLinkEndpoint ? MAX_LINKS_PER_ENDPOINT : MAX_LINKS_PER_RELAY;
         return fluidStrands(be, strands).size() + winchCount >= limit;

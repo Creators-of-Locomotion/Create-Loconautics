@@ -1,5 +1,6 @@
 package com.lycoris.loconautics.content.smokestack;
 
+import com.lycoris.loconautics.content.boiler.BoilerShapes;
 import com.lycoris.loconautics.content.boiler.BoilerAttach;
 import com.lycoris.loconautics.foundation.pick.OversizeShape;
 import com.simibubi.create.content.equipment.wrench.IWrenchable;
@@ -39,6 +40,7 @@ public class SmokestackBlock extends Block implements IWrenchable, EntityBlock, 
 
     public static final BooleanProperty STACKED = BooleanProperty.create("stacked");
     public static final BooleanProperty RAISED = BooleanProperty.create("raised");
+    public static final BooleanProperty SUNK = BooleanProperty.create("sunk");
 
     private static final VoxelShape CAPPED_SHAPE = Shapes.or(
             Block.box(3.0, 0.0, 3.0, 13.0, 9.0, 13.0),
@@ -49,34 +51,44 @@ public class SmokestackBlock extends Block implements IWrenchable, EntityBlock, 
 
     public SmokestackBlock(Properties properties) {
         super(properties);
-        registerDefaultState(stateDefinition.any().setValue(STACKED, false).setValue(RAISED, false));
+        registerDefaultState(stateDefinition.any().setValue(STACKED, false).setValue(RAISED, false)
+                .setValue(SUNK, false).setValue(BoilerAttach.LIFTED, false));
     }
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(STACKED, RAISED);
+        builder.add(STACKED, RAISED, SUNK, BoilerAttach.LIFTED);
     }
 
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         boolean column = state.getValue(STACKED);
-        if (state.getValue(RAISED)) return column ? COLUMN_RAISED : CAPPED_RAISED;
-        return column ? COLUMN_SHAPE : CAPPED_SHAPE;
+        VoxelShape shape = state.getValue(RAISED)
+                ? (column ? COLUMN_RAISED : CAPPED_RAISED)
+                : (column ? COLUMN_SHAPE : CAPPED_SHAPE);
+        return BoilerShapes.raisedIf(shape, state.getValue(BoilerAttach.LIFTED));
     }
 
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
-        return defaultBlockState().setValue(STACKED, joinsAbove(context.getLevel(), context.getClickedPos()))
-                .setValue(RAISED, raisedAt(context.getLevel(), context.getClickedPos()));
+        return fitted(defaultBlockState().setValue(SUNK, context.isSecondaryUseActive()),
+                context.getLevel(), context.getClickedPos());
     }
 
     @Override
     protected BlockState updateShape(BlockState state, Direction direction, BlockState neighborState,
                                      LevelAccessor level, BlockPos pos, BlockPos neighborPos) {
         if (direction == Direction.UP || direction == Direction.DOWN) {
-            return state.setValue(STACKED, joinsAbove(level, pos)).setValue(RAISED, raisedAt(level, pos));
+            return fitted(state, level, pos);
         }
         return state;
+    }
+
+    private static BlockState fitted(BlockState state, BlockGetter level, BlockPos pos) {
+        BlockPos bottom = columnBottom(level, pos);
+        return state.setValue(STACKED, joinsAbove(level, pos))
+                .setValue(RAISED, raisedAt(level, pos) && !state.getValue(SUNK))
+                .setValue(BoilerAttach.LIFTED, BoilerAttach.liftedOn(level, bottom, Direction.DOWN));
     }
 
     // the whole column sits out from a boiler when its bottom block stands on one
@@ -107,7 +119,7 @@ public class SmokestackBlock extends Block implements IWrenchable, EntityBlock, 
         BlockPos at = pos.above();
         BlockState state = level.getBlockState(at);
         while (isStack(state)) {
-            BlockState next = state.setValue(STACKED, joinsAbove(level, at)).setValue(RAISED, raisedAt(level, at));
+            BlockState next = fitted(state, level, at);
             if (next != state) {
                 level.setBlock(at, next, Block.UPDATE_CLIENTS);
             }

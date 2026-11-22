@@ -1,5 +1,6 @@
 package com.lycoris.loconautics.content.smokestack;
 
+import com.lycoris.loconautics.content.boiler.BoilerShapes;
 import com.lycoris.loconautics.config.LoconauticsConfig;
 import com.lycoris.loconautics.foundation.smoke.SmokeEmitter;
 import com.lycoris.loconautics.foundation.smoke.SmokeOptions;
@@ -93,7 +94,8 @@ public class SmokestackBlockEntity extends BlockEntity {
             exhaust.reset();
             return;
         }
-        double standOff = getBlockState().getValue(SmokestackBlock.RAISED) ? BoilerAttach.BULGE : 0.0;
+        double standOff = (getBlockState().getValue(SmokestackBlock.RAISED) ? BoilerAttach.BULGE : 0.0)
+                + BoilerAttach.lift(getBlockState());
         smoke.track(new Vec3(worldPosition.getX() + 0.5, worldPosition.getY() + 1.0 + standOff, worldPosition.getZ() + 0.5));
         float strength = power / 15.0F;
 

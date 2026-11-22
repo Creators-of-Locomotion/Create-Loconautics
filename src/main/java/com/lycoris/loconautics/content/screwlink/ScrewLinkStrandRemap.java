@@ -37,7 +37,8 @@ public final class ScrewLinkStrandRemap implements StrandRemap.Target<ScrewLinkS
     }
 
     @Override
-    public boolean remapEnds(ScrewLinkStrand strand, StrandEnd from, StrandEnd to) {
+    public boolean remapEnds(ScrewLinkStrand strand, StrandEnd from, StrandEnd to, ServerLevel fromLevel,
+                             ServerLevel toLevel) {
         boolean a = from.matches(strand.subA, strand.localA);
         if (a) {
             strand.subA = to.subLevelId();

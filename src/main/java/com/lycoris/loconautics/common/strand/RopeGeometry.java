@@ -1,10 +1,7 @@
 package com.lycoris.loconautics.common.strand;
 
-import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3d;
 import org.joml.Vector3dc;
 
@@ -23,34 +20,12 @@ public final class RopeGeometry {
         return Math.max(1, (int) Math.ceil(restLength - 1.0e-3)) + 1;
     }
 
-    @Nullable
-    public static List<Vec3> interpolateRopePoints(@Nullable float[] curr, @Nullable float[] prev, BlockPos base, float partialTicks) {
-        if (curr == null || curr.length < 6) return null;
-        float[] interp = (prev != null && prev.length == curr.length) ? prev : curr;
-        List<Vec3> out = new ArrayList<>(curr.length / 3);
-        for (int i = 0; i + 2 < curr.length; i += 3) {
-            float x = interp[i]     + (curr[i]     - interp[i])     * partialTicks;
-            float y = interp[i + 1] + (curr[i + 1] - interp[i + 1]) * partialTicks;
-            float z = interp[i + 2] + (curr[i + 2] - interp[i + 2]) * partialTicks;
-            out.add(new Vec3(base.getX() + (double) x, base.getY() + (double) y, base.getZ() + (double) z));
+    public static List<Vector3d> copyPoints(List<? extends Vector3dc> points) {
+        List<Vector3d> copy = new ArrayList<>(points.size());
+        for (Vector3dc p : points) {
+            copy.add(new Vector3d(p));
         }
-        return out;
-    }
-
-    public static AABB renderBounds(@Nullable float[] pts, BlockPos base, double inflate) {
-        if (pts == null || pts.length < 6) {
-            return new AABB(base);
-        }
-        // seeded at the whole anchor cell so the block the rope hangs off is always inside the box
-        double minX = 0, minY = 0, minZ = 0, maxX = 1, maxY = 1, maxZ = 1;
-        for (int i = 0; i + 2 < pts.length; i += 3) {
-            minX = Math.min(minX, pts[i]);     maxX = Math.max(maxX, pts[i]);
-            minY = Math.min(minY, pts[i + 1]); maxY = Math.max(maxY, pts[i + 1]);
-            minZ = Math.min(minZ, pts[i + 2]); maxZ = Math.max(maxZ, pts[i + 2]);
-        }
-        return new AABB(
-                base.getX() + minX, base.getY() + minY, base.getZ() + minZ,
-                base.getX() + maxX, base.getY() + maxY, base.getZ() + maxZ).inflate(inflate);
+        return copy;
     }
 
     public static List<Vec3> redistributeEvenly(List<Vec3> points) {

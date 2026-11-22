@@ -1,0 +1,7 @@
+{
+  "selector": "loconautics:ghost_wheel",
+
+  "properties": {
+    "sable:mass": 0.3
+  }
+}

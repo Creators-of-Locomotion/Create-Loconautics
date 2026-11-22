@@ -401,7 +401,7 @@ public final class TrainResidency {
         }
         if (!state.snatchMissLogged) {
             state.snatchMissLogged = true;
-            LoconauticsConstants.LOGGER.warn("[residency] body {} of train {} was not found in any of {} candidate "
+            LoconauticsConstants.TRACE.warn("[residency] body {} of train {} was not found in any of {} candidate "
                     + "holding chunks, pointer {}, bodyChunk {}, holdingKnown={}, misses={}", shortId(subId),
                     shortId(train.id()), candidates.size(), pointer, train.bodyChunk(), holding != null, misses);
             LoconauticsConstants.TRACE.warn("[ghostedge] miss train={} candidates={} storedBounds={} grownBounds={}",

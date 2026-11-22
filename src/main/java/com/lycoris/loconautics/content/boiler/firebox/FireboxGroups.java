@@ -186,6 +186,7 @@ public final class FireboxGroups {
         for (BlockPos pos : members(level, controller)) {
             BlockState state = level.getBlockState(pos);
             level.sendBlockUpdated(pos, state, state, 3);
+            level.updateNeighborsAt(pos, state.getBlock());
         }
     }
 }

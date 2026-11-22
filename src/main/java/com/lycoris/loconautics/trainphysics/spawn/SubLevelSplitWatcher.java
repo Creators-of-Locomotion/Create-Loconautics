@@ -10,6 +10,7 @@ import com.lycoris.loconautics.trainphysics.drive.TrainRailAdvance;
 import com.lycoris.loconautics.trainphysics.rail.RailCarriage;
 import com.lycoris.loconautics.trainphysics.state.CartEvent;
 import com.lycoris.loconautics.trainphysics.state.CartLifecycle;
+import com.lycoris.loconautics.trainphysics.state.CartStateStore;
 import com.lycoris.loconautics.trainphysics.state.SableTrainPersistence;
 import com.lycoris.loconautics.trainphysics.state.SableTrainRegistry;
 import com.simibubi.create.content.trains.bogey.AbstractBogeyBlock;
@@ -147,13 +148,13 @@ public final class SubLevelSplitWatcher {
                 List<BlockPos> offTrackLocal = new ArrayList<>();
                 SableTrain.Car newCar = buildCarFromSubLevelScan(level, island, railDir, donors, referenceRail,
                         originalTrain, origSub, offTrackLocal);
-                boolean trackless = newCar == null && originalTrain != null && originalTrain.isTrackless();
+                boolean trackless = newCar == null && !scanBogeyPlotPositions(island.getPlot()).isEmpty();
                 if (trackless) {
                     newCar = TracklessCars.build(island);
                 }
                 if (newCar == null) {
                     LoconauticsConstants.LOGGER.info(
-                            "[sabletrain] split island {} has no railed bogey, left as a bodyless sub-level",
+                            "[sabletrain] split island {} has no bogey, left as a plain body",
                             island.getUniqueId());
                     continue;
                 }
@@ -217,77 +218,90 @@ public final class SubLevelSplitWatcher {
     // a bogey placed into a body that is already a train is in no car list, so it never ran until the body was rebuilt
     public static void adoptNewBogeys() {
         for (SableTrain train : new ArrayList<>(SableTrainRegistry.all())) {
-            if (train.isGhost() || train.car() == null) {
-                continue;
-            }
-            ServerSubLevel sub = SubLevelData.resolve(train.level(), train.car().subLevelId());
-            if (sub == null || sub.isRemoved() || sub.getPlot().getLoadedChunks().isEmpty()) {
-                continue;
-            }
-            List<SableTrain.Bogey> known = train.car().bogeys();
-            if (known.size() >= 3 && train.level().getGameTime() % 40L == 0L) {
-                logPivotLive(train, sub);
-            }
-            BlockPos plotCenter = sub.getPlot().getCenterBlock();
-            List<BlockPos> found = scanBogeyPlotPositions(sub.getPlot());
-            Set<BlockPos> ignored = IGNORED_BOGEYS.computeIfAbsent(train.id(), id -> new HashSet<>());
-            ignored.retainAll(found);
-            // a bogey placed before the car reached a rail stays ignored forever, so give it another go every two seconds
-            long now = train.level().getGameTime();
-            Long lastRetry = IGNORED_RETRY_AT.get(train.id());
-            if (lastRetry == null || now - lastRetry >= IGNORED_RETRY_TICKS) {
-                IGNORED_RETRY_AT.put(train.id(), now);
-                ignored.clear();
-            }
-            List<BlockPos> fresh = new ArrayList<>();
-            for (BlockPos plotPos : found) {
-                BlockPos local = plotPos.subtract(plotCenter);
-                if (!ignored.contains(plotPos) && known.stream().noneMatch(b -> b.localPos().equals(local))) {
-                    fresh.add(plotPos);
-                }
-            }
-            if (fresh.isEmpty()) {
-                continue;
-            }
-            if (train.isTrackless()) {
-                adoptTrackless(train, sub);
-                continue;
-            }
-            List<BlockPos> accepted = new ArrayList<>();
-            for (BlockPos plotPos : fresh) {
-                Vector3d world = SubLevelData.worldOfOffset(sub, plotPos.subtract(plotCenter));
-                BogeySeat seat = seatAdopted(train.level(), sub, known, world, train.car().carriage().forward());
-                if (seat != null) {
-                    accepted.add(plotPos);
-                } else {
-                    ignored.add(plotPos);
-                }
-            }
-            if (accepted.isEmpty()) {
-                BogeyEditTrace.refuse(train, "adopt, no seat for " + fresh.size() + " new bogey(s), now ignored");
-                continue;
-            }
-            Vec3 railDir = train.car().carriage().forward();
-            SableTrain.Car rebuilt = buildCarFromSubLevelScan(train.level(), sub, railDir, new ArrayList<>(known),
-                    train.car().carriage(), train, sub, new ArrayList<>(), ADOPT_MATCH_RADIUS_SQ,
-                    new Adoption(known, ignored), false);
-            if (rebuilt == null || !takesBogeys(known, rebuilt.bogeys())) {
-                BogeyEditTrace.refuse(train, "adopt, rebuilt car rejected, rebuilt "
-                        + (rebuilt == null ? "null" : rebuilt.bogeys().size()) + " vs known " + known.size());
-                ignored.addAll(accepted);
-                SableTrainSyncPacket.broadcast(train);
-                continue;
-            }
-            logPivot("before", train, sub);
-            train.replaceCar(rebuilt);
-            logPivot("after", train, sub);
-            SableTrainPersistence.persist(train);
-            SableTrainSyncPacket.broadcast(train);
-            LoconauticsConstants.LOGGER.info("[sabletrain] train {} took a new bogey, now {} bogey(s), pivot on the outer two",
-                    train.id(), rebuilt.bogeys().size());
+            adopt(train);
         }
         IGNORED_BOGEYS.keySet().removeIf(id -> SableTrainRegistry.get(id) == null);
         IGNORED_RETRY_AT.keySet().removeIf(id -> SableTrainRegistry.get(id) == null);
+    }
+
+    public static void adoptMarkedBogeys() {
+        for (UUID id : BogeyPlotChanges.takeMarked()) {
+            SableTrain train = SableTrainRegistry.get(id);
+            if (train != null) {
+                adopt(train);
+            }
+        }
+    }
+
+    private static void adopt(SableTrain train) {
+        if (train.isGhost() || train.car() == null) {
+            return;
+        }
+        ServerSubLevel sub = SubLevelData.resolve(train.level(), train.car().subLevelId());
+        if (sub == null || sub.isRemoved() || sub.getPlot().getLoadedChunks().isEmpty()) {
+            return;
+        }
+        List<SableTrain.Bogey> known = train.car().bogeys();
+        if (known.size() >= 3 && train.level().getGameTime() % 40L == 0L) {
+            logPivotLive(train, sub);
+        }
+        BlockPos plotCenter = sub.getPlot().getCenterBlock();
+        List<BlockPos> found = scanBogeyPlotPositions(sub.getPlot());
+        Set<BlockPos> ignored = IGNORED_BOGEYS.computeIfAbsent(train.id(), id -> new HashSet<>());
+        ignored.retainAll(found);
+        // a bogey placed before the car reached a rail stays ignored forever, so give it another go every two seconds
+        long now = train.level().getGameTime();
+        Long lastRetry = IGNORED_RETRY_AT.get(train.id());
+        if (lastRetry == null || now - lastRetry >= IGNORED_RETRY_TICKS) {
+            IGNORED_RETRY_AT.put(train.id(), now);
+            ignored.clear();
+        }
+        List<BlockPos> fresh = new ArrayList<>();
+        for (BlockPos plotPos : found) {
+            BlockPos local = plotPos.subtract(plotCenter);
+            if (!ignored.contains(plotPos) && known.stream().noneMatch(b -> b.localPos().equals(local))) {
+                fresh.add(plotPos);
+            }
+        }
+        if (fresh.isEmpty()) {
+            return;
+        }
+        if (train.isTrackless()) {
+            adoptTrackless(train, sub);
+            return;
+        }
+        List<BlockPos> accepted = new ArrayList<>();
+        for (BlockPos plotPos : fresh) {
+            Vector3d world = SubLevelData.worldOfOffset(sub, plotPos.subtract(plotCenter));
+            BogeySeat seat = seatAdopted(train.level(), sub, known, world, train.car().carriage().forward());
+            if (seat != null) {
+                accepted.add(plotPos);
+            } else {
+                ignored.add(plotPos);
+            }
+        }
+        if (accepted.isEmpty()) {
+            BogeyEditTrace.refuse(train, "adopt, no seat for " + fresh.size() + " new bogey(s), now ignored");
+            return;
+        }
+        Vec3 railDir = train.car().carriage().forward();
+        SableTrain.Car rebuilt = buildCarFromSubLevelScan(train.level(), sub, railDir, new ArrayList<>(known),
+                train.car().carriage(), train, sub, new ArrayList<>(), ADOPT_MATCH_RADIUS_SQ,
+                new Adoption(known, ignored), false);
+        if (rebuilt == null || !takesBogeys(known, rebuilt.bogeys())) {
+            BogeyEditTrace.refuse(train, "adopt, rebuilt car rejected, rebuilt "
+                    + (rebuilt == null ? "null" : rebuilt.bogeys().size()) + " vs known " + known.size());
+            ignored.addAll(accepted);
+            SableTrainSyncPacket.broadcast(train);
+            return;
+        }
+        logPivot("before", train, sub);
+        train.reshape(rebuilt);
+        logPivot("after", train, sub);
+        SableTrainPersistence.persist(train);
+        SableTrainSyncPacket.broadcast(train);
+        LoconauticsConstants.LOGGER.info("[sabletrain] train {} took a new bogey, now {} bogey(s), pivot on the outer two",
+                train.id(), rebuilt.bogeys().size());
     }
 
     static void refitAfterBogeyDrop(SableTrain train, ServerSubLevel sub, List<SableTrain.Bogey> alive) {
@@ -373,7 +387,7 @@ public final class SubLevelSplitWatcher {
         if (rebuilt == null || rebuilt.bogeys().size() <= train.car().bogeys().size()) {
             return;
         }
-        train.replaceCar(rebuilt);
+        train.reshape(rebuilt);
         SableTrainPersistence.persist(train);
         SableTrainSyncPacket.broadcast(train);
     }
@@ -457,6 +471,7 @@ public final class SubLevelSplitWatcher {
             SableTrain.Car rebuilt = TracklessCars.build(sub);
             if (rebuilt != null) {
                 originalTrain.replaceCar(rebuilt);
+                CartLifecycle.fire(originalTrain, CartEvent.SPLIT);
                 SableTrainPersistence.persist(originalTrain);
                 SableTrainSyncPacket.broadcast(originalTrain);
             }
@@ -518,9 +533,45 @@ public final class SubLevelSplitWatcher {
 
     private static final long IGNORED_RETRY_TICKS = 40L;
 
+    public static final CartStateStore IGNORED_STORE = new CartStateStore() {
+        @Override
+        public void forget(SableTrain train, UUID subId, CartEvent event) {
+            if (!clears(event)) {
+                return;
+            }
+            IGNORED_BOGEYS.remove(train.id());
+            IGNORED_RETRY_AT.remove(train.id());
+        }
+
+        @Override
+        public void retain(Set<UUID> liveTrains, Set<UUID> liveSubs) {
+            IGNORED_BOGEYS.keySet().retainAll(liveTrains);
+            IGNORED_RETRY_AT.keySet().retainAll(liveTrains);
+        }
+
+        @Override
+        public String describe(UUID trainId, UUID subId) {
+            int ignored = ignoredCount(trainId);
+            return ignored == 0 ? "" : "ignoredBogeys=" + ignored;
+        }
+
+        @Override
+        public boolean clears(CartEvent event) {
+            return event.moved() || event == CartEvent.REERAILED || event == CartEvent.RESEATED_IN_PLACE
+                    || event == CartEvent.REMOVED;
+        }
+    };
+
     static int ignoredCount(UUID trainId) {
         Set<BlockPos> ignored = IGNORED_BOGEYS.get(trainId);
         return ignored == null ? 0 : ignored.size();
+    }
+
+    static void forgetIgnored(UUID trainId, BlockPos plotPos) {
+        Set<BlockPos> ignored = IGNORED_BOGEYS.get(trainId);
+        if (ignored != null) {
+            ignored.remove(plotPos);
+        }
     }
 
     static SableTrain.Car buildCarFromSubLevelScan(ServerLevel level, ServerSubLevel sub, Vec3 railDir,

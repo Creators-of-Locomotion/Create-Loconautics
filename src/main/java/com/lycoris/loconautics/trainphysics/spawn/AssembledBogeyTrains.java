@@ -15,38 +15,37 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public final class AssembledBogeyTrains {
 
-    private record Pending(ServerLevel level, UUID subLevelId) {
-    }
-
-    private static final List<Pending> PENDING = new ArrayList<>();
+    private static final Map<UUID, ServerLevel> PENDING = new LinkedHashMap<>();
 
     private AssembledBogeyTrains() {
     }
 
     public static void queue(ServerLevel level, ServerSubLevel sub) {
         synchronized (PENDING) {
-            PENDING.add(new Pending(level, sub.getUniqueId()));
+            PENDING.put(sub.getUniqueId(), level);
         }
     }
 
     public static void processPending() {
-        List<Pending> batch;
+        Map<UUID, ServerLevel> batch;
         synchronized (PENDING) {
             if (PENDING.isEmpty()) return;
-            batch = new ArrayList<>(PENDING);
+            batch = new LinkedHashMap<>(PENDING);
             PENDING.clear();
         }
-        for (Pending pending : batch) {
-            ServerSubLevel sub = SubLevelData.resolve(pending.level(), pending.subLevelId());
+        for (Map.Entry<UUID, ServerLevel> pending : batch.entrySet()) {
+            ServerSubLevel sub = SubLevelData.resolve(pending.getValue(), pending.getKey());
             if (sub == null || isSpokenFor(sub)) continue;
             List<BlockPos> bogeys = SubLevelSplitWatcher.scanBogeyPlotPositions(sub.getPlot());
             if (bogeys.isEmpty()) continue;
-            if (toTrain(pending.level(), sub, bogeys.get(0))) {
+            if (toTrain(pending.getValue(), sub, bogeys.get(0))) {
                 liftGroundDrop(sub, bogeys);
             }
         }
@@ -86,6 +85,7 @@ public final class AssembledBogeyTrains {
         SableTrainSyncPacket.broadcast(train);
         LoconauticsConstants.LOGGER.info("[sabletrain] assembled body {} became train {}, {} bogey(s), {}",
                 sub.getUniqueId(), train.id(), car.bogeys().size(), railed ? "on rail" : "trackless and derailed");
+        BogeyPlotChanges.traceTilt("became train", train);
         return true;
     }
 }

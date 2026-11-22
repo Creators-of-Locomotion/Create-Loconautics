@@ -109,6 +109,7 @@ public record HoseAttachPacket(BlockPos winchPos, @Nullable UUID farSubLevelId, 
             strand.nozzleLocalPos = packet.farLocalPos();
             strand.nozzlePos = BlockPos.containing(farPoint.x, farPoint.y, farPoint.z);
             strand.currentLength = (float) span;
+            strand.dimension = level.dimension();
 
             HoseStrandManager.get(level).create(strand);
             winch.onStrandAttached(strand);

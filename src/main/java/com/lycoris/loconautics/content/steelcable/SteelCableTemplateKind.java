@@ -58,6 +58,7 @@ public final class SteelCableTemplateKind implements StrandTemplateKind {
                 a.getBlockPos(), subIdAt(level, b.getBlockPos()), b.getBlockPos(),
                 SteelCableType.get(ResourceLocation.parse(data.getString("Type"))));
         strand.restLength = data.getDouble("RestLength");
+        strand.dimension = level.dimension();
         strands.create(strand);
         holderSelf.onStrandAttached(strand);
         holderFar.onStrandAttached(strand);

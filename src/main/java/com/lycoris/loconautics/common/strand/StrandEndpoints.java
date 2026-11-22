@@ -3,7 +3,10 @@ package com.lycoris.loconautics.common.strand;
 import dev.ryanhcode.sable.api.sublevel.SubLevelContainer;
 import dev.ryanhcode.sable.sublevel.ServerSubLevel;
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
@@ -32,15 +35,26 @@ public final class StrandEndpoints {
         return level.isLoaded(local);
     }
 
-    // no body found anywhere means plain world blocks, those stay in the overworld
+    // no body found anywhere means plain world blocks, those stay in the dimension they were made in
+    public static boolean drivenBy(ServerLevel level, @Nullable UUID subA, @Nullable UUID subB,
+                                   ResourceKey<Level> worldDimension) {
+        return driverOf(level.getServer(), subA, subB, worldDimension) == level;
+    }
+
     public static boolean drivenBy(ServerLevel level, @Nullable UUID subA, @Nullable UUID subB) {
-        for (ServerLevel candidate : level.getServer().getAllLevels()) {
+        return drivenBy(level, subA, subB, Level.OVERWORLD);
+    }
+
+    @Nullable
+    public static ServerLevel driverOf(MinecraftServer server, @Nullable UUID subA, @Nullable UUID subB,
+                                       ResourceKey<Level> worldDimension) {
+        for (ServerLevel candidate : server.getAllLevels()) {
             SubLevelContainer container = SubLevelContainer.getContainer(candidate);
             if (container != null && (subLevel(container, subA) != null || subLevel(container, subB) != null)) {
-                return candidate == level;
+                return candidate;
             }
         }
-        return level == level.getServer().overworld();
+        return server.getLevel(worldDimension);
     }
 
     @Nullable

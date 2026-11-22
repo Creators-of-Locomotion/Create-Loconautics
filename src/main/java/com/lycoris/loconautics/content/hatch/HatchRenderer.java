@@ -1,5 +1,7 @@
 package com.lycoris.loconautics.content.hatch;
 
+import com.lycoris.loconautics.content.boiler.BoilerShapes;
+import com.lycoris.loconautics.content.boiler.BoilerAttach;
 import com.lycoris.loconautics.client.LoconauticsPartialModels;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.simibubi.create.foundation.blockEntity.renderer.SafeBlockEntityRenderer;
@@ -33,6 +35,7 @@ public class HatchRenderer extends SafeBlockEntityRenderer<FluidHatchBlockEntity
         Direction facing = be.getBlockState().getValue(FluidHatchBlock.FACING);
 
         ms.pushPose();
+        ms.translate(0.0, BoilerAttach.lift(be.getBlockState()), 0.0);
         if (be.getBlockState().getValue(FluidHatchBlock.RAISED)) {
             Direction dome = facing.getOpposite();
             ms.translate(dome.getStepX() * FluidHatchBlock.BARREL_BULGE,

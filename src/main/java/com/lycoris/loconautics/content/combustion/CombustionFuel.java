@@ -1,34 +1,35 @@
 package com.lycoris.loconautics.content.combustion;
 
-import com.lycoris.loconautics.content.cerisene.CeriseneBlocks;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
+import net.minecraft.world.level.material.FlowingFluid;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraft.world.level.material.Fluids;
 import net.neoforged.neoforge.fluids.FluidStack;
 import org.jetbrains.annotations.Nullable;
 
-public enum CombustionFuel {
+import java.util.List;
+import java.util.Map;
 
-    CERISENE(null, 256f, 1.0f / 20f),
-    DIESEL("diesel", 240f, 1.2f / 20f),
-    GASOLINE("gasoline", 224f, 1.5f / 20f),
-    REFINED_FUEL("refined_fuel", 208f, 1.8f / 20f),
-    BIODIESEL("biodiesel", 192f, 2.1f / 20f),
-    HEAVY_OIL("heavy_oil", 176f, 2.4f / 20f),
-    ETHANOL("ethanol", 160f, 3.0f / 20f),
-    LAVA(null, 128f, 6.0f / 20f);
+public final class CombustionFuel {
 
+    private static volatile Map<Fluid, CombustionFuel> byFluid = Map.of();
+    private static volatile List<CombustionFuel> byTag = List.of();
+
+    private final String key;
     private final @Nullable TagKey<Fluid> tag;
     private final float topRpm;
     private final float burnPerTick;
 
-    CombustionFuel(@Nullable String tagPath, float topRpm, float burnPerTick) {
-        this.tag = tagPath == null ? null : TagKey.create(Registries.FLUID,
-                ResourceLocation.fromNamespaceAndPath("c", tagPath));
+    CombustionFuel(String key, @Nullable ResourceLocation tagId, float topRpm, float ticksPerMb) {
+        this.key = key;
+        this.tag = tagId == null ? null : TagKey.create(Registries.FLUID, tagId);
         this.topRpm = topRpm;
-        this.burnPerTick = burnPerTick;
+        this.burnPerTick = 1.0f / ticksPerMb;
+    }
+
+    public String key() {
+        return key;
     }
 
     public float topRpm() {
@@ -39,6 +40,11 @@ public enum CombustionFuel {
         return burnPerTick;
     }
 
+    static void replace(Map<Fluid, CombustionFuel> fluids, List<CombustionFuel> tags) {
+        byFluid = Map.copyOf(fluids);
+        byTag = List.copyOf(tags);
+    }
+
     @Nullable
     public static CombustionFuel of(FluidStack stack) {
         return stack.isEmpty() ? null : of(stack.getFluid());
@@ -46,10 +52,14 @@ public enum CombustionFuel {
 
     @Nullable
     public static CombustionFuel of(Fluid fluid) {
-        if (fluid.isSame(CeriseneBlocks.CERISENE.get())) return CERISENE;
-        if (fluid.isSame(Fluids.LAVA)) return LAVA;
-        for (CombustionFuel fuel : values()) {
-            if (fuel.tag != null && fluid.defaultFluidState().is(fuel.tag)) return fuel;
+        CombustionFuel exact = byFluid.get(fluid);
+        if (exact != null) return exact;
+        if (fluid instanceof FlowingFluid flowing) {
+            exact = byFluid.get(flowing.getSource());
+            if (exact != null) return exact;
+        }
+        for (CombustionFuel fuel : byTag) {
+            if (fluid.defaultFluidState().is(fuel.tag)) return fuel;
         }
         return null;
     }

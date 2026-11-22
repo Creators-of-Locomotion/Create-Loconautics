@@ -21,4 +21,12 @@ public final class TrainSteeringAccessor {
         TrainSteering.clearFollow(train.car());
         TrainSteering.applySteerTarget(train.car(), target);
     }
+
+    public static void clear(SableTrain train) {
+        if (train.car() == null) {
+            return;
+        }
+        train.setSteerIntent(null);
+        TrainSteering.applySteerTarget(train.car(), null);
+    }
 }

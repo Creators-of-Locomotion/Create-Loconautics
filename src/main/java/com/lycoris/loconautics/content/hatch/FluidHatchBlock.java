@@ -1,5 +1,6 @@
 package com.lycoris.loconautics.content.hatch;
 
+import com.lycoris.loconautics.content.boiler.BoilerShapes;
 import com.lycoris.loconautics.content.boiler.BoilerAttach;
 import com.lycoris.loconautics.foundation.pick.OversizeShape;
 import com.lycoris.loconautics.registry.LoconauticsRegistries;
@@ -79,12 +80,12 @@ public class FluidHatchBlock extends Block implements IBE<FluidHatchBlockEntity>
         super(properties);
         registerDefaultState(stateDefinition.any()
                 .setValue(FACING, Direction.DOWN).setValue(OPEN, false).setValue(LID_HINGE, 0)
-                .setValue(RAISED, false).setValue(WATERLOGGED, false));
+                .setValue(RAISED, false).setValue(WATERLOGGED, false).setValue(BoilerAttach.LIFTED, false));
     }
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING, OPEN, LID_HINGE, RAISED, WATERLOGGED);
+        builder.add(FACING, OPEN, LID_HINGE, RAISED, WATERLOGGED, BoilerAttach.LIFTED);
     }
 
     private static boolean onBarrel(BlockGetter level, BlockPos pos, Direction face) {
@@ -120,6 +121,7 @@ public class FluidHatchBlock extends Block implements IBE<FluidHatchBlockEntity>
         Direction face = context.getClickedFace().getOpposite();
         return defaultBlockState().setValue(FACING, face)
                 .setValue(RAISED, onBarrel(context.getLevel(), context.getClickedPos(), face))
+                .setValue(BoilerAttach.LIFTED, BoilerAttach.liftedOn(context.getLevel(), context.getClickedPos(), face))
                 .setValue(WATERLOGGED, context.getLevel().getFluidState(context.getClickedPos()).getType() == Fluids.WATER)
                 .setValue(LID_HINGE, hingeFor(face, hingeSideAimedAt(context, face)));
     }
@@ -212,7 +214,8 @@ public class FluidHatchBlock extends Block implements IBE<FluidHatchBlockEntity>
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         int face = state.getValue(FACING).get3DDataValue();
-        return state.getValue(RAISED) ? SHAPES_RAISED[face] : SHAPES[face];
+        return BoilerShapes.raisedIf(state.getValue(RAISED) ? SHAPES_RAISED[face] : SHAPES[face],
+                state.getValue(BoilerAttach.LIFTED));
     }
 
     @Override

@@ -1050,7 +1050,7 @@ public class HoseScenes {
         tag.putBoolean("HasStrand", true);
         tag.putFloat("Length", (float) span.length());
         tag.putFloat("Speed", speed);
-        tag.putIntArray("RopePts", packed);
+        tag.putIntArray("PonderPts", packed);
         scene.world().modifyBlockEntity(winch, HoseWinchBlockEntity.class,
                 be -> be.readClient(tag, be.getLevel().registryAccess()));
     }

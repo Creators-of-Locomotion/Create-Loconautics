@@ -143,6 +143,7 @@ public class SteelCableItem extends Item {
                 subLevelB != null ? subLevelB.getUniqueId() : null, clickedB,
                 cableType());
         strand.restLength = restLength;
+        strand.dimension = level.dimension();
 
         SteelCableRope rope = SteelCableRope.build(id, strand.type, restLength,
                 strand.subA, strand.localA, new Vector3d(worldA.x, worldA.y, worldA.z),

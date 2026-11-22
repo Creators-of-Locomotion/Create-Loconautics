@@ -75,6 +75,7 @@ public final class HoseTemplateKind implements StrandTemplateKind {
         strand.nozzleSubLevelId = subIdAt(level, other.getBlockPos());
         strand.nozzleLocalPos = other.getBlockPos();
         strand.nozzlePos = other.getBlockPos();
+        strand.dimension = level.dimension();
         strand.currentLength = data.getFloat("Length");
         strand.locked = data.getBoolean("Locked");
         strand.fluidBuffer = data.getInt("Fluid");

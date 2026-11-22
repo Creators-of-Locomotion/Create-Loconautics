@@ -1,6 +1,7 @@
 package com.lycoris.loconautics.trainphysics.rail;
 
 import com.lycoris.loconautics.LoconauticsConstants;
+import com.lycoris.loconautics.common.track.TrackProfile;
 import com.lycoris.loconautics.compat.railways.RailwaysSwitches;
 import com.lycoris.loconautics.foundation.debug.SteerTrace;
 import com.lycoris.loconautics.trainphysics.portal.PortalFrame;
@@ -734,12 +735,17 @@ public final class RailCarriage {
     }
 
     public boolean isOnMonorail() {
-        return onMonorail(leading) || onMonorail(trailing);
+        return trackProfile().isMonorail();
     }
 
-    private static boolean onMonorail(TravellingPoint point) {
+    public TrackProfile trackProfile() {
+        TrackProfile front = profileAt(leading);
+        return front != TrackProfile.STANDARD ? front : profileAt(trailing);
+    }
+
+    private static TrackProfile profileAt(TravellingPoint point) {
         return point != null && point.edge != null
-                && LoconauticsConstants.RAILWAYS_MONORAIL_MATERIAL.equals(point.edge.getTrackMaterial().id);
+                ? TrackProfile.of(point.edge.getTrackMaterial()) : TrackProfile.STANDARD;
     }
 
     public TrackGraph graph() {

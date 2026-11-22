@@ -26,6 +26,7 @@ import dev.ryanhcode.sable.sublevel.ServerSubLevel;
 import dev.ryanhcode.sable.sublevel.storage.SubLevelRemovalReason;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.state.BlockState;
 import org.joml.Quaterniond;
@@ -48,14 +49,6 @@ public final class GhostWheelBodies {
 
     public static final boolean ENABLED = true;
 
-    private static final double YAW_LIMIT = Math.toRadians(12.5);
-
-    private static final double PITCH_LIMIT = Math.toRadians(12.5);
-
-    private static final double ROLL_LIMIT = Math.toRadians(5.0);
-
-    private static final double DANGLE_DAMPING = 4.0;
-
     // the plate hangs off the bogey pivot, it turns and tips within the limits but never slides
     private static final List<ConstraintJointAxis> LOCKED_AXES = List.of(
             ConstraintJointAxis.LINEAR_X, ConstraintJointAxis.LINEAR_Y, ConstraintJointAxis.LINEAR_Z);
@@ -67,7 +60,18 @@ public final class GhostWheelBodies {
     }
 
     private record Rig(UUID wheelSub, GenericConstraintHandle constraint, Vector3d pivotInCar, ServerLevel level,
-                       Quaterniond carRest, Quaterniond wheelRest, Vector3d restFacing, Quaterniond restChord) {
+                       Quaterniond carRest, Quaterniond wheelRest, Vector3d restFacing, Quaterniond restChord,
+                       GhostWheelProfile.Limits limits) {
+
+        private Rig withLimits(GhostWheelProfile.Limits tuned) {
+            return new Rig(wheelSub, constraint, pivotInCar, level, carRest, wheelRest, restFacing, restChord, tuned);
+        }
+    }
+
+    private static GhostWheelProfile.Limits limitsAt(ServerLevel level, BlockPos bogeyPos) {
+        CompoundTag data = level.getBlockEntity(bogeyPos) instanceof AbstractBogeyBlockEntity be
+                ? be.getBogeyData() : null;
+        return GhostWheelProfiles.limitsOf(level.getBlockState(bogeyPos), data);
     }
 
     private static final Set<Key> DANGLING = new HashSet<>();
@@ -101,7 +105,9 @@ public final class GhostWheelBodies {
         public void forget(SableTrain train, UUID subId, CartEvent event) {
             if (event == CartEvent.GHOSTED || event == CartEvent.REMOVED) {
                 releaseAll(train);
-            } else if (event == CartEvent.REERAILED || event == CartEvent.RESEATED_IN_PLACE) {
+            } else if (event == CartEvent.REERAILED) {
+                lockOnRerail(train);
+            } else if (event == CartEvent.RESEATED_IN_PLACE) {
                 clearAlign(train);
             } else if (event.moved()) {
                 clearAlign(train);
@@ -304,7 +310,14 @@ public final class GhostWheelBodies {
             }
             SEEN.add(key);
             Rig existing = RIGS.get(key);
-            if (existing != null && (!existing.constraint().isValid() || !wheelAlive(level, existing))) {
+            GhostWheelProfile.Limits wanted = limitsAt(level, bogeyPos);
+            boolean usable = existing != null && existing.constraint().isValid() && wheelAlive(level, existing);
+            if (usable && !existing.limits().equals(wanted) && existing.limits().along() == wanted.along()) {
+                existing = retune(carSub, train, key, existing, wanted);
+            }
+            boolean regrow = usable && existing.limits().along() != wanted.along();
+            Quaterniond keptTurn = regrow ? plateOrientation(level, existing) : null;
+            if (existing != null && (!usable || regrow)) {
                 destroy(level, existing);
                 RIGS.remove(key);
                 DANGLING.remove(key);
@@ -314,12 +327,52 @@ public final class GhostWheelBodies {
             if (existing == null) {
                 attach(carSub, train, bogey, key);
                 existing = RIGS.get(key);
+                if (existing != null && keptTurn != null) {
+                    restoreTurn(existing, keptTurn);
+                }
             }
             if (existing == null) {
                 continue;
             }
             setDangling(carSub, train, key, existing, train.isDerailed() || train.isBogeyOffTrack(bogey.localPos()));
         }
+    }
+
+    private static Rig retune(ServerSubLevel carSub, SableTrain train, Key key, Rig rig,
+                              GhostWheelProfile.Limits wanted) {
+        Rig tuned = rig.withLimits(wanted);
+        RIGS.put(key, tuned);
+        if (DANGLING.contains(key) && !ALIGNING.containsKey(key)) {
+            openDangleCone(carSub, train, tuned);
+        }
+        return tuned;
+    }
+
+    private static Quaterniond plateOrientation(ServerLevel level, Rig rig) {
+        ServerSubLevelContainer container = SubLevelContainer.getContainer(level);
+        if (container == null || !(container.getSubLevel(rig.wheelSub()) instanceof ServerSubLevel wheel)
+                || wheel.isRemoved()) {
+            return null;
+        }
+        return new Quaterniond(wheel.logicalPose().orientation());
+    }
+
+    private static void restoreTurn(Rig rig, Quaterniond turn) {
+        ServerSubLevelContainer container = SubLevelContainer.getContainer(rig.level());
+        if (container == null || !(container.getSubLevel(rig.wheelSub()) instanceof ServerSubLevel wheel)
+                || wheel.isRemoved()) {
+            return;
+        }
+        BlockPos plot = wheel.getPlot().getCenterBlock();
+        Vector3d pivotWorld = wheel.logicalPose().transformPosition(
+                new Vector3d(plot.getX() + 0.5, plot.getY() + 0.5, plot.getZ() + 0.5), new Vector3d());
+        Vector3d arm = new Quaterniond(wheel.logicalPose().orientation()).conjugate()
+                .transform(new Vector3d(pivotWorld).sub(wheel.logicalPose().position()));
+        Vector3d moved = new Vector3d(pivotWorld).sub(new Quaterniond(turn).transform(arm));
+        if (!moved.isFinite()) {
+            return;
+        }
+        SableTeleportation.writePose(rig.level(), wheel, moved, new Quaterniond(turn));
     }
 
     public static String rigState(SableTrain train, BlockPos bogeyLocal) {
@@ -460,11 +513,12 @@ public final class GhostWheelBodies {
     private static void openDangleCone(ServerSubLevel carSub, SableTrain train, Rig rig) {
         rig.constraint().setFrame1(pivotFor(carSub, train, rig.pivotInCar()),
                 new Quaterniond(rig.carRest()).conjugate().mul(rig.restChord()).normalize());
-        rig.constraint().setLimit(ConstraintJointAxis.ANGULAR_X, -PITCH_LIMIT, PITCH_LIMIT);
-        rig.constraint().setLimit(ConstraintJointAxis.ANGULAR_Y, -YAW_LIMIT, YAW_LIMIT);
-        rig.constraint().setLimit(ConstraintJointAxis.ANGULAR_Z, -ROLL_LIMIT, ROLL_LIMIT);
+        GhostWheelProfile.Limits limits = rig.limits();
+        rig.constraint().setLimit(ConstraintJointAxis.ANGULAR_X, -limits.pitchRadians(), limits.pitchRadians());
+        rig.constraint().setLimit(ConstraintJointAxis.ANGULAR_Y, -limits.yawRadians(), limits.yawRadians());
+        rig.constraint().setLimit(ConstraintJointAxis.ANGULAR_Z, -limits.rollRadians(), limits.rollRadians());
         for (ConstraintJointAxis axis : SWING_AXES) {
-            rig.constraint().setMotor(axis, 0.0, 0.0, DANGLE_DAMPING, false, 0.0);
+            rig.constraint().setMotor(axis, 0.0, 0.0, limits.damping(), false, 0.0);
         }
     }
 
@@ -686,9 +740,13 @@ public final class GhostWheelBodies {
 
         double cone = Math.max(0.0, ALIGNING.getOrDefault(key, 1.0) - ALIGN_STEP);
         ALIGNING.put(key, cone);
-        rig.constraint().setLimit(ConstraintJointAxis.ANGULAR_X, -PITCH_LIMIT * cone, PITCH_LIMIT * cone);
-        rig.constraint().setLimit(ConstraintJointAxis.ANGULAR_Y, -YAW_LIMIT * cone, YAW_LIMIT * cone);
-        rig.constraint().setLimit(ConstraintJointAxis.ANGULAR_Z, -ROLL_LIMIT * cone, ROLL_LIMIT * cone);
+        GhostWheelProfile.Limits limits = rig.limits();
+        rig.constraint().setLimit(ConstraintJointAxis.ANGULAR_X, -limits.pitchRadians() * cone,
+                limits.pitchRadians() * cone);
+        rig.constraint().setLimit(ConstraintJointAxis.ANGULAR_Y, -limits.yawRadians() * cone,
+                limits.yawRadians() * cone);
+        rig.constraint().setLimit(ConstraintJointAxis.ANGULAR_Z, -limits.rollRadians() * cone,
+                limits.rollRadians() * cone);
 
         Vector3d facing = facingOf(container, rig);
         if (facing == null) {
@@ -700,6 +758,22 @@ public final class GhostWheelBodies {
 
     public static void clearAlign(SableTrain train) {
         clearAlign(train, null);
+    }
+
+    private static void lockOnRerail(SableTrain train) {
+        ServerSubLevel carSub = resolveSub(train);
+        if (carSub == null || train.car() == null) {
+            return;
+        }
+        UUID carId = carSub.getUniqueId();
+        for (SableTrain.Bogey bogey : train.car().bogeys()) {
+            Key key = new Key(carId, bogey.localPos());
+            Rig rig = RIGS.get(key);
+            if (rig != null && DANGLING.contains(key)) {
+                setDangling(carSub, train, key, rig, false);
+            }
+            ALIGNING.remove(key);
+        }
     }
 
     public static void clearAlign(SableTrain train, BlockPos bogeyLocal) {
@@ -736,7 +810,8 @@ public final class GhostWheelBodies {
         if (container == null) {
             return;
         }
-        List<BlockPos> pads = WheelColliders.placePads(level, bogeyPos);
+        GhostWheelProfile.Limits limits = limitsAt(level, bogeyPos);
+        List<BlockPos> pads = WheelColliders.placePads(level, bogeyPos, limits.along());
         if (pads.isEmpty()) {
             return;
         }
@@ -774,7 +849,8 @@ public final class GhostWheelBodies {
         WHEEL_BODIES.add(wheelSub.getUniqueId());
         RIGS.put(key, new Rig(wheelSub.getUniqueId(), handle, pivotInCar, level, new Quaterniond(carQ),
                 new Quaterniond(wheelSub.logicalPose().orientation()),
-                restChord.transform(new Vector3d(0.0, 0.0, 1.0)), new Quaterniond(restChord)));
+                restChord.transform(new Vector3d(0.0, 0.0, 1.0)), new Quaterniond(restChord),
+                limits));
         DANGLING.remove(key);
         ALIGNING.remove(key);
     }

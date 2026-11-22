@@ -2,6 +2,7 @@ package com.lycoris.loconautics.trainphysics.spawn;
 
 import com.lycoris.loconautics.common.sable.SubLevelData;
 import com.lycoris.loconautics.LoconauticsConstants;
+import com.lycoris.loconautics.trainphysics.drive.ExternalForceDerail;
 import com.lycoris.loconautics.common.train.TrainStatusChat;
 import com.lycoris.loconautics.trainphysics.SableTrain;
 import com.lycoris.loconautics.trainphysics.state.CartEvent;
@@ -160,6 +161,12 @@ public final class RerailBalance {
             LOOPS.remove(id);
             return;
         }
+        long staff = ExternalForceDerail.staffAge(sub, train);
+        if (staff <= ExternalForceDerail.STAFF_GRACE_TICKS) {
+            LoconauticsConstants.TRACE.warn("[rerailwire] roll off not counted car {}, physics staff held it {} ticks ago",
+                    id, staff);
+            return;
+        }
         int loops = LOOPS.merge(id, 1, Integer::sum);
         if (loops < LOOP_LIMIT) {
             return;
@@ -168,8 +175,8 @@ public final class RerailBalance {
         if (md != null && !md.isInvalid()) {
             LOOPING.put(id, new Snapshot(md.getMass(), new Vector3d(md.getCenterOfMass())));
         }
-        LoconauticsConstants.TRACE.warn("[rerailwire] loop guard tripped car {} after {} roll offs, {} ticks after the rerail",
-                id, loops, now - rerailedAt);
+        LoconauticsConstants.TRACE.warn("[rerailwire] loop guard tripped car {} after {} roll offs, {} ticks after the rerail, staff age {}",
+                id, loops, now - rerailedAt, staff);
         TrainStatusChat.tooLopsided(train);
         RerailApproach.giveUp(train, now);
     }

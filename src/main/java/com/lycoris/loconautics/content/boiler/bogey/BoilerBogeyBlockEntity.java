@@ -2,6 +2,7 @@ package com.lycoris.loconautics.content.boiler.bogey;
 
 import com.lycoris.loconautics.common.LinkHolder;
 import com.lycoris.loconautics.common.RedstoneLinkPair;
+import com.lycoris.loconautics.config.LoconauticsConfig;
 import com.lycoris.loconautics.content.boiler.BoilerLookup;
 import com.lycoris.loconautics.content.boiler.BoilerTags;
 import com.lycoris.loconautics.content.boiler.firebox.FireboxBlockEntity;
@@ -185,7 +186,11 @@ public class BoilerBogeyBlockEntity extends AbstractBogeyBlockEntity implements 
 
     @Override
     public double powerFraction() {
-        return pressure();
+        return pressure() * wheelFactor();
+    }
+
+    private double wheelFactor() {
+        return 1.0 + LoconauticsConfig.WHEEL_PAIR_BONUS.get() * Math.max(0, wheelPairs() - 1);
     }
 
     @Override
@@ -305,7 +310,8 @@ public class BoilerBogeyBlockEntity extends AbstractBogeyBlockEntity implements 
         this.opposed = opposed;
         FireboxBlockEntity fire = boiler();
         if (fire != null) {
-            fire.reportBogeyDemand(worldPosition, (float) (directImpact(massShare, opposed) * Math.abs(rawRpm())));
+            fire.reportBogeyDemand(worldPosition,
+                    (float) (directImpact(massShare, opposed) * Math.abs(rawRpm()) * wheelFactor()));
         }
     }
 

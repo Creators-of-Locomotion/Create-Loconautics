@@ -54,12 +54,17 @@ public final class GrabClientHandler {
     private static boolean rotating;
     private static boolean sawFree;
     private static final Quaterniond grabOrientation = new Quaterniond();
+    private static float orientationYaw;
 
     private GrabClientHandler() {
     }
 
     public static boolean grabbing() {
         return grabSub != null || grabStrand != null || grabKnotStrand != null;
+    }
+
+    public static boolean canRotate() {
+        return grabbing() && grabKnotStrand == null;
     }
 
     @Nullable
@@ -139,6 +144,7 @@ public final class GrabClientHandler {
         rotating = false;
         sawFree = false;
         grabOrientation.set(sub.logicalPose().orientation());
+        orientationYaw = player.getYRot();
         com.lycoris.loconautics.LoconauticsConstants.LOGGER.info("[undockdbg] client grab pos={} powered={}",
                 hitPos, isPowered(sub, hitPos));
         if (isPowered(sub, hitPos)) {
@@ -266,10 +272,21 @@ public final class GrabClientHandler {
         range = clampRange((float) Math.min(
                 player.getAttribute(Attributes.BLOCK_INTERACTION_RANGE).getValue(), MAX_GRAB_DISTANCE));
         grabOrientation.identity();
+        orientationYaw = player.getYRot();
         sendUpdate();
     }
 
+    private static void followCamera() {
+        LocalPlayer player = Minecraft.getInstance().player;
+        if (player == null) {
+            return;
+        }
+        grabOrientation.premul(new Quaterniond().rotationY(-Math.toRadians(player.getYRot() - orientationYaw)));
+        orientationYaw = player.getYRot();
+    }
+
     private static void sendUpdate() {
+        followCamera();
         if (grabKnotStrand != null) {
             PacketDistributor.sendToServer(new StrandKnotGrabPacket(grabKnotStrand, grabKnotIndex, false, range));
             return;

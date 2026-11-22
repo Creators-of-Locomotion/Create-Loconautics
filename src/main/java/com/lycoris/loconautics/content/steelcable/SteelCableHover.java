@@ -3,7 +3,6 @@ package com.lycoris.loconautics.content.steelcable;
 import com.lycoris.loconautics.common.strand.ClientStrands;
 import com.lycoris.loconautics.common.strand.StrandKind;
 import com.lycoris.loconautics.common.strand.StrandRenderer;
-import com.lycoris.loconautics.content.hose.winch.HoseWinchKnotSource;
 import com.lycoris.loconautics.network.packets.attachment.SteelCableBreakPacket;
 import com.simibubi.create.foundation.utility.RaycastHelper;
 import dev.ryanhcode.sable.Sable;
@@ -61,27 +60,21 @@ public final class SteelCableHover {
                 : Sable.HELPER.projectOutOfSubLevel(mc.level, hit.getLocation()).distanceToSqr(eye);
         Vector3d from = new Vector3d(eye.x, eye.y, eye.z);
         Vector3d to = new Vector3d(target.x, target.y, target.z);
-        Pick strand = raycast(from, to, bestSqr, strandLines());
-        Pick winch = raycast(from, to, strand.distSqr(), winchHoseLines());
+        Pick strand = raycast(from, to, bestSqr, lines(entries()));
+        Pick winch = raycast(from, to, strand.distSqr(), lines(StrandKind.WINCH_HOSE.clientStrands().entries()));
         hovered = winch.id() == null ? strand.id() : null;
         hoveredWinchHose = winch.id();
     }
 
-    private static Map<UUID, List<Vector3d>> strandLines() {
+    private static Map<UUID, List<Vector3d>> lines(Iterable<Map.Entry<UUID, ClientStrands.Strand>> entries) {
         Map<UUID, List<Vector3d>> lines = new java.util.HashMap<>();
-        for (Map.Entry<UUID, ClientStrands.Strand> entry : entries()) {
+        for (Map.Entry<UUID, ClientStrands.Strand> entry : entries) {
             List<Vector3d> points = new ArrayList<>();
             for (var point : entry.getValue().points()) {
                 points.add(point.position);
             }
             lines.put(entry.getKey(), points);
         }
-        return lines;
-    }
-
-    private static Map<UUID, List<Vector3d>> winchHoseLines() {
-        Map<UUID, List<Vector3d>> lines = new java.util.HashMap<>();
-        new HoseWinchKnotSource().collect(lines::put);
         return lines;
     }
 

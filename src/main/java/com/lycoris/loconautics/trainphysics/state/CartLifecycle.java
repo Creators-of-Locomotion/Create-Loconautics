@@ -5,6 +5,8 @@ import com.lycoris.loconautics.content.schedule.SableScheduleRuntime;
 import com.lycoris.loconautics.trainphysics.SableTrain;
 import com.lycoris.loconautics.trainphysics.drive.SableTrainDriver;
 import com.lycoris.loconautics.trainphysics.signal.TrainSignals;
+import com.lycoris.loconautics.trainphysics.spawn.BogeyPlotChanges;
+import com.lycoris.loconautics.trainphysics.station.ConsistNose;
 import com.lycoris.loconautics.trainphysics.wheels.GhostWheelBodies;
 import com.simibubi.create.content.trains.station.GlobalStation;
 import net.minecraft.server.MinecraftServer;
@@ -51,6 +53,10 @@ public final class CartLifecycle {
         String held = String.join(",", holders(id, subId, false, event));
         for (CartStateStore store : STORES) {
             store.forget(train, subId, event);
+        }
+        if (event == CartEvent.RESHAPED || event == CartEvent.SPLIT || event == CartEvent.MERGED) {
+            ConsistNose.traceShapeChange(train, event);
+            BogeyPlotChanges.traceTilt(event.name(), train);
         }
         if (event.moved()) {
             train.beginPoseSettle(TrainResidency.POSE_SETTLE_TICKS);

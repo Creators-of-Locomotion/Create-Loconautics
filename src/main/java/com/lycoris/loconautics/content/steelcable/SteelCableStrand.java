@@ -2,8 +2,11 @@ package com.lycoris.loconautics.content.steelcable;
 
 import com.lycoris.loconautics.common.strand.StrandNbt;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3d;
 
@@ -28,6 +31,8 @@ public final class SteelCableStrand {
 
     public double extensionGoal = 1.0;
 
+    public ResourceKey<Level> dimension = Level.OVERWORLD;
+
     public SteelCableStrand(UUID id, @Nullable UUID subA, BlockPos localA,
                             @Nullable UUID subB, BlockPos localB, SteelCableType type) {
         this.id = id;
@@ -46,6 +51,7 @@ public final class SteelCableStrand {
         CompoundTag tag = StrandNbt.write(
                 id, subA, localA, subB, localB, type.id().toString(), restLength, points);
         tag.putDouble("ExtensionGoal", extensionGoal);
+        tag.putString("Dim", dimension.location().toString());
         return tag;
     }
 
@@ -61,6 +67,9 @@ public final class SteelCableStrand {
         s.points = StrandNbt.readPoints(tag);
         if (tag.contains("ExtensionGoal")) {
             s.extensionGoal = tag.getDouble("ExtensionGoal");
+        }
+        if (tag.contains("Dim")) {
+            s.dimension = ResourceKey.create(Registries.DIMENSION, ResourceLocation.parse(tag.getString("Dim")));
         }
         return s;
     }

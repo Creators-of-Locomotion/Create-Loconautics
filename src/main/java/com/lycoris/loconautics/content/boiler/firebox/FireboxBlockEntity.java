@@ -1150,7 +1150,7 @@ public class FireboxBlockEntity extends BlockEntity implements IHaveGoggleInform
             if (away > AWAY_TICKS && old.fireOut()) coolWhileAway(cooling);
         }
         BoilerSummary fresh = new BoilerSummary(ignited, fuelLeft(), lastBurnRate,
-                water() == null ? 0 : water().getWaterAmount(), netWaterPerTick());
+                water() == null ? 0 : water().getWaterAmount(), netWaterPerTick(), pool().bogeysOverdrawn());
         fresh.stamp(level.getGameTime());
         train.setBoilerSummary(fresh);
         BoilerStopAlert.check(train, BoilerStopAlert.rake(train), fresh, steamPressure);

@@ -11,12 +11,10 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3d;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.function.BiConsumer;
 import java.util.function.IntFunction;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
@@ -26,20 +24,9 @@ public final class StrandKnotPicker {
 
     private static final double KNOT_HALF_EXTENT = 0.2;
 
-    private static final List<Source> SOURCES = new ArrayList<>();
-
     public record Knot(UUID strand, int index, double distance) {}
 
-    // for ropes that are not a strand kind and keep their points somewhere else, like the winch hose
-    public interface Source {
-        void collect(BiConsumer<UUID, List<Vector3d>> out);
-    }
-
     private StrandKnotPicker() {
-    }
-
-    public static void registerSource(Source source) {
-        SOURCES.add(source);
     }
 
     @Nullable
@@ -62,9 +49,6 @@ public final class StrandKnotPicker {
                 List<ClientStrands.Point> points = entry.getValue().points();
                 consider(entry.getKey(), points.size(), i -> points.get(i).position, eye, target, bestSqr, best);
             }
-        }
-        for (Source source : SOURCES) {
-            source.collect((id, points) -> consider(id, points.size(), points::get, eye, target, bestSqr, best));
         }
         return best[0];
     }
@@ -100,16 +84,7 @@ public final class StrandKnotPicker {
                 return new Vec3(at.x, at.y, at.z);
             }
         }
-        Vec3[] result = new Vec3[1];
-        for (Source source : SOURCES) {
-            source.collect((id, points) -> {
-                if (id.equals(strand) && index < points.size()) {
-                    Vector3d at = points.get(index);
-                    result[0] = new Vec3(at.x, at.y, at.z);
-                }
-            });
-        }
-        return result[0];
+        return null;
     }
 
     public static int knotCount(UUID strand) {
@@ -119,14 +94,6 @@ public final class StrandKnotPicker {
                 return found.size();
             }
         }
-        int[] count = new int[1];
-        for (Source source : SOURCES) {
-            source.collect((id, points) -> {
-                if (id.equals(strand)) {
-                    count[0] = points.size();
-                }
-            });
-        }
-        return count[0];
+        return 0;
     }
 }

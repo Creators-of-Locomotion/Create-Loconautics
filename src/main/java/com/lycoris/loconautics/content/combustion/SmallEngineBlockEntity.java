@@ -84,7 +84,7 @@ public class SmallEngineBlockEntity extends GeneratingKineticBlockEntity impleme
     private int controlSignal;
     private float ownRpm;
     private float burnCarry;
-    private int fuelOrdinal = -1;
+    private String fuelKey = "";
     private int poolAmount;
     private int poolCapacity = SmallEngineTuning.TANK_CAPACITY;
     private long burnsUntil = -1;
@@ -318,20 +318,20 @@ public class SmallEngineBlockEntity extends GeneratingKineticBlockEntity impleme
             if (burnsUntil < 0 || rateMoved || Math.abs(estimate - burnsUntil) > BURNS_FOR_SLACK) nowBurnsUntil = estimate;
         }
 
-        int nowFuelOrdinal = fuel == null ? -1 : fuel.ordinal();
+        String nowFuelKey = fuel == null ? "" : fuel.key();
         boolean lostHead = head && !nowHead;
-        boolean changed = nowHead != head || nowFuelOrdinal != fuelOrdinal || nowRefused != refused || nowRunning != running
+        boolean changed = nowHead != head || !nowFuelKey.equals(fuelKey) || nowRefused != refused || nowRunning != running
                 || nowSignal != controlSignal || nowRpm != ownRpm
                 || reanchor || nowBurnsUntil != burnsUntil;
-        if (nowRunning && (!running || nowFuelOrdinal != fuelOrdinal) && level instanceof ServerLevel serverLevel) {
-            TrainAdvancements.engineStarted(serverLevel, worldPosition, nowFuelOrdinal, members.size());
+        if (nowRunning && (!running || !nowFuelKey.equals(fuelKey)) && level instanceof ServerLevel serverLevel) {
+            TrainAdvancements.engineStarted(serverLevel, worldPosition, nowFuelKey, members.size());
         }
         head = nowHead;
         refused = nowRefused;
         running = nowRunning;
         controlSignal = nowSignal;
         ownRpm = nowRpm;
-        fuelOrdinal = nowFuelOrdinal;
+        fuelKey = nowFuelKey;
         poolAmount = nextAmount;
         poolRate = nextRate;
         poolStamp = nextStamp;
@@ -608,7 +608,7 @@ public class SmallEngineBlockEntity extends GeneratingKineticBlockEntity impleme
         tag.putInt("Signal", controlSignal);
         tag.putFloat("OwnRpm", ownRpm);
         tag.putFloat("BurnCarry", burnCarry);
-        tag.putInt("Fuel", fuelOrdinal);
+        tag.putString("FuelKey", fuelKey);
         tag.putInt("Pool", poolAmount);
         tag.putInt("PoolCapacity", poolCapacity);
         tag.putFloat("PoolRate", poolRate);
@@ -629,7 +629,7 @@ public class SmallEngineBlockEntity extends GeneratingKineticBlockEntity impleme
         controlSignal = tag.getInt("Signal");
         ownRpm = tag.getFloat("OwnRpm");
         burnCarry = tag.getFloat("BurnCarry");
-        fuelOrdinal = tag.contains("Fuel") ? tag.getInt("Fuel") : -1;
+        fuelKey = tag.getString("FuelKey");
         poolAmount = tag.contains("Pool") ? tag.getInt("Pool") : tank.getFluidAmount();
         poolCapacity = tag.contains("PoolCapacity") ? tag.getInt("PoolCapacity") : tank.getCapacity();
         poolRate = tag.getFloat("PoolRate");

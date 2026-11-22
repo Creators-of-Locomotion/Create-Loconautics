@@ -85,6 +85,17 @@ public final class TiltedShape extends VoxelShape {
     }
 
     @Override
+    public VoxelShape move(double x, double y, double z) {
+        Vec3 shift = new Vec3(x, y, z);
+        List<Vec3[]> movedOutline = outline == null ? null : outline.stream()
+                .map(segment -> new Vec3[]{segment[0].add(shift), segment[1].add(shift)})
+                .toList();
+        return new TiltedShape(straight.move(x, y, z), tilted,
+                point -> toBlock.apply(point).add(shift), point -> toTilted.apply(point.subtract(shift)),
+                movedOutline);
+    }
+
+    @Override
     public DoubleList getCoords(Direction.Axis axis) {
         return switch (axis) {
             case X -> DoubleArrayList.wrap(new double[]{enclosing.minX, enclosing.maxX});

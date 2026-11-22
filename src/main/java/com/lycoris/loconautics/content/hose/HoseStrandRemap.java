@@ -38,15 +38,21 @@ public final class HoseStrandRemap implements StrandRemap.Target<HoseStrand> {
     }
 
     @Override
-    public boolean remapEnds(HoseStrand strand, StrandEnd from, StrandEnd to) {
-        boolean winch = from.local().equals(strand.winchPos);
+    public boolean remapEnds(HoseStrand strand, StrandEnd from, StrandEnd to, ServerLevel fromLevel,
+                             ServerLevel toLevel) {
+        boolean here = strand.dimension.equals(fromLevel.dimension());
+        boolean winch = here && from.local().equals(strand.winchPos);
         if (winch) {
             strand.winchPos = to.local();
         }
-        boolean nozzle = from.matches(strand.nozzleSubLevelId, strand.nozzleLocalPos);
+        boolean nozzle = from.matches(strand.nozzleSubLevelId, strand.nozzleLocalPos)
+                && (strand.nozzleSubLevelId != null || here);
         if (nozzle) {
             strand.nozzleSubLevelId = to.subLevelId();
             strand.nozzleLocalPos = to.local();
+        }
+        if (winch || nozzle) {
+            strand.dimension = toLevel.dimension();
         }
         return winch || nozzle;
     }

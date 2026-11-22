@@ -1,9 +1,12 @@
 package com.lycoris.loconautics.content.boiler.barrel;
 
 import com.lycoris.loconautics.content.boiler.BoilerBlocks;
+import com.lycoris.loconautics.content.boiler.BoilerAttach;
+import com.lycoris.loconautics.content.boiler.BoilerLinePlacement;
 import com.lycoris.loconautics.content.boiler.BoilerPlacement;
 import com.lycoris.loconautics.content.boiler.BoilerShapes;
 import com.lycoris.loconautics.content.boiler.firebox.FireboxBlock;
+import com.lycoris.loconautics.content.boiler.firebox.FireboxGroups;
 import com.lycoris.loconautics.foundation.pick.OversizeShape;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.MapCodec;
@@ -53,16 +56,11 @@ public class BoilerBarrelBlock extends DirectionalBlock
     public static final BooleanProperty SMOKE_POS = BooleanProperty.create("smoke_pos");
     public static final BooleanProperty SMOKE_NEG = BooleanProperty.create("smoke_neg");
 
-    private static final int SMALL_HELPER_ID = PlacementHelpers.register(placement(false));
-    private static final int BIG_HELPER_ID = PlacementHelpers.register(placement(true));
-
-    private static BoilerPlacement placement(boolean big) {
-        return new BoilerPlacement(
-                state -> state.getBlock() instanceof BoilerBarrelBlock b && b.big == big,
-                stack -> stack.getItem() instanceof BlockItem item
-                        && item.getBlock() instanceof BoilerBarrelBlock b && b.big == big,
-                FACING);
-    }
+    private static final int BIG_HELPER_ID = PlacementHelpers.register(new BoilerPlacement(
+            state -> state.getBlock() instanceof BoilerBarrelBlock b && b.big,
+            stack -> stack.getItem() instanceof BlockItem item
+                    && item.getBlock() instanceof BoilerBarrelBlock b && b.big,
+            FACING));
 
     public static final MapCodec<BoilerBarrelBlock> CODEC = RecordCodecBuilder.mapCodec(inst -> inst.group(
             propertiesCodec(),
@@ -86,27 +84,31 @@ public class BoilerBarrelBlock extends DirectionalBlock
                 .setValue(FACING, Direction.NORTH)
                 .setValue(CONNECTED_POS, false).setValue(CONNECTED_NEG, false)
                 .setValue(WRENCHED_POS, false).setValue(WRENCHED_NEG, false)
-                .setValue(SMOKE_POS, false).setValue(SMOKE_NEG, false));
+                .setValue(SMOKE_POS, false).setValue(SMOKE_NEG, false)
+                .setValue(BoilerAttach.RAISED, false));
     }
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING, CONNECTED_POS, CONNECTED_NEG, WRENCHED_POS, WRENCHED_NEG, SMOKE_POS, SMOKE_NEG);
+        builder.add(FACING, CONNECTED_POS, CONNECTED_NEG, WRENCHED_POS, WRENCHED_NEG, SMOKE_POS, SMOKE_NEG,
+                BoilerAttach.RAISED);
     }
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext ctx) {
-        return BoilerShapes.visual(state.getValue(FACING).getAxis(), big);
+        return BoilerShapes.raisedIf(BoilerShapes.visual(state.getValue(FACING).getAxis(), big),
+                state.getValue(BoilerAttach.RAISED));
     }
 
     @Override
     public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext ctx) {
-        return BoilerShapes.collision(state.getValue(FACING).getAxis(), big);
+        return getSubLevelCollisionShape(level, state);
     }
 
     @Override
     public VoxelShape getSubLevelCollisionShape(BlockGetter level, BlockState state) {
-        return BoilerShapes.collision(state.getValue(FACING).getAxis(), big);
+        return BoilerShapes.raisedIf(BoilerShapes.collision(state.getValue(FACING).getAxis(), big),
+                state.getValue(BoilerAttach.RAISED));
     }
 
     @Override
@@ -124,18 +126,30 @@ public class BoilerBarrelBlock extends DirectionalBlock
         return s.getBlock() instanceof BoilerBarrelBlock other
                 && other.big == this.big
                 && s.getValue(FACING).getAxis() == axis
-                || fireboxBack(s, end);
+                || fireboxBack(level, pos, s, end);
     }
 
     // a firebox joins a barrel at its back, the door faces away from the barrel
-    private boolean fireboxBack(BlockState neighbor, Direction end) {
-        return !big && neighbor.getBlock() instanceof FireboxBlock
-                && neighbor.getValue(BlockStateProperties.HORIZONTAL_FACING) == end;
+    // a row of fireboxes faces the way its controller faces, the extensions keep whatever they were placed with
+    private boolean fireboxBack(LevelAccessor level, BlockPos pos, BlockState neighbor, Direction end) {
+        if (big || !(neighbor.getBlock() instanceof FireboxBlock)) return false;
+        BlockPos controller = FireboxGroups.controllerOf(level, pos);
+        BlockState facingState = controller == null ? neighbor : level.getBlockState(controller);
+        return facingState.getValue(BlockStateProperties.HORIZONTAL_FACING) == end;
+    }
+
+    // the front model is the end that points at the firebox, so every barrel of the row faces it
+    private boolean towardFirebox(LevelAccessor level, BlockPos neighborPos, Direction end) {
+        if (big) return false;
+        BlockState s = level.getBlockState(neighborPos);
+        if (fireboxBack(level, neighborPos, s, end)) return true;
+        return s.getBlock() instanceof BoilerBarrelBlock other && !other.big
+                && s.getValue(FACING) == end && s.getValue(connectedFor(end.getAxis(), end));
     }
 
     private boolean autoJoins(LevelAccessor level, BlockPos pos, Direction.Axis axis, Direction end) {
         BlockState s = level.getBlockState(pos);
-        return fireboxBack(s, end) || sameFamily(level, pos, axis, end) && s.getBlock() == this;
+        return fireboxBack(level, pos, s, end) || sameFamily(level, pos, axis, end) && s.getBlock() == this;
     }
 
     static Direction positiveOf(Direction.Axis axis) {
@@ -184,10 +198,14 @@ public class BoilerBarrelBlock extends DirectionalBlock
         Direction facing = look.getOpposite();
         Direction.Axis axis = facing.getAxis();
         BlockState state = defaultBlockState().setValue(FACING, facing)
-                .setValue(smokeEndFor(axis, look), true);
+                .setValue(smokeEndFor(axis, look), true)
+                .setValue(BoilerAttach.RAISED, context.isSecondaryUseActive());
         for (Direction end : new Direction[]{positiveOf(axis), positiveOf(axis).getOpposite()}) {
             boolean join = autoJoins(context.getLevel(), context.getClickedPos().relative(end), axis, end);
             state = state.setValue(connectedFor(axis, end), join);
+            if (join && towardFirebox(context.getLevel(), context.getClickedPos().relative(end), end)) {
+                state = state.setValue(FACING, end);
+            }
         }
         return state;
     }
@@ -204,7 +222,28 @@ public class BoilerBarrelBlock extends DirectionalBlock
         if (!sameFamily(level, neighborPos, axis, direction)) {
             return state.setValue(connected, false).setValue(wrenched, false);
         }
-        return state.setValue(connected, autoJoins(level, neighborPos, axis, direction) != state.getValue(wrenched));
+        boolean join = autoJoins(level, neighborPos, axis, direction) != state.getValue(wrenched);
+        state = state.setValue(connected, join);
+        if (join && towardFirebox(level, neighborPos, direction)) {
+            state = state.setValue(FACING, direction);
+        }
+        return state;
+    }
+
+    // a barrel put down by the placement assist arrives with no joins, and nothing else updates it
+    @Override
+    protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
+        super.onPlace(state, level, pos, oldState, movedByPiston);
+        if (level.isClientSide || oldState.is(this)) return;
+        Direction.Axis axis = state.getValue(FACING).getAxis();
+        BlockState settled = state;
+        for (Direction end : new Direction[]{positiveOf(axis), positiveOf(axis).getOpposite()}) {
+            BlockPos neighborPos = pos.relative(end);
+            settled = updateShape(settled, end, level.getBlockState(neighborPos), level, pos, neighborPos);
+        }
+        if (settled != state) {
+            level.setBlock(pos, settled, Block.UPDATE_ALL);
+        }
     }
 
     @Override
@@ -215,7 +254,7 @@ public class BoilerBarrelBlock extends DirectionalBlock
     @Override
     protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos,
                                               Player player, InteractionHand hand, BlockHitResult hit) {
-        IPlacementHelper helper = PlacementHelpers.get(big ? BIG_HELPER_ID : SMALL_HELPER_ID);
+        IPlacementHelper helper = big ? PlacementHelpers.get(BIG_HELPER_ID) : BoilerLinePlacement.get();
         if (!helper.matchesItem(stack)) {
             return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         }

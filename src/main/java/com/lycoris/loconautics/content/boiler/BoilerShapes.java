@@ -10,6 +10,8 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
 
 public final class BoilerShapes {
@@ -193,6 +195,15 @@ public final class BoilerShapes {
             case Y -> Block.box(u0, 0.0, v0, u1, 16.0, v1);
             case Z -> Block.box(u0, v0, 0.0, u1, v1, 16.0);
         };
+    }
+
+    private static final Map<VoxelShape, VoxelShape> RAISED_SHAPES = new ConcurrentHashMap<>();
+
+    public static VoxelShape raisedIf(VoxelShape shape, boolean raised) {
+        if (!raised) {
+            return shape;
+        }
+        return RAISED_SHAPES.computeIfAbsent(shape, base -> base.move(0.0, BoilerAttach.BULGE, 0.0));
     }
 
     public static VoxelShape visual(Direction.Axis axis, boolean big) {

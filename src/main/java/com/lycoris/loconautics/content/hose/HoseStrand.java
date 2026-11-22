@@ -2,10 +2,13 @@ package com.lycoris.loconautics.content.hose;
 
 import com.lycoris.loconautics.common.strand.StrandNbt;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.DoubleTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3d;
 
@@ -29,6 +32,8 @@ public final class HoseStrand {
 
     @Nullable public List<Vector3d> points;
     public double extensionGoal = 1.0;
+
+    public ResourceKey<Level> dimension = Level.OVERWORLD;
 
     public HoseStrand(UUID id, BlockPos winchPos, HoseType type) {
         this.id = id;
@@ -63,6 +68,7 @@ public final class HoseStrand {
             tag.put("Points", list);
             tag.putDouble("ExtGoal", extensionGoal);
         }
+        tag.putString("Dim", dimension.location().toString());
         return tag;
     }
 
@@ -84,6 +90,9 @@ public final class HoseStrand {
         s.points = StrandNbt.readPoints(tag);
         if (s.points != null) {
             s.extensionGoal = tag.getDouble("ExtGoal");
+        }
+        if (tag.contains("Dim")) {
+            s.dimension = ResourceKey.create(Registries.DIMENSION, ResourceLocation.parse(tag.getString("Dim")));
         }
         return s;
     }

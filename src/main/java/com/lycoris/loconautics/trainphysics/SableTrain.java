@@ -5,6 +5,8 @@ import com.lycoris.loconautics.compat.computercraft.CcEvents;
 import com.lycoris.loconautics.common.train.TrainStatusChat;
 import com.lycoris.loconautics.trainphysics.rail.RailCarriage;
 import com.lycoris.loconautics.trainphysics.spacing.CarExtent;
+import com.lycoris.loconautics.trainphysics.state.CartEvent;
+import com.lycoris.loconautics.trainphysics.state.CartLifecycle;
 import com.lycoris.loconautics.trainphysics.state.SableTrainPersistence;
 import com.simibubi.create.content.trains.station.GlobalStation;
 import dev.ryanhcode.sable.sublevel.storage.holding.GlobalSavedSubLevelPointer;
@@ -143,8 +145,7 @@ public final class SableTrain {
     private void swapRails(RailCarriage newCarriage, List<Bogey> newBogeys, Vector3dc lead, Vector3dc trail) {
         this.car = new Car(car.subLevelId(), newCarriage, newBogeys, lead, trail);
         // a bogey that left with a split island would otherwise stay flagged here, smoking and failing to rerail forever
-        offTrackBogeys.removeIf(pos -> !hasBogeyAt(newBogeys, pos));
-        offTrackSince.keySet().removeIf(pos -> !hasBogeyAt(newBogeys, pos));
+        pruneBogeyState(newBogeys);
         dropReasonWhenRailed();
     }
 
@@ -160,13 +161,25 @@ public final class SableTrain {
 
     public void replaceCar(Car newCar) {
         this.car = newCar;
+        pruneBogeyState(newCar.bogeys());
+        dropReasonWhenRailed();
+    }
+
+    public void reshape(Car newCar) {
+        replaceCar(newCar);
+        CartLifecycle.fire(this, CartEvent.RESHAPED);
     }
 
     public void setBogeys(List<Bogey> newBogeys) {
         this.car = new Car(car.subLevelId(), car.carriage(), newBogeys, car.localLead(), car.localTrail());
-        offTrackBogeys.removeIf(pos -> !hasBogeyAt(newBogeys, pos));
-        bogeyFront.keySet().removeIf(pos -> !hasBogeyAt(newBogeys, pos));
+        pruneBogeyState(newBogeys);
         dropReasonWhenRailed();
+    }
+
+    private void pruneBogeyState(List<Bogey> bogeys) {
+        offTrackBogeys.removeIf(pos -> !hasBogeyAt(bogeys, pos));
+        offTrackSince.keySet().removeIf(pos -> !hasBogeyAt(bogeys, pos));
+        bogeyFront.keySet().removeIf(pos -> !hasBogeyAt(bogeys, pos));
     }
 
     private static boolean hasBogeyAt(List<Bogey> bogeys, BlockPos localPos) {

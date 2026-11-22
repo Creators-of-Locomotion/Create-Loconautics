@@ -59,11 +59,11 @@ public final class ClientStrands {
         }
 
         private void accept(double tick, List<Vector3d> incoming) {
-            if (points.size() != incoming.size()) {
-                points.clear();
-                for (Vector3d p : incoming) {
-                    points.add(new Point(p));
-                }
+            while (points.size() < incoming.size()) {
+                points.add(0, new Point(incoming.get(incoming.size() - points.size() - 1)));
+            }
+            while (points.size() > incoming.size()) {
+                points.remove(0);
             }
             for (int i = 0; i < incoming.size(); i++) {
                 points.get(i).snapshots.add(new Snapshot(tick, new Vector3d(incoming.get(i))));

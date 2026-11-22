@@ -61,6 +61,17 @@
 - Breaking the track under a moving car drops it at once instead of two seconds later.
 - A derail plays one crash, and the heavy thud waits until the car hits the ground.
 - Chat says a car lost its bogeys instead of claiming the track is missing.
+- The coupling stress warning reaches the driver when one bogey is pulled off.
+- Cars thrown off with the physics staff keep rerailing instead of being called too lopsided.
+- Derailed carts no longer twitch on the spot when only one bogey can reach the rail.
+- Winch hoses no longer jump or lag behind the nozzle on a moving train.
+- Hoses and steel cables no longer show up in another dimension.
+- Hose Winches keep working after a reload, no need to break and place them back.
+- Hose Nozzles no longer get flung away when hooked to a Hose Winch.
+- Hose Nozzles turn freely again, the hose no longer fights the nozzle it is hooked to.
+- A bogey placed on a physics body turns it into a train right away, untested.
+- A train made from a placed bogey no longer jerks around on its first rerail, untested.
+- Derailed Railways cars only rerail onto track their bogeys can run on, untested.
 
 ### Added
 - Boilers show a level in the goggles, set by their size and fire.
@@ -99,6 +110,10 @@
 - Hold Alt over a boiler body or firebox to see its water capacity.
 - Single bogey cars lift their wheels on one side like other cars.
 - The /loconautics lost command lists trains whose body went missing and can find them again.
+- Grabbed objects keep the angle you turned them to and turn with your view.
+- Holding something shows which key rotates it, like Create's hints.
+- Datapacks can add engine fuels, with RPM and burn time per fluid.
+- Sneak placing a Firebox raises it, and parts on it rise too.
 
 ### Changed
 - Steam takeoff power follows the boiler level, 16384 SU per level.
@@ -134,9 +149,11 @@
 - Boiler bodies have new end caps and a reworked shell.
 - Boilers count 3 fireboxes and 9 body blocks, extra ones are decorative.
 - Boilers use more water when the bogeys draw more of the pool.
+- Boiler Bogeys pull harder and draw more steam for each wheel pair after the first.
 - Bound panel parts glint and name their block, shift right click unbinds them.
 - Rope and Physics Staff lift limits are configs again, the staff one can be 0.
 - A slow car stops at a track end like a Create train instead of running off.
+- Firebox explosion on impact, along with its crash config options.
 
 ### Ponder
 #### Instrument Panel

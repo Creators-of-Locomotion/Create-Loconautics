@@ -13,18 +13,12 @@ import com.lycoris.loconautics.trainphysics.station.TrainStations;
 import com.lycoris.loconautics.trainphysics.spawn.SableTrainSpawner;
 import com.lycoris.loconautics.common.sable.SubLevelBlocks;
 import com.simibubi.create.content.trains.bogey.AbstractBogeyBlock;
-import com.simibubi.create.foundation.utility.CreateLang;
 import dev.ryanhcode.sable.api.sublevel.ServerSubLevelContainer;
 import dev.ryanhcode.sable.api.sublevel.SubLevelContainer;
 import dev.ryanhcode.sable.sublevel.ServerSubLevel;
-import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.phys.Vec3;
 
 import java.util.Set;
 import java.util.UUID;
-
-import static com.lycoris.loconautics.foundation.LogFormat.shortId;
 
 public final class TrainDerailment {
     private TrainDerailment() {
@@ -38,11 +32,15 @@ public final class TrainDerailment {
             }
             RAILS_GONE.remove(train.id());
             TILT_OVER.remove(train.id());
+            if (subId != null) {
+                BUFFER_HELD.remove(subId);
+            }
         }
 
         @Override
         public void retain(Set<UUID> liveTrains, Set<UUID> liveSubs) {
             TrainDerailment.retain(liveTrains);
+            BUFFER_HELD.keySet().retainAll(liveSubs);
         }
 
         @Override
@@ -127,6 +125,8 @@ public final class TrainDerailment {
     static final int RAILS_GONE_GRACE_TICKS = 40;
 
     static final java.util.Map<UUID, Integer> RAILS_GONE = new java.util.HashMap<>();
+    // keyed by body, the sign of the speed that carried the car into the buffer, the drive may only pull it back out
+    static final java.util.Map<UUID, Integer> BUFFER_HELD = new java.util.HashMap<>();
 
     // false means stop here
     static boolean checkRailsGone(SableTrain train, ServerSubLevel sub) {
@@ -251,27 +251,12 @@ public final class TrainDerailment {
         if (culprit == null) {
             return false;
         }
-        derailBogey(train, train.car(), culprit, DerailReason.COUPLING_STRESS);
-        tellPlayersAboard(sub, CreateLang.translateDirect("train.status.coupling_stress"));
+        if (!derailBogey(train, train.car(), culprit, DerailReason.COUPLING_STRESS)) {
+            TrainStatusChat.highStress(train);
+        }
         LoconauticsConstants.LOGGER.info(
                 "[sabletrain] car {} bogey {} derailed, coupling stress {} > {}",
                 train.id(), culprit.localPos().toShortString(), SableTrainDriver.f(stress.amount()), SableTrainDriver.f(MAX_COUPLING_STRESS));
         return true;
-    }
-
-    static void tellPlayersAboard(ServerSubLevel sub, Component message) {
-        var bounds = sub.getPlot().getBoundingBox();
-        for (ServerPlayer player : sub.getLevel().getServer().getPlayerList().getPlayers()) {
-            Vec3 at = player.getVehicle() != null ? player.getVehicle().position() : player.position();
-            if (!bounds.contains((int) Math.floor(at.x), (int) Math.floor(at.y), (int) Math.floor(at.z))) {
-                continue;
-            }
-            player.displayClientMessage(CreateLang
-                    .translateDirect("train.status", shortId(sub.getUniqueId()))
-                    .withStyle(net.minecraft.ChatFormatting.GOLD), false);
-            player.displayClientMessage(Component.literal(" - ")
-                    .withStyle(net.minecraft.ChatFormatting.GRAY)
-                    .append(message.copy().withStyle(st -> st.withColor(0xFFD3B4))), false);
-        }
     }
 }

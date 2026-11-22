@@ -159,6 +159,13 @@ public final class LoconauticsClient {
             if (block instanceof com.simibubi.create.content.trains.bogey.AbstractBogeyBlock<?>) {
                 registerDrivenBogey(block);
             }
+            if (block.defaultBlockState().hasProperty(com.lycoris.loconautics.content.boiler.BoilerAttach.LIFTED)
+                    || block instanceof com.lycoris.loconautics.content.boiler.barrel.BoilerBarrelBlock
+                    || block instanceof com.lycoris.loconautics.content.boiler.firebox.FireboxBlock) {
+                com.simibubi.create.CreateClient.MODEL_SWAPPER.getCustomBlockModels().register(
+                        net.createmod.catnip.registry.RegisteredObjectsHelper.getKeyOrThrow(block),
+                        com.lycoris.loconautics.content.boiler.RaisedBoilerModel::new);
+            }
         }
     }
 
@@ -266,9 +273,6 @@ public final class LoconauticsClient {
         TooltipModifier.REGISTRY.register(LoconauticsRegistries.KNUCKLE_ITEM.get(),
                 new ItemDescription.Modifier(LoconauticsRegistries.KNUCKLE_ITEM.get(),
                         net.createmod.catnip.lang.FontHelper.Palette.STANDARD_CREATE));
-
-        com.lycoris.loconautics.common.strand.StrandKnotPicker.registerSource(
-                new com.lycoris.loconautics.content.hose.winch.HoseWinchKnotSource());
 
         registerTooltip(com.lycoris.loconautics.content.cerisene.CeriseneBlocks.RAW_CERISENE.get(), "item.loconautics.raw_cerisene");
         registerTooltip(com.lycoris.loconautics.content.cerisene.CeriseneBlocks.CERISENE_BLOCK_ITEM.get(), "block.loconautics.cerisene_block");
@@ -577,6 +581,7 @@ public final class LoconauticsClient {
             com.lycoris.loconautics.trainphysics.portal.PortalCutsClient.onLevelUnload(level);
             com.lycoris.loconautics.foundation.particle.LateParticles.clear();
             com.lycoris.loconautics.content.analogcontroller.AnalogControllerClientHandler.clear();
+            com.lycoris.loconautics.common.strand.ClientStrands.clearAll();
         }
     }
 

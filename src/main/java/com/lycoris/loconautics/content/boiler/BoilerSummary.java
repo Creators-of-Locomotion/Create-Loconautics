@@ -8,7 +8,9 @@ public final class BoilerSummary {
     public static final String NO_FUEL = "no_fuel";
     public static final String NO_WATER = "no_water";
     public static final String NOT_LIT = "not_lit";
+    public static final String OVERDRAWN = "overdrawn";
 
+    private boolean overdrawn;
     private boolean ignited;
     private float fuel;
     private float burnPerTick;
@@ -21,7 +23,9 @@ public final class BoilerSummary {
     public BoilerSummary() {
     }
 
-    public BoilerSummary(boolean ignited, float fuel, float burnPerTick, int water, float waterPerTick) {
+    public BoilerSummary(boolean ignited, float fuel, float burnPerTick, int water, float waterPerTick,
+                         boolean overdrawn) {
+        this.overdrawn = overdrawn;
         this.ignited = ignited;
         this.fuel = fuel;
         this.burnPerTick = burnPerTick;
@@ -66,6 +70,7 @@ public final class BoilerSummary {
         if (!ignited) return NOT_LIT;
         if (fuel <= 0f) return NO_FUEL;
         if (waterPerTick > 0f && water <= 0) return NO_WATER;
+        if (overdrawn) return OVERDRAWN;
         return null;
     }
 
@@ -88,6 +93,7 @@ public final class BoilerSummary {
     public CompoundTag save() {
         CompoundTag tag = new CompoundTag();
         tag.putBoolean("Ignited", ignited);
+        tag.putBoolean("Overdrawn", overdrawn);
         tag.putFloat("Fuel", fuel);
         tag.putFloat("BurnPerTick", burnPerTick);
         tag.putInt("Water", water);
@@ -100,7 +106,8 @@ public final class BoilerSummary {
 
     public static BoilerSummary load(CompoundTag tag) {
         BoilerSummary summary = new BoilerSummary(tag.getBoolean("Ignited"), tag.getFloat("Fuel"),
-                tag.getFloat("BurnPerTick"), tag.getInt("Water"), tag.getFloat("WaterPerTick"));
+                tag.getFloat("BurnPerTick"), tag.getInt("Water"), tag.getFloat("WaterPerTick"),
+                tag.getBoolean("Overdrawn"));
         summary.spentFuel = tag.getFloat("SpentFuel");
         summary.spentWater = tag.getFloat("SpentWater");
         summary.syncedAt = tag.contains("SyncedAt") ? tag.getLong("SyncedAt") : -1L;

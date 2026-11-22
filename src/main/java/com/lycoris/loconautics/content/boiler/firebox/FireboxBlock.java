@@ -7,9 +7,9 @@ import com.lycoris.loconautics.client.connected.ConnectedBlock;
 import com.lycoris.loconautics.client.connected.ConnectionBounds;
 import com.lycoris.loconautics.client.copycat.CopycatMaterialSource;
 import com.lycoris.loconautics.client.copycat.CopycatQuads;
-import com.lycoris.loconautics.compat.cbc.BoilerImpactCallback;
 import com.lycoris.loconautics.content.boiler.BoilerBlocks;
-import com.lycoris.loconautics.content.boiler.BoilerPlacement;
+import com.lycoris.loconautics.content.boiler.BoilerAttach;
+import com.lycoris.loconautics.content.boiler.BoilerLinePlacement;
 import com.lycoris.loconautics.content.boiler.BoilerShapes;
 import com.lycoris.loconautics.foundation.pick.OversizeShape;
 import com.mojang.serialization.MapCodec;
@@ -17,9 +17,6 @@ import com.simibubi.create.content.equipment.wrench.IWrenchable;
 import dev.ryanhcode.sable.api.block.BlockSubLevelAssemblyListener;
 import dev.ryanhcode.sable.api.block.BlockSubLevelCollisionShape;
 import net.createmod.catnip.placement.IPlacementHelper;
-import net.createmod.catnip.placement.PlacementHelpers;
-import dev.ryanhcode.sable.api.block.BlockWithSubLevelCollisionCallback;
-import dev.ryanhcode.sable.api.physics.callback.BlockSubLevelCollisionCallback;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -51,23 +48,18 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
 
 public class FireboxBlock extends BaseEntityBlock
-        implements BlockWithSubLevelCollisionCallback, BlockSubLevelAssemblyListener, IWrenchable, ConnectedBlock,
+        implements BlockSubLevelAssemblyListener, IWrenchable, ConnectedBlock,
         CopycatMaterialSource, BlockSubLevelCollisionShape, OversizeShape {
 
     public static final BooleanProperty EXTENSION = BooleanProperty.create("extension");
-
-    private static final int PLACEMENT_ID = PlacementHelpers.register(new BoilerPlacement(
-            state -> state.getBlock() instanceof FireboxBlock,
-            stack -> stack.getItem() instanceof BlockItem item && item.getBlock() instanceof FireboxBlock,
-            BlockStateProperties.HORIZONTAL_FACING));
-
 
     public FireboxBlock(BlockBehaviour.Properties properties) {
         super(properties);
         registerDefaultState(getStateDefinition().any()
                 .setValue(BlockStateProperties.LIT, false)
                 .setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.NORTH)
-                .setValue(EXTENSION, false));
+                .setValue(EXTENSION, false)
+                .setValue(BoilerAttach.RAISED, false));
     }
 
     @Override
@@ -77,14 +69,15 @@ public class FireboxBlock extends BaseEntityBlock
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(BlockStateProperties.LIT, BlockStateProperties.HORIZONTAL_FACING, EXTENSION);
+        builder.add(BlockStateProperties.LIT, BlockStateProperties.HORIZONTAL_FACING, EXTENSION, BoilerAttach.RAISED);
     }
 
     @Override
     public @Nullable BlockState getStateForPlacement(net.minecraft.world.item.context.BlockPlaceContext context) {
         return defaultBlockState()
                 .setValue(BlockStateProperties.HORIZONTAL_FACING, ShiftPlacement.facing(context))
-                .setValue(EXTENSION, absorbingController(context.getLevel(), context.getClickedPos()) != null);
+                .setValue(EXTENSION, absorbingController(context.getLevel(), context.getClickedPos()) != null)
+                .setValue(BoilerAttach.RAISED, context.isSecondaryUseActive());
     }
 
     @Override
@@ -187,22 +180,21 @@ public class FireboxBlock extends BaseEntityBlock
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext ctx) {
-        return BoilerShapes.fireboxVisual(state.getValue(BlockStateProperties.HORIZONTAL_FACING).getAxis());
+        return BoilerShapes.raisedIf(
+                BoilerShapes.fireboxVisual(state.getValue(BlockStateProperties.HORIZONTAL_FACING).getAxis()),
+                state.getValue(BoilerAttach.RAISED));
     }
 
     @Override
     public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext ctx) {
-        return BoilerShapes.fireboxCollision(state.getValue(BlockStateProperties.HORIZONTAL_FACING).getAxis());
+        return getSubLevelCollisionShape(level, state);
     }
 
     @Override
     public VoxelShape getSubLevelCollisionShape(BlockGetter level, BlockState state) {
-        return BoilerShapes.fireboxCollision(state.getValue(BlockStateProperties.HORIZONTAL_FACING).getAxis());
-    }
-
-    @Override
-    public BlockSubLevelCollisionCallback sable$getCallback() {
-        return BoilerImpactCallback.INSTANCE;
+        return BoilerShapes.raisedIf(
+                BoilerShapes.fireboxCollision(state.getValue(BlockStateProperties.HORIZONTAL_FACING).getAxis()),
+                state.getValue(BoilerAttach.RAISED));
     }
 
     @Override
@@ -245,7 +237,7 @@ public class FireboxBlock extends BaseEntityBlock
     protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level,
                                               BlockPos pos, Player player, InteractionHand hand,
                                               BlockHitResult hitResult) {
-        IPlacementHelper helper = PlacementHelpers.get(PLACEMENT_ID);
+        IPlacementHelper helper = BoilerLinePlacement.get();
         if (helper.matchesItem(stack)) {
             return helper.getOffset(player, level, state, pos, hitResult)
                     .placeInWorld(level, (BlockItem) stack.getItem(), player, hand, hitResult);
@@ -338,7 +330,9 @@ public class FireboxBlock extends BaseEntityBlock
             BlockPos neighbor = removedPos.relative(dir);
             if (remaining.contains(neighbor)) {
                 target = neighbor;
-                preferred = findExposedFace(level, neighbor, dir);
+                Direction own = level.getBlockState(neighbor).getValue(BlockStateProperties.HORIZONTAL_FACING);
+                preferred = remaining.contains(neighbor.relative(own))
+                        ? findExposedFace(level, neighbor, dir) : own;
                 break;
             }
         }

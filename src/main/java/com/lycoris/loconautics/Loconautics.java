@@ -10,14 +10,12 @@ import com.lycoris.loconautics.content.hose.spray.interaction.HoseSprayInteracti
 import com.lycoris.loconautics.content.hose.spray.interaction.VanillaHoseSprayInteractions;
 import com.lycoris.loconautics.registry.LoconauticsRegistries;
 import com.lycoris.loconautics.trainphysics.drive.SableTrainDriver;
-import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 
 @Mod(LoconauticsConstants.MOD_ID)
@@ -44,6 +42,7 @@ public final class Loconautics {
         modEventBus.addListener(this::registerCapabilities);
         modEventBus.addListener(com.lycoris.loconautics.content.controls.panel.target.RedstoneTargets::register);
         modEventBus.addListener(com.lycoris.loconautics.content.boiler.FuelGrades::register);
+        modEventBus.addListener(com.lycoris.loconautics.trainphysics.wheels.GhostWheelProfiles::register);
         modEventBus.addListener(this::onAddPackFinders);
         modEventBus.addListener(
                 com.lycoris.loconautics.trainphysics.state.StationChunkTickets::register);
@@ -51,7 +50,6 @@ public final class Loconautics {
         modContainer.registerConfig(ModConfig.Type.SERVER, LoconauticsConfig.SERVER_SPEC);
         modContainer.registerConfig(ModConfig.Type.COMMON, com.lycoris.loconautics.config.ExperimentalConfig.SPEC, "loconautics-experimental.toml");
 
-        NeoForge.EVENT_BUS.addListener(this::onPlayerLogin);
         NeoForge.EVENT_BUS.addListener(this::onServerStopped);
         NeoForge.EVENT_BUS.addListener(this::onAddReloadListeners);
         NeoForge.EVENT_BUS.addListener(this::onDatapackSync);
@@ -103,6 +101,11 @@ public final class Loconautics {
                             serverContainer.getLevel(),
                             com.lycoris.loconautics.content.steelcable.rope.SteelCableRope::kind,
                             com.lycoris.loconautics.content.steelcable.rope.SteelCableRopeManager::get));
+            serverContainer.trackingSystem().addTrackingPlugin(
+                    new com.lycoris.loconautics.common.strand.StrandTrackingSystem<>(
+                            serverContainer.getLevel(),
+                            rope -> com.lycoris.loconautics.common.strand.StrandKind.WINCH_HOSE,
+                            HoseRopeManager::get));
             com.lycoris.loconautics.content.knuckle.KnuckleConnectionManager.watch(serverContainer);
             com.lycoris.loconautics.content.buffer.BufferContactManager.watch(serverContainer);
             com.lycoris.loconautics.common.strand.RemovedSubLevels.watch(serverContainer);
@@ -134,6 +137,7 @@ public final class Loconautics {
                 com.lycoris.loconautics.trainphysics.drive.ExternalForceDerail.STORE,
                 com.lycoris.loconautics.trainphysics.drive.TrainDerailment.STORE,
                 com.lycoris.loconautics.trainphysics.wheels.GhostWheelBodies.STORE,
+                com.lycoris.loconautics.trainphysics.spawn.SubLevelSplitWatcher.IGNORED_STORE,
                 new com.lycoris.loconautics.trainphysics.state.TravelSignSeed(),
                 com.lycoris.loconautics.trainphysics.state.GhostCreateStep.STORE,
                 com.lycoris.loconautics.trainphysics.state.TrainResidency.STORE,
@@ -208,38 +212,6 @@ public final class Loconautics {
         }
     }
 
-    private void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
-        if (!(event.getEntity() instanceof ServerPlayer player)) return;
-        for (var strand : com.lycoris.loconautics.content.steelcable.SteelCableStrandManager
-                .get(player.getServer()).all()) {
-            sendStrandOnLogin(player, strand.type.kind(), strand.id, strand.points,
-                    new com.lycoris.loconautics.common.strand.StrandEnd(strand.subA, strand.localA),
-                    new com.lycoris.loconautics.common.strand.StrandEnd(strand.subB, strand.localB));
-        }
-        for (var strand : com.lycoris.loconautics.content.screwlink.ScrewLinkStrandManager
-                .get(player.getServer()).all()) {
-            sendStrandOnLogin(player, com.lycoris.loconautics.common.strand.StrandKind.SCREW_LINK,
-                    strand.id, strand.points,
-                    new com.lycoris.loconautics.common.strand.StrandEnd(strand.subA, strand.localA),
-                    strand.localB == null ? null
-                            : new com.lycoris.loconautics.common.strand.StrandEnd(strand.subB, strand.localB));
-        }
-    }
-
-    private static void sendStrandOnLogin(ServerPlayer player,
-                                          com.lycoris.loconautics.common.strand.StrandKind kind,
-                                          java.util.UUID id,
-                                          @org.jetbrains.annotations.Nullable java.util.List<org.joml.Vector3d> points,
-                                          com.lycoris.loconautics.common.strand.StrandEnd start,
-                                          @org.jetbrains.annotations.Nullable com.lycoris.loconautics.common.strand.StrandEnd end) {
-        if (points == null || points.size() < 2) {
-            return;
-        }
-        net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(player,
-                new com.lycoris.loconautics.network.packets.attachment.StrandPointsPacket(
-                        kind, id, 0, true, points, start, end));
-    }
-
     private void onServerStopped(ServerStoppedEvent event) {
         runStopHook("PanelDriveBus", com.lycoris.loconautics.content.controls.panel.PanelDriveBus::clear);
         runStopHook("PanelSignals", com.lycoris.loconautics.content.controls.panel.target.PanelSignals::clear);
@@ -277,6 +249,7 @@ public final class Loconautics {
     private void onAddReloadListeners(net.neoforged.neoforge.event.AddReloadListenerEvent event) {
         event.addListener(new HoseSprayLoader());
         event.addListener(new BoilerContributions());
+        event.addListener(new com.lycoris.loconautics.content.combustion.CombustionFuelLoader());
         event.addListener(new com.lycoris.loconautics.content.variantpicker.data.VariantFamilyLoader());
     }
 

@@ -1,0 +1,471 @@
+{
+  "values": {
+    "create:small_bogey": {
+      "limits": {
+        "yaw": 12.5,
+        "pitch": 12.5,
+        "roll": 5.0,
+        "damping": 4.0
+      }
+    },
+    "create:large_bogey": {
+      "limits": {
+        "yaw": 12.5,
+        "pitch": 12.5,
+        "roll": 5.0,
+        "damping": 4.0
+      }
+    },
+    "loconautics:boiler_bogey": {
+      "limits": {
+        "yaw": 12.5,
+        "pitch": 12.5,
+        "roll": 5.0,
+        "damping": 4.0
+      },
+      "size_key": "TrainWheels",
+      "sizes": {
+        "0": {
+          "yaw": 12.5,
+          "pitch": 12.5,
+          "roll": 5.0,
+          "damping": 4.0,
+          "along": 1
+        },
+        "1": {
+          "yaw": 12.5,
+          "pitch": 12.5,
+          "roll": 5.0,
+          "damping": 4.0,
+          "along": 1
+        },
+        "2": {
+          "yaw": 7.0,
+          "pitch": 7.0,
+          "roll": 4.0,
+          "damping": 4.0,
+          "along": 2
+        },
+        "3": {
+          "yaw": 4.5,
+          "pitch": 4.5,
+          "roll": 3.5,
+          "damping": 4.0,
+          "along": 3
+        },
+        "4": {
+          "yaw": 3.0,
+          "pitch": 3.0,
+          "roll": 3.0,
+          "damping": 4.0,
+          "along": 4
+        }
+      }
+    },
+    "railways:singleaxle_bogey": {
+      "limits": {
+        "yaw": 12.5,
+        "pitch": 12.5,
+        "roll": 5.0,
+        "damping": 4.0,
+        "along": 1
+      }
+    },
+    "railways:narrow_small_bogey": {
+      "limits": {
+        "yaw": 12.5,
+        "pitch": 12.5,
+        "roll": 5.0,
+        "damping": 4.0,
+        "along": 1
+      }
+    },
+    "railways:narrow_scotch_bogey": {
+      "limits": {
+        "yaw": 12.5,
+        "pitch": 12.5,
+        "roll": 5.0,
+        "damping": 4.0,
+        "along": 1
+      }
+    },
+    "railways:narrow_double_scotch_bogey": {
+      "limits": {
+        "yaw": 7.0,
+        "pitch": 7.0,
+        "roll": 4.0,
+        "damping": 4.0,
+        "along": 2
+      }
+    },
+    "railways:medium_bogey": {
+      "limits": {
+        "yaw": 12.5,
+        "pitch": 12.5,
+        "roll": 5.0,
+        "damping": 4.0,
+        "along": 1
+      }
+    },
+    "railways:doubleaxle_bogey": {
+      "limits": {
+        "yaw": 12.5,
+        "pitch": 12.5,
+        "roll": 5.0,
+        "damping": 4.0,
+        "along": 1
+      }
+    },
+    "railways:tripleaxle_bogey": {
+      "limits": {
+        "yaw": 7.0,
+        "pitch": 7.0,
+        "roll": 4.0,
+        "damping": 4.0,
+        "along": 2
+      }
+    },
+    "railways:wide_doubleaxle_bogey": {
+      "limits": {
+        "yaw": 7.0,
+        "pitch": 7.0,
+        "roll": 4.0,
+        "damping": 4.0,
+        "along": 2
+      }
+    },
+    "railways:wide_scotch_bogey": {
+      "limits": {
+        "yaw": 12.5,
+        "pitch": 12.5,
+        "roll": 5.0,
+        "damping": 4.0,
+        "along": 1
+      }
+    },
+    "railways:wide_comically_large_bogey": {
+      "limits": {
+        "yaw": 4.5,
+        "pitch": 4.5,
+        "roll": 3.5,
+        "damping": 4.0,
+        "along": 3
+      }
+    },
+    "railways:large_platform_doubleaxle_bogey": {
+      "limits": {
+        "yaw": 12.5,
+        "pitch": 12.5,
+        "roll": 5.0,
+        "damping": 4.0,
+        "along": 1
+      }
+    },
+    "railways:mono_bogey": {
+      "limits": {
+        "yaw": 12.5,
+        "pitch": 12.5,
+        "roll": 5.0,
+        "damping": 4.0,
+        "along": 1
+      }
+    },
+    "railways:invisible_bogey": {
+      "limits": {
+        "yaw": 12.5,
+        "pitch": 12.5,
+        "roll": 5.0,
+        "damping": 4.0,
+        "along": 1
+      }
+    },
+    "railways:invisible_mono_bogey": {
+      "limits": {
+        "yaw": 12.5,
+        "pitch": 12.5,
+        "roll": 5.0,
+        "damping": 4.0,
+        "along": 1
+      }
+    },
+    "create_bb:l_0100": {
+      "limits": {
+        "yaw": 3.0,
+        "pitch": 3.0,
+        "roll": 3.0,
+        "damping": 4.0,
+        "along": 4
+      }
+    },
+    "create_bb:l_0100_rot": {
+      "limits": {
+        "yaw": 3.0,
+        "pitch": 3.0,
+        "roll": 3.0,
+        "damping": 4.0,
+        "along": 4
+      }
+    },
+    "create_bb:l_0120": {
+      "limits": {
+        "yaw": 3.0,
+        "pitch": 3.0,
+        "roll": 3.0,
+        "damping": 4.0,
+        "along": 4
+      }
+    },
+    "create_bb:l_0120_rot": {
+      "limits": {
+        "yaw": 3.0,
+        "pitch": 3.0,
+        "roll": 3.0,
+        "damping": 4.0,
+        "along": 4
+      }
+    },
+    "create_bb:l_020": {
+      "limits": {
+        "yaw": 12.5,
+        "pitch": 12.5,
+        "roll": 5.0,
+        "damping": 4.0,
+        "along": 1
+      }
+    },
+    "create_bb:l_020_rot": {
+      "limits": {
+        "yaw": 12.5,
+        "pitch": 12.5,
+        "roll": 5.0,
+        "damping": 4.0,
+        "along": 1
+      }
+    },
+    "create_bb:l_040": {
+      "limits": {
+        "yaw": 12.5,
+        "pitch": 12.5,
+        "roll": 5.0,
+        "damping": 4.0,
+        "along": 1
+      }
+    },
+    "create_bb:l_040_rot": {
+      "limits": {
+        "yaw": 12.5,
+        "pitch": 12.5,
+        "roll": 5.0,
+        "damping": 4.0,
+        "along": 1
+      }
+    },
+    "create_bb:l_060": {
+      "limits": {
+        "yaw": 7.0,
+        "pitch": 7.0,
+        "roll": 4.0,
+        "damping": 4.0,
+        "along": 2
+      }
+    },
+    "create_bb:l_060_rot": {
+      "limits": {
+        "yaw": 7.0,
+        "pitch": 7.0,
+        "roll": 4.0,
+        "damping": 4.0,
+        "along": 2
+      }
+    },
+    "create_bb:l_080": {
+      "limits": {
+        "yaw": 4.5,
+        "pitch": 4.5,
+        "roll": 3.5,
+        "damping": 4.0,
+        "along": 3
+      }
+    },
+    "create_bb:l_080_rot": {
+      "limits": {
+        "yaw": 4.5,
+        "pitch": 4.5,
+        "roll": 3.5,
+        "damping": 4.0,
+        "along": 3
+      }
+    },
+    "create_bb:s_0100_standard": {
+      "limits": {
+        "yaw": 7.0,
+        "pitch": 7.0,
+        "roll": 4.0,
+        "damping": 4.0,
+        "along": 2
+      }
+    },
+    "create_bb:s_020_offset": {
+      "limits": {
+        "yaw": 12.5,
+        "pitch": 12.5,
+        "roll": 5.0,
+        "damping": 4.0,
+        "along": 1
+      }
+    },
+    "create_bb:s_020_standard": {
+      "limits": {
+        "yaw": 12.5,
+        "pitch": 12.5,
+        "roll": 5.0,
+        "damping": 4.0,
+        "along": 1
+      }
+    },
+    "create_bb:s_020_trailing": {
+      "limits": {
+        "yaw": 12.5,
+        "pitch": 12.5,
+        "roll": 5.0,
+        "damping": 4.0,
+        "along": 1
+      }
+    },
+    "create_bb:s_040_trailing": {
+      "limits": {
+        "yaw": 12.5,
+        "pitch": 12.5,
+        "roll": 5.0,
+        "damping": 4.0,
+        "along": 1
+      }
+    },
+    "create_bb:s_060_standard": {
+      "limits": {
+        "yaw": 12.5,
+        "pitch": 12.5,
+        "roll": 5.0,
+        "damping": 4.0,
+        "along": 1
+      }
+    },
+    "create_bb:s_060_trailing": {
+      "limits": {
+        "yaw": 12.5,
+        "pitch": 12.5,
+        "roll": 5.0,
+        "damping": 4.0,
+        "along": 1
+      }
+    },
+    "create_bb:s_080_standard": {
+      "limits": {
+        "yaw": 12.5,
+        "pitch": 12.5,
+        "roll": 5.0,
+        "damping": 4.0,
+        "along": 1
+      }
+    },
+    "create_bb:s_080_trailing": {
+      "limits": {
+        "yaw": 7.0,
+        "pitch": 7.0,
+        "roll": 4.0,
+        "damping": 4.0,
+        "along": 2
+      }
+    },
+    "create_bb:xl_0100": {
+      "limits": {
+        "yaw": 2.5,
+        "pitch": 2.5,
+        "roll": 2.5,
+        "damping": 4.0,
+        "along": 5
+      }
+    },
+    "create_bb:xl_0100_rot": {
+      "limits": {
+        "yaw": 2.5,
+        "pitch": 2.5,
+        "roll": 2.5,
+        "damping": 4.0,
+        "along": 5
+      }
+    },
+    "create_bb:xl_020": {
+      "limits": {
+        "yaw": 12.5,
+        "pitch": 12.5,
+        "roll": 5.0,
+        "damping": 4.0,
+        "along": 1
+      }
+    },
+    "create_bb:xl_020_rot": {
+      "limits": {
+        "yaw": 12.5,
+        "pitch": 12.5,
+        "roll": 5.0,
+        "damping": 4.0,
+        "along": 1
+      }
+    },
+    "create_bb:xl_040": {
+      "limits": {
+        "yaw": 7.0,
+        "pitch": 7.0,
+        "roll": 4.0,
+        "damping": 4.0,
+        "along": 2
+      }
+    },
+    "create_bb:xl_040_rot": {
+      "limits": {
+        "yaw": 7.0,
+        "pitch": 7.0,
+        "roll": 4.0,
+        "damping": 4.0,
+        "along": 2
+      }
+    },
+    "create_bb:xl_060": {
+      "limits": {
+        "yaw": 4.5,
+        "pitch": 4.5,
+        "roll": 3.5,
+        "damping": 4.0,
+        "along": 3
+      }
+    },
+    "create_bb:xl_060_rot": {
+      "limits": {
+        "yaw": 4.5,
+        "pitch": 4.5,
+        "roll": 3.5,
+        "damping": 4.0,
+        "along": 3
+      }
+    },
+    "create_bb:xl_080": {
+      "limits": {
+        "yaw": 3.0,
+        "pitch": 3.0,
+        "roll": 3.0,
+        "damping": 4.0,
+        "along": 4
+      }
+    },
+    "create_bb:xl_080_rot": {
+      "limits": {
+        "yaw": 3.0,
+        "pitch": 3.0,
+        "roll": 3.0,
+        "damping": 4.0,
+        "along": 4
+      }
+    }
+  }
+}

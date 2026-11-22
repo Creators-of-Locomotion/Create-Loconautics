@@ -4,6 +4,7 @@ import com.lycoris.loconautics.trainphysics.DerailReason;
 import com.lycoris.loconautics.LoconauticsConstants;
 import com.lycoris.loconautics.common.SubLevelAssemblyUtil;
 import com.lycoris.loconautics.common.sable.SableTeleportation;
+import com.lycoris.loconautics.common.track.BogeyTrackFit;
 import com.lycoris.loconautics.config.LoconauticsConfig;
 import com.lycoris.loconautics.content.knuckle.KnuckleBlockEntity;
 import com.lycoris.loconautics.network.packets.train.SableTrainSyncPacket;
@@ -39,6 +40,7 @@ import com.lycoris.loconautics.trainphysics.portal.TrainPortalCrossing;
 import com.simibubi.create.content.trains.station.GlobalStation;
 import com.simibubi.create.content.trains.station.StationBlockEntity;
 import com.simibubi.create.content.trains.track.ITrackBlock;
+import com.simibubi.create.content.trains.track.TrackMaterial;
 import com.simibubi.create.foundation.utility.CreateLang;
 import dev.ryanhcode.sable.Sable;
 import dev.ryanhcode.sable.api.SubLevelAssemblyHelper;
@@ -78,6 +80,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Predicate;
 
 import static com.lycoris.loconautics.foundation.LogFormat.v3d;
 
@@ -1060,7 +1063,7 @@ public final class SableTrainSpawner {
         for (SableTrain.Bogey bogey : bogeys) {
             Vector3d world = SubLevelData.worldOfOffset(sub, bogey.localPos());
             TrackHit hit = findRailBelow(level, BlockPos.containing(world.x, world.y, world.z),
-                    bogeyFacing(level, sub, bogey, carFacing), hangs(sub, bogey));
+                    bogeyFacing(level, sub, bogey, carFacing), hangs(sub, bogey), fitOf(sub, bogey));
             if (hit == null) {
                 return null;
             }
@@ -1547,7 +1550,7 @@ public final class SableTrainSpawner {
     static RailCarriage acceptableSeatFor(ServerLevel level, ServerSubLevel sub, SableTrain.Bogey bogey, Vec3 fwd,
                                           @Nullable TrackGraph graph, double maxLateral) {
         RailCarriage rail = railUnderBogey(level, sub, bogey, fwd);
-        String refused = rail == null ? String.format("no rail under the bogey at %s, scanned r%d and %d down",
+        String refused = rail == null ? String.format("no rail that fits the bogey under it at %s, scanned r%d and %d down",
                         v3d(SubLevelData.worldOfOffset(sub, bogey.localPos())),
                         LoconauticsConfig.RAIL_SEARCH_RADIUS.get(),
                         RAIL_SEARCH_VERTICAL_RANGE)
@@ -1599,7 +1602,8 @@ public final class SableTrainSpawner {
                                               Vec3 fwd) {
         Vec3 facing = bogeyFacing(level, sub, bogey, fwd);
         Vector3d world = SubLevelData.worldOfOffset(sub, bogey.localPos());
-        TrackHit hit = findRailBelow(level, BlockPos.containing(world.x, world.y, world.z), facing, hangs(sub, bogey));
+        TrackHit hit = findRailBelow(level, BlockPos.containing(world.x, world.y, world.z), facing, hangs(sub, bogey),
+                fitOf(sub, bogey));
         if (hit == null) {
             return null;
         }
@@ -1609,6 +1613,10 @@ public final class SableTrainSpawner {
     private static boolean hangs(ServerSubLevel sub, SableTrain.Bogey bogey) {
         return WheelColliders.isUpsideDown(
                 sub.getLevel().getBlockState(sub.getPlot().getCenterBlock().offset(bogey.localPos())));
+    }
+
+    static Predicate<TrackMaterial> fitOf(ServerSubLevel sub, SableTrain.Bogey bogey) {
+        return BogeyTrackFit.forBogey(sub.getLevel(), sub.getPlot().getCenterBlock().offset(bogey.localPos()));
     }
 
     private static RailCarriage seatFollowerUnder(TrackHit hit, Vector3d world) {
@@ -1690,10 +1698,15 @@ public final class SableTrainSpawner {
     }
 
     static TrackHit findRailBelow(ServerLevel level, BlockPos origin, Vec3 look, boolean hanging) {
+        return findRailBelow(level, origin, look, hanging, BogeyTrackFit.ANY);
+    }
+
+    static TrackHit findRailBelow(ServerLevel level, BlockPos origin, Vec3 look, boolean hanging,
+                                  Predicate<TrackMaterial> accepts) {
         Vec3 world = Vec3.atCenterOf(origin);
         double reach = searchReach();
         Hit best = new Hit();
-        scanRailBelow(level, null, origin, look, best, hanging);
+        scanRailBelow(level, null, origin, look, best, hanging, accepts);
         BoundingBox3d box = new BoundingBox3d(world.x - reach, world.y - reach, world.z - reach,
                 world.x + reach, world.y + reach, world.z + reach);
         List<ServerSubLevel> hosts = new ArrayList<>();
@@ -1704,13 +1717,13 @@ public final class SableTrainSpawner {
             hosts.add(host);
             Vec3 localPos = SablePlotFrame.toLocalPos(host, world);
             scanRailBelow(level, host, BlockPos.containing(localPos), SablePlotFrame.toLocalDir(host, look), best,
-                    hanging);
+                    hanging, accepts);
         }
         if (best.hit == null) {
-            edgeRailBelow(level, null, world, look, best, hanging);
+            edgeRailBelow(level, null, world, look, best, hanging, accepts);
             for (ServerSubLevel host : hosts) {
                 edgeRailBelow(level, host, SablePlotFrame.toLocalPos(host, world),
-                        SablePlotFrame.toLocalDir(host, look), best, hanging);
+                        SablePlotFrame.toLocalDir(host, look), best, hanging, accepts);
             }
         }
         return best.hit;
@@ -1718,10 +1731,10 @@ public final class SableTrainSpawner {
 
     // a bezier bend has no blocks under its middle, so the track graph edges are the only rail there
     private static void edgeRailBelow(ServerLevel level, ServerSubLevel host, Vec3 origin, Vec3 look, Hit best,
-                                      boolean hanging) {
+                                      boolean hanging, Predicate<TrackMaterial> accepts) {
         RailEdgeSearch.Found found = RailEdgeSearch.nearest(level.dimension(), host, origin, look,
                 LoconauticsConfig.RAIL_SEARCH_RADIUS.get() + 0.5, RAIL_SEARCH_VERTICAL_RANGE,
-                hanging);
+                hanging, accepts);
         if (found != null && found.distSqr() < best.distSqr) {
             best.hit = new TrackHit(found.location(), found.upNormal(), Mth.floor(found.railY()));
             best.distSqr = found.distSqr();
@@ -1739,7 +1752,7 @@ public final class SableTrainSpawner {
     }
 
     private static void scanRailBelow(ServerLevel level, ServerSubLevel host, BlockPos origin, Vec3 look, Hit best,
-                                     boolean hanging) {
+                                     boolean hanging, Predicate<TrackMaterial> accepts) {
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
         int down = RAIL_SEARCH_VERTICAL_RANGE;
         int radius = LoconauticsConfig.RAIL_SEARCH_RADIUS.get();
@@ -1753,6 +1766,9 @@ public final class SableTrainSpawner {
                     pos.set(origin.getX() + dx, origin.getY() - dy, origin.getZ() + dz);
                     BlockState state = level.getBlockState(pos);
                     if (!(state.getBlock() instanceof ITrackBlock track)) {
+                        continue;
+                    }
+                    if (!accepts.test(track.getMaterial())) {
                         continue;
                     }
                     Pair<Vec3, Direction.AxisDirection> axis = track.getNearestTrackAxis(level, pos, state, look);

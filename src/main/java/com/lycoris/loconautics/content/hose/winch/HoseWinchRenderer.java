@@ -3,6 +3,8 @@ package com.lycoris.loconautics.content.hose.winch;
 import com.lycoris.loconautics.client.HoseDraw;
 import com.lycoris.loconautics.client.LoconauticsPartialModels;
 import com.lycoris.loconautics.client.RopeRendering;
+import com.lycoris.loconautics.common.strand.ClientStrands;
+import com.lycoris.loconautics.common.strand.StrandKind;
 import com.lycoris.loconautics.common.strand.StrandRenderer;
 import com.lycoris.loconautics.content.steelcable.SteelCableHover;
 import com.lycoris.loconautics.common.strand.StrandAnchors;
@@ -31,6 +33,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.Nullable;
 import org.joml.Quaternionf;
 import org.joml.Vector3d;
 
@@ -99,7 +102,7 @@ public class HoseWinchRenderer implements BlockEntityRenderer<HoseWinchBlockEnti
                               float partialTicks) {
         ClientSubLevel ownerSub = dev.ryanhcode.sable.Sable.HELPER.getContainingClient(be);
         Pose3dc ownerPose = ownerSub == null ? null : ownerSub.renderPose();
-        List<Vec3> points = be.clientRopePoints(partialTicks);
+        List<Vec3> points = ropePoints(be, ownerPose, partialTicks);
         if (points == null) {
             Vec3 nozzlePoint = resolveNozzlePoint(be, level);
             if (nozzlePoint == null) {
@@ -171,6 +174,25 @@ public class HoseWinchRenderer implements BlockEntityRenderer<HoseWinchBlockEnti
         } else if (be.clientStrandId() != null && be.clientStrandId().equals(SteelCableHover.hoveredWinchHose)) {
             RopeRendering.renderHitbox(ps, buffer, points, ownerPos, StrandRenderer.OUTLINE_RADIUS);
         }
+    }
+
+    @Nullable
+    private static List<Vec3> ropePoints(HoseWinchBlockEntity be, @Nullable Pose3dc ownerPose, float partialTicks) {
+        UUID id = be.clientStrandId();
+        ClientStrands.Strand strand = id == null ? null : StrandKind.WINCH_HOSE.clientStrands().get(id);
+        if (strand == null || strand.size() < 2) {
+            return be.ponderRopePoints(partialTicks);
+        }
+        List<Vec3> out = new java.util.ArrayList<>(strand.size());
+        Vector3d at = new Vector3d();
+        for (ClientStrands.Point point : strand.points()) {
+            point.renderPos(partialTicks, at);
+            if (ownerPose != null) {
+                ownerPose.transformPositionInverse(at);
+            }
+            out.add(new Vec3(at.x, at.y, at.z));
+        }
+        return out;
     }
 
     private static Vec3 transform(Pose3dc pose, Vec3 p, boolean toLocal) {
@@ -263,8 +285,20 @@ public class HoseWinchRenderer implements BlockEntityRenderer<HoseWinchBlockEnti
         if (level == null) {
             return box;
         }
+        ClientSubLevel ownerSub = dev.ryanhcode.sable.Sable.HELPER.getContainingClient(be);
+        Pose3dc ownerPose = ownerSub == null ? null : ownerSub.renderPose();
+        List<Vec3> points = ropePoints(be, ownerPose, 1.0f);
+        if (points != null) {
+            for (Vec3 p : points) {
+                box = box.minmax(new AABB(p, p).inflate(1.0));
+            }
+        }
         Vec3 nozzle = resolveNozzlePoint(be, level);
-        return nozzle == null ? box : box.minmax(new AABB(nozzle, nozzle).inflate(1.0));
+        if (nozzle != null) {
+            Vec3 local = ownerPose == null ? nozzle : transform(ownerPose, nozzle, true);
+            box = box.minmax(new AABB(local, local).inflate(1.0));
+        }
+        return box;
     }
 
     @Override

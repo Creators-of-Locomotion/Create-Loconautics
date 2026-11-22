@@ -26,7 +26,7 @@ public final class StrandRemap {
 
         UUID idOf(S strand);
 
-        boolean remapEnds(S strand, StrandEnd from, StrandEnd to);
+        boolean remapEnds(S strand, StrandEnd from, StrandEnd to, ServerLevel fromLevel, ServerLevel toLevel);
 
         List<StrandEnd> endsOf(S strand);
 
@@ -54,20 +54,18 @@ public final class StrandRemap {
         BlockEntity oldBe = originLevel.getBlockEntity(oldPos);
         BlockEntity newBe = resultingLevel.getBlockEntity(newPos);
         for (Target<?> target : TARGETS) {
-            int remapped = remap(originLevel, target, from, to, oldBe, newBe);
-            if (remapped > 0) {
-            }
+            remap(originLevel, resultingLevel, target, from, to, oldBe, newBe);
         }
     }
 
-    private static <S> int remap(ServerLevel level, Target<S> target, StrandEnd from, StrandEnd to,
-                                 @Nullable BlockEntity oldBe, @Nullable BlockEntity newBe) {
+    private static <S> void remap(ServerLevel level, ServerLevel toLevel, Target<S> target, StrandEnd from,
+                                  StrandEnd to, @Nullable BlockEntity oldBe, @Nullable BlockEntity newBe) {
         RopeManager<?> ropes = target.ropes(level);
         SubLevelPhysicsSystem system = SubLevelPhysicsSystem.get(level);
         SubLevelContainer container = SubLevelContainer.getContainer(level);
         int remapped = 0;
         for (S strand : new ArrayList<>(target.strands(level))) {
-            if (!target.remapEnds(strand, from, to)) {
+            if (!target.remapEnds(strand, from, to, level, toLevel)) {
                 continue;
             }
             remapped++;
@@ -88,7 +86,6 @@ public final class StrandRemap {
         if (remapped > 0) {
             target.touch(level);
         }
-        return remapped;
     }
 
     @Nullable

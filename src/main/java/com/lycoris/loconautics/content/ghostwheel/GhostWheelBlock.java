@@ -2,6 +2,7 @@ package com.lycoris.loconautics.content.ghostwheel;
 
 import com.lycoris.loconautics.LoconauticsConstants;
 import com.lycoris.loconautics.config.LoconauticsConfig;
+import com.lycoris.loconautics.trainphysics.wheels.GhostWheelProfiles;
 import com.mojang.serialization.MapCodec;
 import dev.ryanhcode.sable.api.block.BlockSubLevelCollisionShape;
 import dev.ryanhcode.sable.api.block.BlockWithSubLevelCollisionCallback;
@@ -47,8 +48,6 @@ public class GhostWheelBlock extends Block implements BlockWithSubLevelCollision
 
     private static final double END_REACH = 0.75;
 
-    private static final double COLLISION_FLOOR = LoconauticsConstants.RAIL_HEAD_HEIGHT;
-
     public GhostWheelBlock(Properties properties) {
         super(properties);
         registerDefaultState(stateDefinition.any().setValue(CORNER, 0).setValue(MIDDLE, false)
@@ -88,7 +87,7 @@ public class GhostWheelBlock extends Block implements BlockWithSubLevelCollision
 
     private static VoxelShape padShape(BlockState state) {
         boolean monorail = state.getValue(ON_MONORAIL);
-        double floor = monorail ? LoconauticsConstants.MONORAIL_PAD_FLOOR : COLLISION_FLOOR;
+        double floor = GhostWheelProfiles.floor(monorail);
         if (floor < 0.0 || floor >= 1.0) {
             LoconauticsConstants.LOGGER.warn(
                     "GhostWheel COLLISION_FLOOR {} is out of [0,1). Collision lives within ONE cell. Clamping.",

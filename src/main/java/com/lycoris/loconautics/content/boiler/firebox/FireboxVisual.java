@@ -1,5 +1,6 @@
 package com.lycoris.loconautics.content.boiler.firebox;
 
+import com.lycoris.loconautics.content.boiler.BoilerAttach;
 import com.lycoris.loconautics.client.LoconauticsPartialModels;
 import dev.engine_room.flywheel.api.instance.Instance;
 import dev.engine_room.flywheel.api.visual.DynamicVisual;
@@ -16,7 +17,6 @@ import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.SectionPos;
-import net.minecraft.util.Mth;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import org.joml.Vector3f;
@@ -26,13 +26,8 @@ import java.util.function.Consumer;
 public class FireboxVisual extends AbstractBlockEntityVisual<FireboxBlockEntity>
         implements SimpleDynamicVisual {
 
-    private static final float LEVER_DEGREES = -42.5f;
-
-    private static final float DOOR_DEGREES = 35.0f;
-
-    private static final Vector3f LEVER_PIVOT = pivot(7.5f, 12.5f, -1.025f);
-    private static final Vector3f DOOR_LEFT_PIVOT = pivot(8.0f, 13.0f, -0.5f);
-    private static final Vector3f DOOR_RIGHT_PIVOT = pivot(8.0f, 13.0f, -0.5f);
+    private static final Vector3f LEVER_PIVOT = pivot(FireboxRenderer.LEVER_PIVOT);
+    private static final Vector3f DOOR_PIVOT = pivot(FireboxRenderer.DOOR_PIVOT);
 
     private final TransformedInstance leverArm;
     private final TransformedInstance doorLeft;
@@ -69,8 +64,8 @@ public class FireboxVisual extends AbstractBlockEntityVisual<FireboxBlockEntity>
         lightSections.sections(here == front ? LongSet.of(here) : LongSet.of(here, front));
     }
 
-    private static Vector3f pivot(float x, float y, float z) {
-        return new Vector3f(x / 16.0f, y / 16.0f, z / 16.0f);
+    private static Vector3f pivot(float[] at) {
+        return new Vector3f(at[0], at[1], at[2]);
     }
 
     private TransformedInstance instance(PartialModel model) {
@@ -110,13 +105,14 @@ public class FireboxVisual extends AbstractBlockEntityVisual<FireboxBlockEntity>
 
         float swing = blockEntity.getDoorOpenTime(partialTick)
                 / FireboxBlockEntity.DOOR_SWING_TICKS;
-        float progress = Mth.sin(swing * Mth.HALF_PI);
+        float progress = FireboxRenderer.openProgress(swing);
         int light = brightest(LevelRenderer.getLightColor(level, pos),
                 LevelRenderer.getLightColor(level, openAirLightPos));
 
-        swingPart(leverArm, LEVER_PIVOT, LEVER_DEGREES * progress, light);
-        swingPart(doorLeft, DOOR_LEFT_PIVOT, -DOOR_DEGREES * progress, light);
-        swingPart(doorRight, DOOR_RIGHT_PIVOT, DOOR_DEGREES * progress, light);
+        float lift = state.getValue(BoilerAttach.RAISED) ? (float) BoilerAttach.BULGE : 0.0f;
+        swingPart(leverArm, LEVER_PIVOT, FireboxRenderer.LEVER_DEGREES * progress, lift, light);
+        swingPart(doorLeft, DOOR_PIVOT, -FireboxRenderer.DOOR_DEGREES * progress, lift, light);
+        swingPart(doorRight, DOOR_PIVOT, FireboxRenderer.DOOR_DEGREES * progress, lift, light);
     }
 
     private static int brightest(int a, int b) {
@@ -134,9 +130,9 @@ public class FireboxVisual extends AbstractBlockEntityVisual<FireboxBlockEntity>
         }
     }
 
-    private void swingPart(TransformedInstance instance, Vector3f hinge, float degrees, int light) {
+    private void swingPart(TransformedInstance instance, Vector3f hinge, float degrees, float lift, int light) {
         instance.setIdentityTransform()
-                .translate(visualPos.getX(), visualPos.getY(), visualPos.getZ())
+                .translate(visualPos.getX(), visualPos.getY() + lift, visualPos.getZ())
                 .translate(0.5f, 0.5f, 0.5f)
                 .rotateYDegrees(yaw)
                 .translate(-0.5f, -0.5f, -0.5f)

@@ -35,10 +35,12 @@ public final class TrainPropulsion {
         double limit = Math.max(MIN_ACCELERATION,
                 Math.min(scaled, MAX_ACCELERATION));
         double boosted = limit * ConsistPower.driverBoost(train) * drivePowerFraction(train);
-        return isMonorail(train) ? boosted * MONORAIL_TRACTION_BOOST : boosted;
+        return boosted * tractionBoost(train);
     }
 
-    static final double MONORAIL_TRACTION_BOOST = 3.0;
+    static double tractionBoost(SableTrain train) {
+        return train.car().carriage() != null ? train.car().carriage().trackProfile().tractionBoost() : 1.0;
+    }
 
     public static boolean isMonorail(SableTrain train) {
         return train.car().carriage() != null && train.car().carriage().isOnMonorail();

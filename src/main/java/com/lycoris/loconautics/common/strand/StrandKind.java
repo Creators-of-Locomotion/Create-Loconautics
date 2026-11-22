@@ -4,7 +4,8 @@ public enum StrandKind {
 
     STEEL_CABLE,
     SCREW_LINK,
-    HOSE_LINK;
+    HOSE_LINK,
+    WINCH_HOSE;
 
     private final ClientStrands clientStrands = new ClientStrands();
 

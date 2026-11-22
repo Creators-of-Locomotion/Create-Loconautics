@@ -6,11 +6,14 @@ import com.simibubi.create.content.trains.graph.TrackGraph;
 import com.simibubi.create.content.trains.graph.TrackGraphLocation;
 import com.simibubi.create.content.trains.graph.TrackNode;
 import com.simibubi.create.content.trains.graph.TrackNodeLocation;
+import com.simibubi.create.content.trains.track.TrackMaterial;
 import dev.ryanhcode.sable.sublevel.ServerSubLevel;
 import net.createmod.catnip.data.Couple;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+
+import java.util.function.Predicate;
 
 public final class RailEdgeSearch {
 
@@ -23,7 +26,8 @@ public final class RailEdgeSearch {
 
     // a bend has track blocks only at its ends, so the middle is found by walking graph edges in the hosts frame
     public static Found nearest(ResourceKey<Level> dimension, ServerSubLevel host, Vec3 origin, Vec3 look,
-                                double radius, double below, boolean hanging) {
+                                double radius, double below, boolean hanging,
+                                Predicate<TrackMaterial> accepts) {
         double minY = hanging ? origin.y : origin.y - below;
         double maxY = hanging ? origin.y + below : origin.y;
         double lookFlat = Math.sqrt(look.x * look.x + look.z * look.z);
@@ -42,6 +46,9 @@ public final class RailEdgeSearch {
                     TrackEdge edge = entry.getValue();
                     double length = edge.getLength();
                     if (edge.isInterDimensional() || length <= 0.0) {
+                        continue;
+                    }
+                    if (!accepts.test(edge.getTrackMaterial())) {
                         continue;
                     }
                     if (horizontalSqr(start, origin) > (length + radius) * (length + radius)) {

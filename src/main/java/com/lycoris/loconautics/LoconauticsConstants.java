@@ -16,7 +16,7 @@ public final class LoconauticsConstants {
 
     public static final Logger TRACE = LoggerFactory.getLogger("com.lycoris.loconautics.trace");
 
-    public static final int NETWORK_VERSION = 85;
+    public static final int NETWORK_VERSION = 86;
 
     public static final String CARRIAGE_NAME_INFIX = " Carriage ";
 
@@ -60,6 +60,9 @@ public final class LoconauticsConstants {
 
     public static final ResourceLocation RAILWAYS_MONORAIL_MATERIAL =
             ResourceLocation.fromNamespaceAndPath("railways", "monorail");
+
+    public static final ResourceLocation RAILWAYS_UNIVERSAL_TRACK =
+            ResourceLocation.fromNamespaceAndPath("railways", "universal");
 
     public static final double MONORAIL_COLLISION_HEIGHT = 15.0 / 16.0;
 

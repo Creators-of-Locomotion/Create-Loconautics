@@ -1,6 +1,6 @@
 package com.lycoris.loconautics.mixin.sable.train;
 
-import com.lycoris.loconautics.trainphysics.spawn.WheelColliders;
+import com.lycoris.loconautics.trainphysics.spawn.BogeyPlotChanges;
 import com.simibubi.create.content.trains.bogey.AbstractBogeyBlock;
 import dev.ryanhcode.sable.sublevel.system.SubLevelPhysicsSystem;
 import net.minecraft.core.BlockPos;
@@ -22,15 +22,20 @@ public abstract class SubLevelPhysicsSystemBogeyBreakMixin {
     private ServerLevel level;
 
     @Inject(method = "handleBlockChange", at = @At("HEAD"))
-    private void loconautics$clearGhostPadsBeforeSubdivide(SectionPos sectionPos,
+    private void loconautics$bogeyChanged(SectionPos sectionPos,
             net.minecraft.world.level.chunk.LevelChunkSection section, int x, int y, int z,
             BlockState oldState, BlockState newState, CallbackInfo ci) {
-        if (!(oldState.getBlock() instanceof AbstractBogeyBlock)
-                || newState.getBlock() instanceof AbstractBogeyBlock) {
+        boolean was = oldState.getBlock() instanceof AbstractBogeyBlock;
+        boolean is = newState.getBlock() instanceof AbstractBogeyBlock;
+        if (was == is) {
             return;
         }
         BlockPos bogeyPos = new BlockPos((sectionPos.x() << 4) + x, (sectionPos.y() << 4) + y,
                 (sectionPos.z() << 4) + z);
-        WheelColliders.clearPadsAround(level, bogeyPos);
+        if (is) {
+            BogeyPlotChanges.placed(level, bogeyPos);
+        } else {
+            BogeyPlotChanges.removed(level, bogeyPos);
+        }
     }
 }

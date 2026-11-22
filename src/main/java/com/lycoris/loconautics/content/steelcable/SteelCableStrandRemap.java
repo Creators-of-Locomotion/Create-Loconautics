@@ -37,16 +37,21 @@ public final class SteelCableStrandRemap implements StrandRemap.Target<SteelCabl
     }
 
     @Override
-    public boolean remapEnds(SteelCableStrand strand, StrandEnd from, StrandEnd to) {
-        boolean a = from.matches(strand.subA, strand.localA);
+    public boolean remapEnds(SteelCableStrand strand, StrandEnd from, StrandEnd to, ServerLevel fromLevel,
+                             ServerLevel toLevel) {
+        boolean worldHere = strand.dimension.equals(fromLevel.dimension());
+        boolean a = from.matches(strand.subA, strand.localA) && (strand.subA != null || worldHere);
         if (a) {
             strand.subA = to.subLevelId();
             strand.localA = to.local();
         }
-        boolean b = from.matches(strand.subB, strand.localB);
+        boolean b = from.matches(strand.subB, strand.localB) && (strand.subB != null || worldHere);
         if (b) {
             strand.subB = to.subLevelId();
             strand.localB = to.local();
+        }
+        if (a || b) {
+            strand.dimension = toLevel.dimension();
         }
         return a || b;
     }

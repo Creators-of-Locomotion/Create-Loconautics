@@ -616,16 +616,18 @@ public class AnalogControllerBlockEntity extends SmartBlockEntity implements Men
     }
 
     public void onRemoved() {
-        if (level == null) return;
-        if (currentUser != null && !level.isClientSide) {
-            Player player = level.getPlayerByUUID(currentUser);
-            if (player instanceof ServerPlayer sp) {
-                com.lycoris.loconautics.network.LoconauticsNetwork.sendMount(
-                        sp, false, net.minecraft.core.BlockPos.ZERO);
-            }
-            currentUser = null;
-        }
+        releaseUser();
         releaseLinks();
+    }
+
+    private void releaseUser() {
+        if (level == null || currentUser == null || level.isClientSide) return;
+        Player player = level.getPlayerByUUID(currentUser);
+        if (player instanceof ServerPlayer sp) {
+            com.lycoris.loconautics.network.LoconauticsNetwork.sendMount(
+                    sp, false, net.minecraft.core.BlockPos.ZERO);
+        }
+        currentUser = null;
     }
 
     @Override
@@ -651,6 +653,7 @@ public class AnalogControllerBlockEntity extends SmartBlockEntity implements Men
 
     @Override
     public void invalidate() {
+        releaseUser();
         releaseLinks();
         super.invalidate();
     }

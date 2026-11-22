@@ -22,6 +22,8 @@ public final class BoilerAttach {
 
     public static final BooleanProperty RAISED = BooleanProperty.create("raised");
 
+    public static final BooleanProperty LIFTED = BooleanProperty.create("lifted");
+
     // how far a part sits out from its host, in blocks
     public static final double BULGE = 0.5;
 
@@ -45,6 +47,18 @@ public final class BoilerAttach {
         boolean barrelEnd = host.getBlock() instanceof BoilerBarrelBlock
                 && host.getValue(BoilerBarrelBlock.FACING).getAxis() == face.getAxis();
         return !barrelEnd;
+    }
+
+    public static boolean liftedOn(BlockGetter level, BlockPos part, Direction face) {
+        BlockState host = level.getBlockState(part.relative(face));
+        return host.is(HOSTS) && host.hasProperty(RAISED) && host.getValue(RAISED);
+    }
+
+    // a raised host carries its parts up with it
+    public static double lift(BlockState state) {
+        boolean host = state.is(HOSTS) && state.hasProperty(RAISED) && state.getValue(RAISED);
+        boolean carried = state.hasProperty(LIFTED) && state.getValue(LIFTED);
+        return host || carried ? BULGE : 0.0;
     }
 
     // a placement helper ghost and its placed block both take their raised and joined state from the neighbors

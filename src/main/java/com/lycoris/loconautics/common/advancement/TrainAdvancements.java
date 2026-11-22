@@ -34,6 +34,9 @@ import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.advancements.AdvancementProgress;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -73,7 +76,7 @@ public final class TrainAdvancements {
     private static final ResourceLocation ANY_FUEL_WILL_DO = LoconauticsConstants.id("any_fuel_will_do");
     private static final ResourceLocation OVER_9000 = LoconauticsConstants.id("over_9000");
     private static final ResourceLocation LOCONAUTICS_CUSTOMS = LoconauticsConstants.id("loconautics_customs");
-    private static final String ENGINE_FUELS = "LoconauticsEngineFuels";
+    private static final String ENGINE_FUEL_KEYS = "LoconauticsEngineFuelKeys";
     private static final String ENGINE_COLORS = "LoconauticsEngineColors";
     private static final int ENGINE_WITNESS_RANGE = 16;
     private static final int DIFFERENT_FUELS = 3;
@@ -136,15 +139,20 @@ public final class TrainAdvancements {
         }
     }
 
-    public static void engineStarted(ServerLevel level, BlockPos at, int fuelOrdinal, int rowLength) {
+    public static void engineStarted(ServerLevel level, BlockPos at, String fuelKey, int rowLength) {
         for (ServerPlayer player : level.players()) {
             if (player.blockPosition().distSqr(at) > ENGINE_WITNESS_RANGE * ENGINE_WITNESS_RANGE) {
                 continue;
             }
-            int fuels = player.getPersistentData().getInt(ENGINE_FUELS) | (1 << fuelOrdinal);
-            player.getPersistentData().putInt(ENGINE_FUELS, fuels);
-            if (Integer.bitCount(fuels) >= DIFFERENT_FUELS) {
-                award(player, ANY_FUEL_WILL_DO);
+            if (!fuelKey.isEmpty()) {
+                ListTag fuels = player.getPersistentData().getList(ENGINE_FUEL_KEYS, Tag.TAG_STRING);
+                if (!fuels.contains(StringTag.valueOf(fuelKey))) {
+                    fuels.add(StringTag.valueOf(fuelKey));
+                    player.getPersistentData().put(ENGINE_FUEL_KEYS, fuels);
+                }
+                if (fuels.size() >= DIFFERENT_FUELS) {
+                    award(player, ANY_FUEL_WILL_DO);
+                }
             }
             if (rowLength >= SmallEngineTuning.MAX_TANDEM) {
                 award(player, OVER_9000);

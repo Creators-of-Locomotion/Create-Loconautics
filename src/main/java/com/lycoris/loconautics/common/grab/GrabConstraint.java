@@ -25,10 +25,16 @@ public final class GrabConstraint {
 
     private static final float ROTATE_ANGULAR_STIFFNESS = 10000.0f;
     private static final float ROTATE_ANGULAR_DAMPING = 850.0f;
+    private static final float HOLD_ANGULAR_STIFFNESS = 1500.0f;
+    private static final float HOLD_ANGULAR_DAMPING = 330.0f;
+    private static final float HOLD_FORCE_SHARE = 0.35f;
 
     private final UUID playerId;
     private float scrollDistance;
     private boolean rotating;
+    private boolean holding;
+    private boolean orientationYawPending;
+    private float orientationYaw;
     private final Quaterniond targetOrientation = new Quaterniond();
     @Nullable private PhysicsConstraintHandle handle;
 
@@ -43,8 +49,10 @@ public final class GrabConstraint {
 
     public void setRotation(boolean rotating, org.joml.Quaterniondc orientation) {
         this.rotating = rotating;
+        holding |= rotating;
         if (orientation != null) {
             targetOrientation.set(orientation);
+            orientationYawPending = true;
         }
     }
 
@@ -78,7 +86,13 @@ public final class GrabConstraint {
             return;
         }
         SubLevelPhysicsSystem system = container.physicsSystem();
-        Quaterniond frame = rotating ? new Quaterniond(targetOrientation) : new Quaterniond();
+        if (orientationYawPending) {
+            orientationYaw = player.getYRot();
+            orientationYawPending = false;
+        }
+        Quaterniond frame = rotating || holding
+                ? new Quaterniond().rotationY(-Math.toRadians(player.getYRot() - orientationYaw)).mul(targetOrientation)
+                : new Quaterniond();
         handle = system.getPipeline().addConstraint(null, body,
                 new FreeConstraintConfiguration(goal, grabAnchor, frame));
         if (handle == null) {
@@ -92,6 +106,9 @@ public final class GrabConstraint {
             if (rotating) {
                 handle.setMotor(axis, 0.0, ROTATE_ANGULAR_STIFFNESS, ROTATE_ANGULAR_DAMPING, true,
                         rotateMaxForce);
+            } else if (holding) {
+                handle.setMotor(axis, 0.0, HOLD_ANGULAR_STIFFNESS, HOLD_ANGULAR_DAMPING, true,
+                        rotateMaxForce * HOLD_FORCE_SHARE);
             } else {
                 handle.setMotor(axis, 0.0, 0.0, GrabTarget.ANGULAR_DAMPING, true, GrabTarget.MAX_FORCE);
             }

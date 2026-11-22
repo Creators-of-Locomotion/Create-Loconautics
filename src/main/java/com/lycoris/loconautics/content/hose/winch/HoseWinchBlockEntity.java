@@ -7,6 +7,7 @@ import com.lycoris.loconautics.common.strand.RemovedSubLevels;
 import com.lycoris.loconautics.common.strand.StrandEndpoints;
 import com.lycoris.loconautics.common.strand.StrandSnap;
 import com.lycoris.loconautics.common.strand.StrandHolder;
+import com.lycoris.loconautics.common.strand.StrandKind;
 import com.lycoris.loconautics.config.LoconauticsConfig;
 import com.lycoris.loconautics.content.hose.HoseFluidCarrier;
 import com.lycoris.loconautics.content.hose.HoseHolderBehaviour;
@@ -20,6 +21,7 @@ import com.lycoris.loconautics.content.hose.link.HoseLinks;
 import com.lycoris.loconautics.content.hose.nozzle.HoseNozzleBlockEntity;
 import com.lycoris.loconautics.content.hose.rope.HoseRope;
 import com.lycoris.loconautics.content.hose.rope.HoseRopeManager;
+import com.lycoris.loconautics.network.packets.attachment.StrandPointsPacket;
 import com.lycoris.loconautics.trainphysics.TrainConsist;
 import com.lycoris.loconautics.trainphysics.state.SableTrainRegistry;
 import com.simibubi.create.content.kinetics.base.KineticEffectHandler;
@@ -41,6 +43,7 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3d;
 
@@ -100,12 +103,9 @@ public class HoseWinchBlockEntity extends GeneratingKineticBlockEntity implement
     @Nullable private UUID clientNozzleSub;
     @Nullable private BlockPos clientNozzleLocal;
 
-    @Nullable private float[] ropePtsIncoming;
-    @Nullable private float[] ropePtsPrev;
-    @Nullable private float[] ropePtsCurr;
-
-    @Nullable private float[] pendingRopePoints;
-
+    @Nullable private float[] ponderPtsIncoming;
+    @Nullable private float[] ponderPtsPrev;
+    @Nullable private float[] ponderPtsCurr;
 
     private float coilAngle;
     private float coilAnglePrev;
@@ -155,14 +155,13 @@ public class HoseWinchBlockEntity extends GeneratingKineticBlockEntity implement
             return;
         }
         if (level.isClientSide) {
-            HoseWinchKnotSource.track(this);
             coilAnglePrev = coilAngle;
             coilAngle += getSpeed() * COIL_DEGREES_PER_RPM_TICK;
             float wrap = (int) (coilAngle / 360.0f) * 360.0f;
             coilAngle -= wrap;
             coilAnglePrev -= wrap;
-            ropePtsPrev = ropePtsCurr;
-            ropePtsCurr = ropePtsIncoming;
+            ponderPtsPrev = ponderPtsCurr;
+            ponderPtsCurr = ponderPtsIncoming;
             if (clientReach <= 0.001f) {
                 clientFill.startWithValue(0);
             } else {
@@ -383,7 +382,7 @@ public class HoseWinchBlockEntity extends GeneratingKineticBlockEntity implement
         if (nozzle != null && nozzle.isDocked() && level.getGameTime() % 5 == 0) {
             HoseRopeManager dbg = HoseRopeManager.get(level);
             HoseRope dbgRope = dbg == null ? null : dbg.get(strand.id);
-            com.lycoris.loconautics.LoconauticsConstants.LOGGER.info(
+            com.lycoris.loconautics.LoconauticsConstants.TRACE.info(
                     "[undockdbg] winch tension canUndock={} stretch={} freeSpin={} payout={} ext={}",
                     nozzle.canUndock(), dbgRope == null ? "norope" : dbgRope.getStretchRatio(), isFreeSpin(),
                     smoothedPayout, dbgRope == null ? "norope" : dbgRope.getCurrentExtension());
@@ -547,10 +546,12 @@ public class HoseWinchBlockEntity extends GeneratingKineticBlockEntity implement
                 reelSpeed = Math.max(reelSpeed, Math.min(FREE_SPIN_MAX_PAYOUT, need));
             }
         }
-        int pointsBefore = rope.getPoints().size();
-        rope.reel(reelSpeed, winchWorld());
-        if (!freeSpinning && getSpeed() != 0.0f) {
-            logReel(rope, strand, reelSpeed, pointsBefore);
+        if (rope.isActive()) {
+            int pointsBefore = rope.getPoints().size();
+            rope.reel(reelSpeed, winchWorld());
+            if (!freeSpinning && getSpeed() != 0.0f) {
+                logReel(rope, strand, reelSpeed, pointsBefore);
+            }
         }
 
         if (!rope.isActive() && rope.areAttachmentsLoaded((net.minecraft.server.level.ServerLevel) level)
@@ -559,12 +560,8 @@ public class HoseWinchBlockEntity extends GeneratingKineticBlockEntity implement
         }
         if (rope.isActive()) {
             strand.currentLength = (float) Math.min(rope.getCurrentExtension(), strand.type.maxLength() + 1.0);
-            strand.points = new java.util.ArrayList<>(rope.getPoints());
+            strand.points = RopeGeometry.copyPoints(rope.getPoints());
             strand.extensionGoal = rope.getExtension();
-            if (rope.needsSync()) {
-                syncRopePoints(rope);
-                rope.justSynced();
-            }
         }
     }
 
@@ -593,7 +590,7 @@ public class HoseWinchBlockEntity extends GeneratingKineticBlockEntity implement
         Vec3 nozzle = resolveNozzlePoint(strand);
         double nozzleStep = nozzle == null || lastNozzleLog == null ? 0.0 : nozzle.distanceTo(lastNozzleLog);
         lastNozzleLog = nozzle;
-        LoconauticsConstants.LOGGER.info("[winchreel] t={} speed={} reel={} pts={}->{} goal={} desired={} cur={} stretch={} first={} maxSeg={} nozzleStep={} joint={} active={}",
+        LoconauticsConstants.TRACE.info("[winchreel] t={} speed={} reel={} pts={}->{} goal={} desired={} cur={} stretch={} first={} maxSeg={} nozzleStep={} joint={} active={}",
                 level.getGameTime(), getSpeed(), reelSpeed, pointsBefore, pts.size(), rope.getExtension(),
                 rope.getDesiredExtension(), rope.getCurrentExtension(), rope.getStretchRatio(), firstSegment,
                 maxSegment, nozzleStep, rope.hasJoint(), rope.isActive());
@@ -631,26 +628,6 @@ public class HoseWinchBlockEntity extends GeneratingKineticBlockEntity implement
         return p != null ? new Vector3d(p.x, p.y, p.z) : winchWorld();
     }
 
-    private void syncRopePoints(HoseRope rope) {
-        var pts = rope.getPoints();
-        int n = pts.size();
-        float[] rel = new float[n * 3];
-        BlockPos base = getBlockPos();
-        dev.ryanhcode.sable.sublevel.SubLevel own = dev.ryanhcode.sable.Sable.HELPER.getContaining(this);
-        Vector3d scratch = new Vector3d();
-        for (int i = 0; i < n; i++) {
-            scratch.set(pts.get(i));
-            if (own != null) {
-                own.logicalPose().transformPositionInverse(scratch);
-            }
-            rel[i * 3] = (float) (scratch.x - base.getX());
-            rel[i * 3 + 1] = (float) (scratch.y - base.getY());
-            rel[i * 3 + 2] = (float) (scratch.z - base.getZ());
-        }
-        pendingRopePoints = rel;
-        sendData();
-    }
-
     @Override
     protected void write(CompoundTag tag, HolderLookup.Provider registries, boolean clientPacket) {
         super.write(tag, registries, clientPacket);
@@ -669,13 +646,6 @@ public class HoseWinchBlockEntity extends GeneratingKineticBlockEntity implement
                     tag.putLong("NozzleLocal", strand.nozzleLocalPos.asLong());
                 }
             }
-            if (pendingRopePoints != null) {
-                int[] packed = new int[pendingRopePoints.length];
-                for (int i = 0; i < packed.length; i++) {
-                    packed[i] = Float.floatToIntBits(pendingRopePoints[i]);
-                }
-                tag.putIntArray("RopePts", packed);
-            }
         }
     }
 
@@ -693,17 +663,19 @@ public class HoseWinchBlockEntity extends GeneratingKineticBlockEntity implement
             clientStrandId = tag.hasUUID("StrandId") ? tag.getUUID("StrandId") : null;
             clientNozzleSub = tag.hasUUID("NozzleSub") ? tag.getUUID("NozzleSub") : null;
             clientNozzleLocal = tag.contains("NozzleLocal") ? BlockPos.of(tag.getLong("NozzleLocal")) : null;
-            if (tag.contains("RopePts")) {
-                int[] packed = tag.getIntArray("RopePts");
+            if (tag.contains("PonderPts")) {
+                int[] packed = tag.getIntArray("PonderPts");
                 float[] pts = new float[packed.length];
                 for (int i = 0; i < packed.length; i++) {
                     pts[i] = Float.intBitsToFloat(packed[i]);
                 }
-                ropePtsIncoming = pts;
+                ponderPtsIncoming = pts;
             }
             if (!clientHasStrand) {
-                ropePtsIncoming = ropePtsCurr = ropePtsPrev = null;
+                ponderPtsIncoming = ponderPtsCurr = ponderPtsPrev = null;
             }
+        } else {
+            reActivateSource = true;
         }
     }
 
@@ -759,13 +731,20 @@ public class HoseWinchBlockEntity extends GeneratingKineticBlockEntity implement
     }
 
     @Nullable
-    public List<Vec3> clientRopePoints(float partialTicks) {
-        return RopeGeometry.interpolateRopePoints(ropePtsCurr, ropePtsPrev, getBlockPos(), partialTicks);
-    }
-
-    @Override
-    public net.minecraft.world.phys.AABB getRenderBoundingBox() {
-        return RopeGeometry.renderBounds(ropePtsCurr, getBlockPos(), 1.0);
+    public List<Vec3> ponderRopePoints(float partialTicks) {
+        float[] curr = ponderPtsCurr;
+        if (curr == null || curr.length < 6) {
+            return null;
+        }
+        float[] prev = ponderPtsPrev != null && ponderPtsPrev.length == curr.length ? ponderPtsPrev : curr;
+        BlockPos base = getBlockPos();
+        List<Vec3> out = new java.util.ArrayList<>(curr.length / 3);
+        for (int i = 0; i + 2 < curr.length; i += 3) {
+            out.add(new Vec3(base.getX() + Mth.lerp(partialTicks, prev[i], curr[i]),
+                    base.getY() + Mth.lerp(partialTicks, prev[i + 1], curr[i + 1]),
+                    base.getZ() + Mth.lerp(partialTicks, prev[i + 2], curr[i + 2])));
+        }
+        return out;
     }
 
     private boolean isNozzleGone(HoseStrand strand) {
@@ -819,13 +798,39 @@ public class HoseWinchBlockEntity extends GeneratingKineticBlockEntity implement
     }
 
     private void removeRope(UUID id) {
-        if (level == null || level.isClientSide) {
+        if (!(level instanceof ServerLevel serverLevel)) {
             return;
         }
-        HoseRopeManager ropes = HoseRopeManager.get(level);
-        if (ropes != null) {
-            ropes.remove(SubLevelPhysicsSystem.get(level), id);
+        HoseRopeManager ropes = HoseRopeManager.get(serverLevel);
+        SubLevelPhysicsSystem system = SubLevelPhysicsSystem.get(serverLevel);
+        if (ropes != null && system != null) {
+            ropes.remove(system, id);
         }
+        PacketDistributor.sendToPlayersInDimension(serverLevel, StrandPointsPacket.removal(StrandKind.WINCH_HOSE, id));
+    }
+
+    @Override
+    public void onChunkUnloaded() {
+        super.onChunkUnloaded();
+        if (!(level instanceof ServerLevel serverLevel) || isPortalTwin()) {
+            return;
+        }
+        HoseStrand strand = getAttachedStrand();
+        HoseRopeManager ropes = HoseRopeManager.get(serverLevel);
+        HoseRope rope = strand == null || ropes == null ? null : ropes.get(strand.id);
+        if (rope == null) {
+            return;
+        }
+        if (rope.isActive()) {
+            rope.updatePose();
+            strand.points = RopeGeometry.copyPoints(rope.getPoints());
+            strand.extensionGoal = rope.getExtension();
+            HoseStrandManager strands = HoseStrandManager.get(serverLevel);
+            if (strands != null) {
+                strands.touch();
+            }
+        }
+        removeRope(strand.id);
     }
 
     @Nullable

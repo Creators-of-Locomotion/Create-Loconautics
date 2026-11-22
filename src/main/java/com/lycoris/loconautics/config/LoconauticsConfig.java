@@ -62,6 +62,7 @@ public final class LoconauticsConfig {
     public static ModConfigSpec.IntValue FIRE_LEVELS_POOR;
     public static ModConfigSpec.IntValue FIRE_LEVELS_NORMAL;
     public static ModConfigSpec.IntValue FIRE_LEVELS_PREMIUM;
+    public static ModConfigSpec.DoubleValue WHEEL_PAIR_BONUS;
     public static ModConfigSpec.IntValue POOR_FUEL_BURN_LIMIT;
     public static ModConfigSpec.IntValue PREMIUM_FUEL_BURN_LIMIT;
     public static ModConfigSpec.IntValue BODY_WATER_CAPACITY;
@@ -71,10 +72,6 @@ public final class LoconauticsConfig {
     public static ModConfigSpec.DoubleValue BURST_PRESSURE;
     public static ModConfigSpec.IntValue CROWN_SHEET_TICKS;
     public static ModConfigSpec.IntValue DRAFT_CHOKE_TICKS;
-
-    public static ModConfigSpec.BooleanValue CRASH_EXPLODE_ENABLED;
-    public static ModConfigSpec.DoubleValue CRASH_IMPACT_THRESHOLD;
-    public static ModConfigSpec.DoubleValue CRASH_EXPLOSION_POWER;
 
     public static ModConfigSpec.DoubleValue OPPOSED_STRESS_FACTOR;
     public static ModConfigSpec.IntValue ANALOG_DECAY_TICKS;
@@ -349,6 +346,10 @@ public final class LoconauticsConfig {
                 .comment("Levels each firebox adds to the fire limit with premium fuel like coal blocks.")
                 .defineInRange("fireLevelsPremium", 4, 1, 16);
 
+        WHEEL_PAIR_BONUS = BUILDER
+                .comment("Extra pull and extra pool draw a boiler bogey gets for each wheel pair after the first.")
+                .defineInRange("wheelPairBonus", 0.25, 0.0, 2.0);
+
         POOR_FUEL_BURN_LIMIT = BUILDER
                 .comment("Fuel that burns this many ticks or less counts as poor, unless a fuel tag says otherwise.")
                 .defineInRange("poorFuelBurnLimit", 400, 1, 1000000);
@@ -380,19 +381,6 @@ public final class LoconauticsConfig {
 
         CROWN_SHEET_TICKS = BUILDER
                 .defineInRange("crownSheetTicks", 600, 20, 72000);
-
-        BUILDER.pop();
-
-        BUILDER.push("crash");
-
-        CRASH_EXPLODE_ENABLED = BUILDER
-                .define("explodeOnCrash", true);
-
-        CRASH_IMPACT_THRESHOLD = BUILDER
-                .defineInRange("crashImpactThreshold", 4.0, 0.0, 1000.0);
-
-        CRASH_EXPLOSION_POWER = BUILDER
-                .defineInRange("explosionPower", 4.0, 0.0, 100.0);
 
         BUILDER.pop();
 

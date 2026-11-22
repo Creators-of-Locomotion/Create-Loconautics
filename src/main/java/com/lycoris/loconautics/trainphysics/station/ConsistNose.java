@@ -6,6 +6,7 @@ import com.lycoris.loconautics.trainphysics.TrainConsist;
 import com.lycoris.loconautics.trainphysics.drive.SableTrainDriver;
 import com.lycoris.loconautics.trainphysics.rail.RailCarriage;
 import com.lycoris.loconautics.trainphysics.rail.RailSeams;
+import com.lycoris.loconautics.trainphysics.state.CartEvent;
 import com.lycoris.loconautics.trainphysics.state.SableTrainRegistry;
 import com.simibubi.create.content.trains.entity.TravellingPoint;
 import net.minecraft.server.level.ServerLevel;
@@ -34,6 +35,7 @@ public final class ConsistNose {
     private static final Map<UUID, Nose> CACHE = new HashMap<>();
     private static final Map<UUID, Nose> TAILS = new HashMap<>();
     private static final Map<UUID, Memory> MEMORY = new HashMap<>();
+    private static final Map<UUID, Vec3> ISSUE_PIN_CHORD = new HashMap<>();
     private static final Map<UUID, String> LOGGED = new HashMap<>();
     private static final Map<String, Integer> RELATIONS = new HashMap<>();
     private static int cacheTick = Integer.MIN_VALUE;
@@ -42,6 +44,7 @@ public final class ConsistNose {
         CACHE.clear();
         TAILS.clear();
         MEMORY.clear();
+        ISSUE_PIN_CHORD.clear();
         LOGGED.clear();
         RELATIONS.clear();
     }
@@ -85,6 +88,19 @@ public final class ConsistNose {
         }
     }
 
+    public static void traceShapeChange(SableTrain train, CartEvent event) {
+        UUID id = idOf(train);
+        Memory memory = id == null ? null : MEMORY.get(id);
+        if (memory == null || !memory.pinned()) {
+            return;
+        }
+        SableTrain ref = memory.ref() == null ? null : SableTrainRegistry.bySubLevel(memory.ref());
+        Vec3 was = ISSUE_PIN_CHORD.get(memory.ref());
+        Vec3 now = ref == null ? null : SableTrainDriver.scheduleDriveTangent(ref);
+        LoconauticsConstants.TRACE.info("[nosepin] car {} after {} pinned sign {} ref {} chord at pin {} now {} flipped {}",
+                id, event, memory.sign(), memory.ref(), was, now, was != null && now != null && was.dot(now) < 0.0);
+    }
+
     private static void pin(SableTrain train, SableTrain ref, double sign) {
         UUID id = idOf(train);
         ServerLevel level = train.level();
@@ -94,6 +110,11 @@ public final class ConsistNose {
         Memory memory = new Memory(id, idOf(ref), sign, true);
         store(consistCars(train), memory);
         MEMORY.put(id, memory);
+        UUID refId = idOf(ref);
+        Vec3 refChord = ref == null ? null : SableTrainDriver.scheduleDriveTangent(ref);
+        if (refId != null && refChord != null) {
+            ISSUE_PIN_CHORD.put(refId, refChord);
+        }
         CACHE.clear();
         TAILS.clear();
     }

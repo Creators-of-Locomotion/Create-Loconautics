@@ -21,7 +21,8 @@ public final class GhostWheelCollisionCallback implements BlockSubLevelCollision
             return false;
         }
         java.util.UUID parent = com.lycoris.loconautics.trainphysics.wheels.GhostWheelBodies.parentCarOf(padSub);
-        return otherSub.equals(parent);
+        return otherSub.equals(parent)
+                || com.lycoris.loconautics.trainphysics.wheels.GhostWheelBodies.parentCarOf(otherSub) != null;
     }
 
     private static java.util.UUID subLevelIdAt(ServerLevel level, BlockPos pos) {

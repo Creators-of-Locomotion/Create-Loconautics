@@ -1,5 +1,6 @@
 package com.lycoris.loconautics.content.hose.nozzle;
 
+import com.lycoris.loconautics.common.strand.RopeContactFilter;
 import com.lycoris.loconautics.common.strand.StrandRemap;
 import com.simibubi.create.content.equipment.wrench.IWrenchable;
 import com.lycoris.loconautics.registry.LoconauticsRegistries;
@@ -7,6 +8,8 @@ import com.simibubi.create.foundation.block.IBE;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import dev.ryanhcode.sable.api.block.BlockSubLevelAssemblyListener;
+import dev.ryanhcode.sable.api.block.BlockWithSubLevelCollisionCallback;
+import dev.ryanhcode.sable.api.physics.callback.BlockSubLevelCollisionCallback;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
@@ -32,7 +35,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 
 public class HoseNozzleBlock extends Block
         implements IWrenchable, IBE<HoseNozzleBlockEntity>, dev.ryanhcode.sable.api.block.BlockSubLevelCollisionShape,
-        BlockSubLevelAssemblyListener, SimpleWaterloggedBlock {
+        BlockSubLevelAssemblyListener, SimpleWaterloggedBlock, BlockWithSubLevelCollisionCallback {
 
     private static final VoxelShape SHAPE = Shapes.or(
             Shapes.box(0.28125, 0.0, 0.28125, 0.71875, 0.4375, 0.71875),
@@ -81,6 +84,11 @@ public class HoseNozzleBlock extends Block
     @Override
     public VoxelShape getSubLevelCollisionShape(BlockGetter level, BlockState state) {
         return PHYSICS_SHAPE;
+    }
+
+    @Override
+    public BlockSubLevelCollisionCallback sable$getCallback() {
+        return RopeContactFilter.INSTANCE;
     }
 
     @Override

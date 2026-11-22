@@ -25,7 +25,9 @@ import net.createmod.catnip.data.Couple;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public final class CcControl {
 
@@ -33,6 +35,7 @@ public final class CcControl {
     public static final String STOPPED_EVENT = "train_stopped";
 
     private static final Map<UUID, CcControl> ACTIVE = new HashMap<>();
+    private static final Set<UUID> RELEASED_STEER = ConcurrentHashMap.newKeySet();
     private static int lastParkId;
     private static int lastStopId;
     private static final int DRIVETRAIN_RECHECK_TICKS = 20;
@@ -95,10 +98,14 @@ public final class CcControl {
             com.lycoris.loconautics.LoconauticsConstants.LOGGER.info("[ccsteer] dropped control of {} steer={}", trainId, released.steer);
             released.abandonPark();
             released.clearTransmission();
+            if (released.steer != null) {
+                RELEASED_STEER.add(trainId);
+            }
         }
     }
 
     public static void retain(java.util.Set<UUID> live) {
+        RELEASED_STEER.retainAll(live);
         ACTIVE.entrySet().removeIf(entry -> {
             if (live.contains(entry.getKey())) {
                 return false;
@@ -230,6 +237,9 @@ public final class CcControl {
     }
 
     public static void apply(SableTrain train) {
+        if (RELEASED_STEER.remove(train.id())) {
+            TrainSteeringAccessor.clear(train);
+        }
         CcControl control = ACTIVE.get(train.id());
         if (control == null) {
             return;

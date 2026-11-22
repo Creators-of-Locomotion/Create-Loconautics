@@ -1,5 +1,6 @@
 package com.lycoris.loconautics.content.boiler.safetyvalve;
 
+import com.lycoris.loconautics.content.boiler.BoilerShapes;
 import com.lycoris.loconautics.content.boiler.BoilerBlocks;
 import com.lycoris.loconautics.content.boiler.BoilerAttach;
 import com.lycoris.loconautics.foundation.pick.OversizeShape;
@@ -56,7 +57,8 @@ public class SmartSafetyValveBlock extends SafetyValveBlock implements OversizeS
 
     public SmartSafetyValveBlock(Properties properties) {
         super(properties);
-        registerDefaultState(stateDefinition.any().setValue(FACING, Direction.UP).setValue(RAISED, false).setValue(BRASS, false));
+        registerDefaultState(stateDefinition.any().setValue(FACING, Direction.UP).setValue(RAISED, false).setValue(BRASS, false)
+                .setValue(BoilerAttach.LIFTED, false));
     }
 
     private static VoxelShape buildShape(Direction facing, double lift) {
@@ -92,14 +94,16 @@ public class SmartSafetyValveBlock extends SafetyValveBlock implements OversizeS
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING, RAISED, BRASS);
+        builder.add(FACING, RAISED, BRASS, BoilerAttach.LIFTED);
     }
 
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
         Direction face = context.getClickedFace();
         boolean onBarrel = BoilerAttach.raisedOn(context.getLevel(), context.getClickedPos(), face.getOpposite());
-        return defaultBlockState().setValue(FACING, face).setValue(RAISED, onBarrel);
+        return defaultBlockState().setValue(FACING, face).setValue(RAISED, onBarrel)
+                .setValue(BoilerAttach.LIFTED,
+                        BoilerAttach.liftedOn(context.getLevel(), context.getClickedPos(), face.getOpposite()));
     }
 
     @Override
@@ -121,7 +125,8 @@ public class SmartSafetyValveBlock extends SafetyValveBlock implements OversizeS
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         int face = state.getValue(FACING).get3DDataValue();
-        return state.getValue(RAISED) ? SHAPES_RAISED[face] : SHAPES[face];
+        return BoilerShapes.raisedIf(state.getValue(RAISED) ? SHAPES_RAISED[face] : SHAPES[face],
+                state.getValue(BoilerAttach.LIFTED));
     }
 
     @Override

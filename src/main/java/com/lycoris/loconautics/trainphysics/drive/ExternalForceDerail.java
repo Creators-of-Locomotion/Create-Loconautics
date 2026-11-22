@@ -96,6 +96,7 @@ public final class ExternalForceDerail {
     private static final long STALE_TICKS = 1;
     private static final int REGRIP_TICKS = 40;
     private static final long TRACE_TICKS = 10;
+    public static final long STAFF_GRACE_TICKS = 20;
 
     private record Push(long gameTime, double lift) {
 
@@ -117,6 +118,7 @@ public final class ExternalForceDerail {
     private static final Map<UUID, Long> REGRIP = new HashMap<>();
     private static final Map<UUID, Long> TRACED = new HashMap<>();
     private static final Map<UUID, Release> RELEASED = new HashMap<>();
+    private static final Map<UUID, Long> STAFF_SEEN = new HashMap<>();
 
     private record Release(long until, Vector3d linear, Vector3d angular) {
     }
@@ -152,11 +154,14 @@ public final class ExternalForceDerail {
     }
 
     static void sample(ServerSubLevel sub, Car car, SableTrain train, double dt) {
+        long now = sub.getLevel().getGameTime();
+        boolean dragged = staffDrags(sub);
+        if (dragged || staffLocked(sub)) {
+            STAFF_SEEN.put(train.id(), now);
+        }
         if (!LoconauticsConfig.DERAIL_ON_EXTERNAL_FORCE.get() || dt <= 0.0 || TrainPropulsion.isMonorail(train)) {
             return;
         }
-        long now = sub.getLevel().getGameTime();
-        boolean dragged = staffDrags(sub);
         Vector3d[] ref = TrainRailAdvance.bogeyReference(car);
         Vector3d tangent = ref != null ? ref[1] : SableTrainDriver.railTangent(car);
         if (tangent != null) {
@@ -316,6 +321,14 @@ public final class ExternalForceDerail {
         }
     }
 
+    public static long staffAge(ServerSubLevel sub, SableTrain train) {
+        if (staffHolds(sub)) {
+            return 0L;
+        }
+        Long seen = STAFF_SEEN.get(train.id());
+        return seen == null ? Long.MAX_VALUE : sub.getLevel().getGameTime() - seen;
+    }
+
     public static boolean staffHolds(ServerSubLevel sub) {
         if (!(sub.getLevel() instanceof ServerLevel level)) {
             return false;
@@ -455,5 +468,6 @@ public final class ExternalForceDerail {
         REGRIP.keySet().retainAll(liveTrains);
         TRACED.keySet().retainAll(liveSubLevels);
         RELEASED.keySet().retainAll(liveTrains);
+        STAFF_SEEN.keySet().retainAll(liveTrains);
     }
 }
