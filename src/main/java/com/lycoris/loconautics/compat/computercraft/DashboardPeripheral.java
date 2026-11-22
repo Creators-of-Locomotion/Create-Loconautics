@@ -89,8 +89,7 @@ public class DashboardPeripheral implements IPeripheral, DashboardWatcher.Pollab
         return part instanceof RedstoneLinkedPart;
     }
 
-    private static net.minecraft.world.level.block.entity.BlockEntity source(Control control,
-                                                                             GaugeBlockEntity.Gauge gauge) {
+    private static net.minecraft.world.level.block.entity.BlockEntity source(Control control, GaugeBlockEntity.Gauge gauge) {
         return control.panel() instanceof GaugeBlockEntity panel ? panel.sourceOf(gauge) : null;
     }
 
