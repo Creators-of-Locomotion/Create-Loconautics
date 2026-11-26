@@ -32,6 +32,7 @@ import net.neoforged.neoforge.server.ServerLifecycleHooks;
 import org.joml.Vector3d;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -256,20 +257,42 @@ public final class RailSeams {
         if (networks == null || networks.isEmpty()) {
             return false;
         }
-        List<Railhead> heads = new ArrayList<>();
-        for (TrackGraph graph : new ArrayList<>(networks.values())) {
-            for (TrackNodeLocation location : new ArrayList<>(graph.getNodes())) {
+        // a seam always has a rail inside a plot, so with none of those there is nothing to pair
+        List<Railhead> plotted = new ArrayList<>();
+        Map<ResourceKey<Level>, SubLevelContainer> containers = new HashMap<>();
+        for (TrackGraph graph : networks.values()) {
+            for (TrackNodeLocation location : graph.getNodes()) {
+                SubLevelContainer container = containers.computeIfAbsent(location.dimension,
+                        dimension -> anyContainer(dimension));
+                if (container == null || !inPlotGrid(container, location)) {
+                    continue;
+                }
+                Railhead head = railheadOf(graph, graph.locateNode(location));
+                if (head != null) {
+                    plotted.add(head);
+                }
+            }
+        }
+        if (plotted.isEmpty()) {
+            return false;
+        }
+        List<Railhead> heads = new ArrayList<>(plotted);
+        double reach = MAX_SEAM_GAP * MAX_SEAM_GAP;
+        for (TrackGraph graph : networks.values()) {
+            for (TrackNodeLocation location : graph.getNodes()) {
+                SubLevelContainer container = containers.get(location.dimension);
+                if (container == null || inPlotGrid(container, location) || !nearAny(plotted, location, reach)) {
+                    continue;
+                }
                 Railhead head = railheadOf(graph, graph.locateNode(location));
                 if (head != null) {
                     heads.add(head);
                 }
             }
         }
-        for (int i = 0; i < heads.size(); i++) {
-            Railhead x = heads.get(i);
-            for (int j = i + 1; j < heads.size(); j++) {
-                Railhead y = heads.get(j);
-                if (x.world.distanceToSqr(y.world) > MAX_SEAM_GAP * MAX_SEAM_GAP
+        for (Railhead x : plotted) {
+            for (Railhead y : heads) {
+                if (x == y || x.world.distanceToSqr(y.world) > reach
                         || x.alongRail.dot(y.alongRail) > FACING_DOT) {
                     continue;
                 }
@@ -285,6 +308,16 @@ public final class RailSeams {
                 if (weld(x.graph, x.node, y.graph, y.node, x.material)) {
                     return true;
                 }
+            }
+        }
+        return false;
+    }
+
+    private static boolean nearAny(List<Railhead> heads, TrackNodeLocation location, double reachSqr) {
+        Vec3 at = location.getLocation();
+        for (Railhead head : heads) {
+            if (head.world.distanceToSqr(at) <= reachSqr) {
+                return true;
             }
         }
         return false;
@@ -345,7 +378,8 @@ public final class RailSeams {
         }
         for (TrackGraph graph : new ArrayList<>(networks.values())) {
             int dropped = 0;
-            for (TrackNodeLocation location : new ArrayList<>(graph.getNodes())) {
+            List<TrackNodeLocation> linked = nodesWithLinks(graph);
+            for (TrackNodeLocation location : linked) {
                 TrackNode node = graph.locateNode(location);
                 Map<TrackNode, TrackEdge> connections = node == null ? null : graph.getConnectionsFrom(node);
                 if (connections == null) {
@@ -369,6 +403,27 @@ public final class RailSeams {
                 resync(graph);
             }
         }
+    }
+
+    private static List<TrackNodeLocation> nodesWithLinks(TrackGraph graph) {
+        List<TrackNodeLocation> linked = List.of();
+        for (TrackNodeLocation location : graph.getNodes()) {
+            TrackNode node = graph.locateNode(location);
+            Map<TrackNode, TrackEdge> connections = node == null ? null : graph.getConnectionsFrom(node);
+            if (connections == null) {
+                continue;
+            }
+            for (TrackEdge edge : connections.values()) {
+                if (edge.isInterDimensional()) {
+                    if (linked.isEmpty()) {
+                        linked = new ArrayList<>();
+                    }
+                    linked.add(location);
+                    break;
+                }
+            }
+        }
+        return linked;
     }
 
     // creates sync has no edge removal, so a client keeps a dropped seam and its own walks would loop on it

@@ -76,6 +76,7 @@
 - Bogeys no longer bounce when a car drops onto the track.
 - Loose bogeys follow their wheel plate smoothly instead of skipping some ticks.
 - Hose and steel cable length configs apply to winch ropes.
+- Rail seams no longer cause a small lag spike every second.
 - Rollers on Sable trains break blocks in tunnel mode without a paving block.
 - Analog controller speed limit moves one bar segment per scroll, like Create.
 - Breaking a train block through a portal needs the right tool and drops its items at you.
