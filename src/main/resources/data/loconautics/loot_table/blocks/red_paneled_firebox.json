@@ -6,7 +6,7 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "loconautics:firebox"
+          "name": "loconautics:red_paneled_firebox"
         }
       ],
       "conditions": [

@@ -1,0 +1,11 @@
+{
+  "replace": false,
+  "values": [
+    "loconautics:red_ribbed_firebox",
+    "loconautics:industrial_ribbed_firebox",
+    "loconautics:andesite_ribbed_firebox",
+    "loconautics:brass_ribbed_firebox",
+    "loconautics:copper_ribbed_firebox",
+    "loconautics:zinc_ribbed_firebox"
+  ]
+}

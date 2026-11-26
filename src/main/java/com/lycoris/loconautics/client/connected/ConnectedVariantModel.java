@@ -30,22 +30,37 @@ public class ConnectedVariantModel implements IDynamicBakedModel {
         SINGLE,
         START,
         MIDDLE,
-        END
+        END,
+        END_LONG,
+        SINGLE_OPEN,
+        END_OPEN,
+        END_LONG_OPEN
     }
+
+    private static final int LONG_RUN = 3;
 
     private final BakedModel single;
     private final BakedModel start;
     private final BakedModel middle;
     private final BakedModel end;
+    private final BakedModel endLong;
+    private final BakedModel singleOpen;
+    private final BakedModel endOpen;
+    private final BakedModel endLongOpen;
     private final boolean along;
 
     public ConnectedVariantModel(BakedModel single, BakedModel start, BakedModel middle, BakedModel end,
-                                 boolean along) {
+                                 BakedModel endLong, BakedModel singleOpen, BakedModel endOpen,
+                                 BakedModel endLongOpen, boolean along) {
         this.along = along;
         this.single = single;
         this.start = start;
         this.middle = middle;
         this.end = end;
+        this.endLong = endLong;
+        this.singleOpen = singleOpen;
+        this.endOpen = endOpen;
+        this.endLongOpen = endLongOpen;
     }
 
     private BakedModel pick(@NotNull ModelData data) {
@@ -56,6 +71,10 @@ public class ConnectedVariantModel implements IDynamicBakedModel {
             case START -> start;
             case MIDDLE -> middle;
             case END -> end;
+            case END_LONG -> endLong;
+            case SINGLE_OPEN -> singleOpen;
+            case END_OPEN -> endOpen;
+            case END_LONG_OPEN -> endLongOpen;
         };
     }
 
@@ -66,7 +85,7 @@ public class ConnectedVariantModel implements IDynamicBakedModel {
         if (!state.hasProperty(BlockStateProperties.HORIZONTAL_FACING)) return modelData;
 
         Set<BlockPos> group = block.connectionBounds()
-                .group(block, level, state, block.groupAnchor(level, state, pos));
+                .group(block, level, state, block.groupAnchor(level, state, pos), pos);
 
         Direction facing = state.getValue(BlockStateProperties.HORIZONTAL_FACING);
         Direction startSide = along ? facing : facing.getCounterClockWise();
@@ -80,9 +99,17 @@ public class ConnectedVariantModel implements IDynamicBakedModel {
         } else if (toEnd) {
             variant = Variant.START;
         } else if (toStart) {
-            variant = Variant.END;
+            variant = group.size() >= LONG_RUN ? Variant.END_LONG : Variant.END;
         } else {
             variant = Variant.SINGLE;
+        }
+        if (block.backOpen(level, state, pos)) {
+            variant = switch (variant) {
+                case SINGLE -> Variant.SINGLE_OPEN;
+                case END -> Variant.END_OPEN;
+                case END_LONG -> Variant.END_LONG_OPEN;
+                default -> variant;
+            };
         }
         return modelData.derive().with(VARIANT, variant).build();
     }

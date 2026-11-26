@@ -7,7 +7,7 @@
   },
   "display": {
     "icon": {
-      "id": "loconautics:firebox"
+      "id": "loconautics:red_ribbed_firebox"
     },
     "title": {
       "translate": "advancement.loconautics.too_much_pressure"

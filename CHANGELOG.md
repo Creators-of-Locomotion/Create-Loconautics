@@ -79,16 +79,17 @@
 - Rail seams no longer cause a small lag spike every second.
 - Rollers on Sable trains break blocks in tunnel mode without a paving block.
 - Analog controller speed limit moves one bar segment per scroll, like Create.
+- Deployers lay track along the car on a turned train.
 - Breaking a train block through a portal needs the right tool and drops its items at you.
 - Coupled cars no longer shove each other apart while crossing a portal, untested.
 - Trains wait at a portal until the far side has loaded, untested.
 - Trackless cars coupled into a train cross portals with it, untested.
 - Bogeys still behind a portal keep turning after the train crosses, untested.
+- Boiler barrel ends no longer cut into the shell.
 - Holding Space while standing still approaches the station again.
 - Boiler bogeys with no wheels show plain side plates where the axle boxes were open.
 - Boiler bogeys put their pistons on the side you place them from.
 
-- Deployers lay track along the car on a turned train.
 ### Added
 - Boilers show a level in the goggles, set by their size and fire.
 - Fuel quality sets the boiler fire limit, wood is weakest and coal blocks strongest.
@@ -130,8 +131,12 @@
 - Holding something shows which key rotates it, like Create's hints.
 - Datapacks can add engine fuels, with RPM and burn time per fluid.
 - Sneak placing a Firebox raises it, and parts on it rise too.
+- Wheel wobble and plate size are set per bogey in a datapack, bigger bogeys wobble less.
 - Smokestack column height is a server config, default 6 blocks.
 - Panel gauges can read industrial tank contents and fill.
+- The wrench cuts or rejoins seams between boiler bodies and fireboxes.
+- Smokestacks, safety valves and hatches sit on the slanted boiler sides.
+- Fireboxes come in the five boiler body styles, in every dye and metal color.
 
 ### Changed
 - Steam takeoff power follows the boiler level, 16384 SU per level.
@@ -173,8 +178,13 @@
 - A slow car stops at a track end like a Create train instead of running off.
 - The lever hold bar is wider and takes the part colors.
 - Shovel right click takes one fuel, sneaking takes it all in full stacks.
+- A Firebox works without a Boiler Body, bodies only make it bigger.
+- The Hose Winch has a new model, its fluid input moved to match.
 - Hose Winch free reel is analog, a weaker redstone signal makes it stiffer.
+
+### Removed
 - Firebox explosion on impact, along with its crash config options.
+- The old plain firebox is gone, placed ones vanish from existing worlds.
 
 ### Ponder
 #### Instrument Panel

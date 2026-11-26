@@ -767,8 +767,6 @@
   "loconautics.train.status.maneuver_why.not_connected": "%1$s ist mit keinem Gleis verbunden, das dieser Zug erreichen kann",
   "block.loconautics.barrel_pipe_connector": "Kesselrohranschluss",
   "block.loconautics.boiler_body": "Kesselkörper",
-  "block.loconautics.firebox": "Feuerbüchse",
-  "block.loconautics.firebox_controller": "Feuerbüchsensteuerung",
   "block.loconautics.firebox_stocker": "Feuerbüchsenbeschicker",
   "block.loconautics.industrial_fluid_tank": "Industrieller Flüssigkeitstank",
   "block.loconautics.industrial_fluid_tank.mixed_fluids": "Diese Tanks enthalten unterschiedliche Flüssigkeiten",

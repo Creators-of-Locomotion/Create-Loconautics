@@ -1,0 +1,22 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "loconautics:experimental",
+      "feature": "boilerworks"
+    }
+  ],
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "tag": "loconautics:ribbed_fireboxes"
+    },
+    {
+      "item": "create:zinc_ingot"
+    }
+  ],
+  "result": {
+    "id": "loconautics:zinc_ribbed_firebox",
+    "count": 1
+  }
+}

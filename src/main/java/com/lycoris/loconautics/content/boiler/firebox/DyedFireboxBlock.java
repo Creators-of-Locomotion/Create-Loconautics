@@ -1,0 +1,87 @@
+package com.lycoris.loconautics.content.boiler.firebox;
+
+import com.lycoris.loconautics.common.DyedBlock;
+import com.lycoris.loconautics.content.boiler.BoilerBlocks;
+import com.mojang.serialization.MapCodec;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.item.DyeItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.BaseEntityBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.Property;
+import net.minecraft.world.phys.BlockHitResult;
+import org.jetbrains.annotations.Nullable;
+
+public class DyedFireboxBlock extends FireboxBlock implements DyedBlock {
+    private static final int KEEP_GROUP_FLAGS = Block.UPDATE_ALL | Block.UPDATE_MOVE_BY_PISTON;
+
+    private final String kind;
+    private final String colorName;
+    @Nullable private final DyeColor dye;
+
+    public DyedFireboxBlock(Properties properties, String kind, DyeColor dye) {
+        this(properties, kind, dye.getSerializedName(), dye);
+    }
+
+    public DyedFireboxBlock(Properties properties, String kind, String colorName) {
+        this(properties, kind, colorName, null);
+    }
+
+    private DyedFireboxBlock(Properties properties, String kind, String colorName, @Nullable DyeColor dye) {
+        super(properties);
+        this.kind = kind;
+        this.colorName = colorName;
+        this.dye = dye;
+    }
+
+    public String kind() {
+        return kind;
+    }
+
+    @Override
+    @Nullable
+    public DyeColor getColor() {
+        return dye;
+    }
+
+    @Override
+    public BlockState paintedState(BlockState state, DyeColor dyed) {
+        BlockState painted = BoilerBlocks.dyedFirebox(kind, dyed).defaultBlockState();
+        for (Property<?> property : state.getProperties()) {
+            painted = copyValue(painted, state, property);
+        }
+        return painted;
+    }
+
+    private static <T extends Comparable<T>> BlockState copyValue(BlockState to, BlockState from, Property<T> property) {
+        return to.setValue(property, from.getValue(property));
+    }
+
+    @Override
+    public void applyPaint(Level level, BlockPos pos, BlockState painted) {
+        level.setBlock(pos, painted, KEEP_GROUP_FLAGS);
+    }
+
+    @Override
+    protected MapCodec<? extends BaseEntityBlock> codec() {
+        return simpleCodec(properties -> new DyedFireboxBlock(properties, kind, colorName, dye));
+    }
+
+    @Override
+    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos,
+                                              Player player, InteractionHand hand, BlockHitResult hit) {
+        if (stack.getItem() instanceof DyeItem item && BoilerBlocks.dyedFirebox(kind, item.getDyeColor()) != null) {
+            ItemInteractionResult painted = paint(stack, state, level, pos, player);
+            if (painted != ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION) {
+                return painted;
+            }
+        }
+        return super.useItemOn(stack, state, level, pos, player, hand, hit);
+    }
+}

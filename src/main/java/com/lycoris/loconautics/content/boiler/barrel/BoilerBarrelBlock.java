@@ -142,14 +142,15 @@ public class BoilerBarrelBlock extends DirectionalBlock
     private boolean towardFirebox(LevelAccessor level, BlockPos neighborPos, Direction end) {
         if (big) return false;
         BlockState s = level.getBlockState(neighborPos);
-        if (fireboxBack(level, neighborPos, s, end)) return true;
-        return s.getBlock() instanceof BoilerBarrelBlock other && !other.big
+        return fireboxBack(level, neighborPos, s, end)
+                || s.getBlock() instanceof BoilerBarrelBlock other && !other.big
                 && s.getValue(FACING) == end && s.getValue(connectedFor(end.getAxis(), end));
     }
 
     private boolean autoJoins(LevelAccessor level, BlockPos pos, Direction.Axis axis, Direction end) {
         BlockState s = level.getBlockState(pos);
-        return fireboxBack(level, pos, s, end) || sameFamily(level, pos, axis, end) && s.getBlock() == this;
+        return fireboxBack(level, pos, s, end)
+                || s.getBlock() instanceof BoilerBarrelBlock && sameFamily(level, pos, axis, end);
     }
 
     static Direction positiveOf(Direction.Axis axis) {
@@ -278,15 +279,29 @@ public class BoilerBarrelBlock extends DirectionalBlock
         }
 
         Direction end = aimedEnd(state, context);
-        BlockPos neighborPos = pos.relative(end);
-        if (!sameFamily(level, neighborPos, axis, end)) {
+        if (!hasPartner(level, pos, end)) {
             return InteractionResult.PASS;
         }
         if (!level.isClientSide()) {
-            boolean connect = !state.getValue(connectedFor(axis, end));
-            toggleSeam(level, pos, neighborPos, axis, end, connect);
+            toggleEnd(level, pos, end);
         }
         return InteractionResult.sidedSuccess(level.isClientSide());
+    }
+
+    public boolean hasPartner(LevelAccessor level, BlockPos pos, Direction end) {
+        Direction.Axis axis = level.getBlockState(pos).getValue(FACING).getAxis();
+        return end.getAxis() == axis && sameFamily(level, pos.relative(end), axis, end);
+    }
+
+    public static boolean joinsToward(BlockState state, Direction toNeighbor) {
+        Direction.Axis axis = state.getValue(FACING).getAxis();
+        return toNeighbor.getAxis() == axis && state.getValue(connectedFor(axis, toNeighbor));
+    }
+
+    public void toggleEnd(Level level, BlockPos pos, Direction end) {
+        BlockState state = level.getBlockState(pos);
+        Direction.Axis axis = state.getValue(FACING).getAxis();
+        toggleSeam(level, pos, pos.relative(end), axis, end, !state.getValue(connectedFor(axis, end)));
     }
 
     private Direction aimedEnd(BlockState state, UseOnContext context) {

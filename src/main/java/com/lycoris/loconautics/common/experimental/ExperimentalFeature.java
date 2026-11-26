@@ -18,7 +18,6 @@ import java.util.function.Supplier;
 public enum ExperimentalFeature {
     BOILERWORKS("boilerworks", () -> {
         List<Item> items = new ArrayList<>(List.of(
-                BoilerBlocks.FIREBOX_ITEM.get(),
                 BoilerBlocks.STEAM_TAKEOFF_ITEM.get(),
                 BoilerBlocks.SMART_SAFETY_VALVE_ITEM.get(),
                 BoilerBlocks.FIREBOX_STOCKER_ITEM.get(),
@@ -28,6 +27,7 @@ public enum ExperimentalFeature {
                 LoconauticsRegistries.BOILER_TUBES.get(),
                 LoconauticsRegistries.VALVE_GEAR.get()));
         items.addAll(BoilerBlocks.dyedBodyItems());
+        items.addAll(BoilerBlocks.fireboxItems());
         return items;
     }),
     DIESELWORKS("dieselworks", () -> new ArrayList<>(SmallEngineBlocks.ENGINE_ITEMS.values().stream().map(DeferredHolder::get).toList())),

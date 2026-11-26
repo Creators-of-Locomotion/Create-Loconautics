@@ -1,5 +1,6 @@
 package com.lycoris.loconautics;
 
+import com.lycoris.loconautics.client.BoilerSeamPreview;
 import com.lycoris.loconautics.client.LoconauticsPartialModels;
 import com.lycoris.loconautics.client.LoconauticsSpriteShifts;
 import com.lycoris.loconautics.client.StationParkingFlagClient;
@@ -464,6 +465,7 @@ public final class LoconauticsClient {
         com.lycoris.loconautics.compat.create.patch.RollerAnimator.tickAll();
         StationParkingFlagClient.tick();
         com.lycoris.loconautics.content.hose.HoseInteractionHandler.tickPreview();
+        BoilerSeamPreview.tick();
         com.lycoris.loconautics.content.steelcable.SteelCablePreview.tickPreview();
         com.lycoris.loconautics.content.steelcable.SteelCableHover.tick();
         com.lycoris.loconautics.content.grab.GrabClientHandler.tick();

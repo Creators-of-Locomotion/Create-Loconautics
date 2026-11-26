@@ -25,12 +25,25 @@ public class ConnectedVariantModelLoader implements IGeometryLoader<ConnectedVar
 
     @Override
     public Geometry read(JsonObject json, JsonDeserializationContext context) {
-        List<ResourceLocation> parts = new ArrayList<>(KEYS.length);
+        List<ResourceLocation> parts = new ArrayList<>(KEYS.length + 4);
         ResourceLocation fallback = ResourceLocation.parse(GsonHelper.getAsString(json, "single"));
         for (String key : KEYS) {
             parts.add(json.has(key) ? ResourceLocation.parse(GsonHelper.getAsString(json, key)) : fallback);
         }
+        ResourceLocation end = parts.get(3);
+        ResourceLocation endLong = json.has("end_long")
+                ? ResourceLocation.parse(GsonHelper.getAsString(json, "end_long")) : end;
+        parts.add(endLong);
+        ResourceLocation singleOpen = openPart(json, "single_open", parts.get(0));
+        ResourceLocation endOpen = openPart(json, "end_open", end);
+        parts.add(singleOpen);
+        parts.add(endOpen);
+        parts.add(json.has("end_long_open") ? openPart(json, "end_long_open", endLong) : endOpen);
         return new Geometry(List.copyOf(parts), GsonHelper.getAsBoolean(json, "along", false));
+    }
+
+    private static ResourceLocation openPart(JsonObject json, String key, ResourceLocation closed) {
+        return json.has(key) ? ResourceLocation.parse(GsonHelper.getAsString(json, key)) : closed;
     }
 
     public record Geometry(List<ResourceLocation> parts, boolean along) implements IUnbakedGeometry<Geometry> {
@@ -51,7 +64,8 @@ public class ConnectedVariantModelLoader implements IGeometryLoader<ConnectedVar
             for (ResourceLocation part : parts) {
                 baked.add(baker.bake(part, modelState, spriteGetter));
             }
-            return new ConnectedVariantModel(baked.get(0), baked.get(1), baked.get(2), baked.get(3), along);
+            return new ConnectedVariantModel(baked.get(0), baked.get(1), baked.get(2), baked.get(3),
+                    baked.get(4), baked.get(5), baked.get(6), baked.get(7), along);
         }
     }
 }

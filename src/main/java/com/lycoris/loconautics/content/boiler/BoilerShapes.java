@@ -62,7 +62,7 @@ public final class BoilerShapes {
     }
 
     private static List<Vec3[]> fireboxOutline(Direction.Axis lengthAxis, double half, double flat) {
-        double[][] rim = {{half, -half}, {half, flat}, {flat, half}, {-flat, half}, {-half, flat}, {-half, -half}};
+        double[][] rim = fireboxRim(half, flat);
         List<Vec3[]> edges = new ArrayList<>();
         for (int i = 0; i < rim.length; i++) {
             double[] here = rim[i];
@@ -74,6 +74,25 @@ public final class BoilerShapes {
             edges.add(new Vec3[]{hi, sidewaysPoint(lengthAxis, next, 1.0)});
         }
         return edges;
+    }
+
+    private static double[][] fireboxRim(double half, double flat) {
+        return new double[][]{{half, -half}, {half, flat}, {flat, half}, {-flat, half}, {-half, flat}, {-half, -half}};
+    }
+
+    private static double[][] octagonRim(double half, double flat) {
+        return new double[][]{{half, flat}, {flat, half}, {-flat, half}, {-half, flat},
+                {-half, -flat}, {-flat, -half}, {flat, -half}, {half, -flat}};
+    }
+
+    public static List<Vec3> seamRing(Direction.Axis lengthAxis, boolean firebox, double along) {
+        double half = (SMALL[1] - SMALL[0]) / 32.0;
+        double flat = (SMALL[3] - SMALL[2]) / 32.0;
+        List<Vec3> ring = new ArrayList<>();
+        for (double[] corner : firebox ? fireboxRim(half, flat) : octagonRim(half, flat)) {
+            ring.add(firebox ? sidewaysPoint(lengthAxis, corner, along) : rimPoint(lengthAxis, corner, along));
+        }
+        return ring;
     }
 
     private static Vec3 sidewaysPoint(Direction.Axis lengthAxis, double[] cross, double along) {
@@ -111,8 +130,7 @@ public final class BoilerShapes {
     }
 
     private static List<Vec3[]> octagonOutline(Direction.Axis lengthAxis, double half, double flat) {
-        double[][] rim = {{half, flat}, {flat, half}, {-flat, half}, {-half, flat},
-                {-half, -flat}, {-flat, -half}, {flat, -half}, {half, -flat}};
+        double[][] rim = octagonRim(half, flat);
         List<Vec3[]> edges = new ArrayList<>();
         for (int i = 0; i < rim.length; i++) {
             double[] here = rim[i];

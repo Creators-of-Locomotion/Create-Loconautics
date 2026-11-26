@@ -1,0 +1,22 @@
+{
+  "neoforge:conditions": [
+    {
+      "type": "loconautics:experimental",
+      "feature": "boilerworks"
+    }
+  ],
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "tag": "loconautics:slatted_fireboxes"
+    },
+    {
+      "item": "create:brass_ingot"
+    }
+  ],
+  "result": {
+    "id": "loconautics:brass_slatted_firebox",
+    "count": 1
+  }
+}

@@ -678,6 +678,761 @@
         "copper",
         "zinc"
       ]
+    },
+    {
+      "path": "assets/loconautics/blockstates/{color}_ribbed_firebox.json"
+    },
+    {
+      "path": "assets/loconautics/models/item/{color}_ribbed_firebox.json"
+    },
+    {
+      "path": "data/loconautics/loot_table/blocks/{color}_ribbed_firebox.json"
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/ribbed/single.json"
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/ribbed/front.json"
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/ribbed/middle.json"
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/ribbed/end.json"
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/ribbed/joined.json"
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/ribbed/single_open.json"
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/ribbed/end_open.json"
+    },
+    {
+      "path": "assets/loconautics/blockstates/{color}_paneled_firebox.json"
+    },
+    {
+      "path": "assets/loconautics/models/item/{color}_paneled_firebox.json"
+    },
+    {
+      "path": "data/loconautics/loot_table/blocks/{color}_paneled_firebox.json"
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/paneled/single.json"
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/paneled/front.json"
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/paneled/middle.json"
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/paneled/end.json"
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/paneled/joined.json"
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/paneled/single_open.json"
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/paneled/end_open.json"
+    },
+    {
+      "path": "assets/loconautics/blockstates/{color}_plated_firebox.json"
+    },
+    {
+      "path": "assets/loconautics/models/item/{color}_plated_firebox.json"
+    },
+    {
+      "path": "data/loconautics/loot_table/blocks/{color}_plated_firebox.json"
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/plated/single.json"
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/plated/front.json"
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/plated/middle.json"
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/plated/end.json"
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/plated/joined.json"
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/plated/single_open.json"
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/plated/end_open.json"
+    },
+    {
+      "path": "assets/loconautics/blockstates/{color}_framed_firebox.json"
+    },
+    {
+      "path": "assets/loconautics/models/item/{color}_framed_firebox.json"
+    },
+    {
+      "path": "data/loconautics/loot_table/blocks/{color}_framed_firebox.json"
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/framed/single.json"
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/framed/front.json"
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/framed/middle.json"
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/framed/end.json"
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/framed/joined.json"
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/framed/single_open.json"
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/framed/end_open.json"
+    },
+    {
+      "path": "assets/loconautics/blockstates/{color}_slatted_firebox.json"
+    },
+    {
+      "path": "assets/loconautics/models/item/{color}_slatted_firebox.json"
+    },
+    {
+      "path": "data/loconautics/loot_table/blocks/{color}_slatted_firebox.json"
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/slatted/single.json"
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/slatted/front.json"
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/slatted/middle.json"
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/slatted/end.json"
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/slatted/joined.json"
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/slatted/single_open.json"
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/slatted/end_open.json"
+    },
+    {
+      "path": "data/loconautics/recipe/{color}_ribbed_firebox_with_dye.json",
+      "parent": "black",
+      "colors": [
+        "white",
+        "light_gray",
+        "gray",
+        "brown",
+        "red",
+        "orange",
+        "yellow",
+        "lime",
+        "green",
+        "cyan",
+        "light_blue",
+        "blue",
+        "purple",
+        "magenta",
+        "pink"
+      ]
+    },
+    {
+      "path": "data/loconautics/recipe/{color}_paneled_firebox_with_dye.json",
+      "parent": "black",
+      "colors": [
+        "white",
+        "light_gray",
+        "gray",
+        "brown",
+        "red",
+        "orange",
+        "yellow",
+        "lime",
+        "green",
+        "cyan",
+        "light_blue",
+        "blue",
+        "purple",
+        "magenta",
+        "pink"
+      ]
+    },
+    {
+      "path": "data/loconautics/recipe/{color}_plated_firebox_with_dye.json",
+      "parent": "black",
+      "colors": [
+        "white",
+        "light_gray",
+        "gray",
+        "brown",
+        "red",
+        "orange",
+        "yellow",
+        "lime",
+        "green",
+        "cyan",
+        "light_blue",
+        "blue",
+        "purple",
+        "magenta",
+        "pink"
+      ]
+    },
+    {
+      "path": "data/loconautics/recipe/{color}_framed_firebox_with_dye.json",
+      "parent": "black",
+      "colors": [
+        "white",
+        "light_gray",
+        "gray",
+        "brown",
+        "red",
+        "orange",
+        "yellow",
+        "lime",
+        "green",
+        "cyan",
+        "light_blue",
+        "blue",
+        "purple",
+        "magenta",
+        "pink"
+      ]
+    },
+    {
+      "path": "data/loconautics/recipe/{color}_slatted_firebox_with_dye.json",
+      "parent": "black",
+      "colors": [
+        "white",
+        "light_gray",
+        "gray",
+        "brown",
+        "red",
+        "orange",
+        "yellow",
+        "lime",
+        "green",
+        "cyan",
+        "light_blue",
+        "blue",
+        "purple",
+        "magenta",
+        "pink"
+      ]
+    },
+    {
+      "path": "assets/loconautics/blockstates/{color}_ribbed_firebox.json",
+      "colors": [
+        "industrial",
+        "andesite",
+        "brass",
+        "copper",
+        "zinc"
+      ]
+    },
+    {
+      "path": "assets/loconautics/models/item/{color}_ribbed_firebox.json",
+      "colors": [
+        "industrial",
+        "andesite",
+        "brass",
+        "copper",
+        "zinc"
+      ]
+    },
+    {
+      "path": "data/loconautics/loot_table/blocks/{color}_ribbed_firebox.json",
+      "colors": [
+        "industrial",
+        "andesite",
+        "brass",
+        "copper",
+        "zinc"
+      ]
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/ribbed/single.json",
+      "colors": [
+        "industrial",
+        "andesite",
+        "brass",
+        "copper",
+        "zinc"
+      ]
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/ribbed/front.json",
+      "colors": [
+        "industrial",
+        "andesite",
+        "brass",
+        "copper",
+        "zinc"
+      ]
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/ribbed/middle.json",
+      "colors": [
+        "industrial",
+        "andesite",
+        "brass",
+        "copper",
+        "zinc"
+      ]
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/ribbed/end.json",
+      "colors": [
+        "industrial",
+        "andesite",
+        "brass",
+        "copper",
+        "zinc"
+      ]
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/ribbed/joined.json",
+      "colors": [
+        "industrial",
+        "andesite",
+        "brass",
+        "copper",
+        "zinc"
+      ]
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/ribbed/single_open.json",
+      "colors": [
+        "industrial",
+        "andesite",
+        "brass",
+        "copper",
+        "zinc"
+      ]
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/ribbed/end_open.json",
+      "colors": [
+        "industrial",
+        "andesite",
+        "brass",
+        "copper",
+        "zinc"
+      ]
+    },
+    {
+      "path": "assets/loconautics/blockstates/{color}_paneled_firebox.json",
+      "colors": [
+        "industrial",
+        "andesite",
+        "brass",
+        "copper",
+        "zinc"
+      ]
+    },
+    {
+      "path": "assets/loconautics/models/item/{color}_paneled_firebox.json",
+      "colors": [
+        "industrial",
+        "andesite",
+        "brass",
+        "copper",
+        "zinc"
+      ]
+    },
+    {
+      "path": "data/loconautics/loot_table/blocks/{color}_paneled_firebox.json",
+      "colors": [
+        "industrial",
+        "andesite",
+        "brass",
+        "copper",
+        "zinc"
+      ]
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/paneled/single.json",
+      "colors": [
+        "industrial",
+        "andesite",
+        "brass",
+        "copper",
+        "zinc"
+      ]
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/paneled/front.json",
+      "colors": [
+        "industrial",
+        "andesite",
+        "brass",
+        "copper",
+        "zinc"
+      ]
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/paneled/middle.json",
+      "colors": [
+        "industrial",
+        "andesite",
+        "brass",
+        "copper",
+        "zinc"
+      ]
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/paneled/end.json",
+      "colors": [
+        "industrial",
+        "andesite",
+        "brass",
+        "copper",
+        "zinc"
+      ]
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/paneled/joined.json",
+      "colors": [
+        "industrial",
+        "andesite",
+        "brass",
+        "copper",
+        "zinc"
+      ]
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/paneled/single_open.json",
+      "colors": [
+        "industrial",
+        "andesite",
+        "brass",
+        "copper",
+        "zinc"
+      ]
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/paneled/end_open.json",
+      "colors": [
+        "industrial",
+        "andesite",
+        "brass",
+        "copper",
+        "zinc"
+      ]
+    },
+    {
+      "path": "assets/loconautics/blockstates/{color}_plated_firebox.json",
+      "colors": [
+        "industrial",
+        "andesite",
+        "brass",
+        "copper",
+        "zinc"
+      ]
+    },
+    {
+      "path": "assets/loconautics/models/item/{color}_plated_firebox.json",
+      "colors": [
+        "industrial",
+        "andesite",
+        "brass",
+        "copper",
+        "zinc"
+      ]
+    },
+    {
+      "path": "data/loconautics/loot_table/blocks/{color}_plated_firebox.json",
+      "colors": [
+        "industrial",
+        "andesite",
+        "brass",
+        "copper",
+        "zinc"
+      ]
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/plated/single.json",
+      "colors": [
+        "industrial",
+        "andesite",
+        "brass",
+        "copper",
+        "zinc"
+      ]
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/plated/front.json",
+      "colors": [
+        "industrial",
+        "andesite",
+        "brass",
+        "copper",
+        "zinc"
+      ]
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/plated/middle.json",
+      "colors": [
+        "industrial",
+        "andesite",
+        "brass",
+        "copper",
+        "zinc"
+      ]
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/plated/end.json",
+      "colors": [
+        "industrial",
+        "andesite",
+        "brass",
+        "copper",
+        "zinc"
+      ]
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/plated/joined.json",
+      "colors": [
+        "industrial",
+        "andesite",
+        "brass",
+        "copper",
+        "zinc"
+      ]
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/plated/single_open.json",
+      "colors": [
+        "industrial",
+        "andesite",
+        "brass",
+        "copper",
+        "zinc"
+      ]
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/plated/end_open.json",
+      "colors": [
+        "industrial",
+        "andesite",
+        "brass",
+        "copper",
+        "zinc"
+      ]
+    },
+    {
+      "path": "assets/loconautics/blockstates/{color}_framed_firebox.json",
+      "colors": [
+        "industrial",
+        "andesite",
+        "brass",
+        "copper",
+        "zinc"
+      ]
+    },
+    {
+      "path": "assets/loconautics/models/item/{color}_framed_firebox.json",
+      "colors": [
+        "industrial",
+        "andesite",
+        "brass",
+        "copper",
+        "zinc"
+      ]
+    },
+    {
+      "path": "data/loconautics/loot_table/blocks/{color}_framed_firebox.json",
+      "colors": [
+        "industrial",
+        "andesite",
+        "brass",
+        "copper",
+        "zinc"
+      ]
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/framed/single.json",
+      "colors": [
+        "industrial",
+        "andesite",
+        "brass",
+        "copper",
+        "zinc"
+      ]
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/framed/front.json",
+      "colors": [
+        "industrial",
+        "andesite",
+        "brass",
+        "copper",
+        "zinc"
+      ]
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/framed/middle.json",
+      "colors": [
+        "industrial",
+        "andesite",
+        "brass",
+        "copper",
+        "zinc"
+      ]
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/framed/end.json",
+      "colors": [
+        "industrial",
+        "andesite",
+        "brass",
+        "copper",
+        "zinc"
+      ]
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/framed/joined.json",
+      "colors": [
+        "industrial",
+        "andesite",
+        "brass",
+        "copper",
+        "zinc"
+      ]
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/framed/single_open.json",
+      "colors": [
+        "industrial",
+        "andesite",
+        "brass",
+        "copper",
+        "zinc"
+      ]
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/framed/end_open.json",
+      "colors": [
+        "industrial",
+        "andesite",
+        "brass",
+        "copper",
+        "zinc"
+      ]
+    },
+    {
+      "path": "assets/loconautics/blockstates/{color}_slatted_firebox.json",
+      "colors": [
+        "industrial",
+        "andesite",
+        "brass",
+        "copper",
+        "zinc"
+      ]
+    },
+    {
+      "path": "assets/loconautics/models/item/{color}_slatted_firebox.json",
+      "colors": [
+        "industrial",
+        "andesite",
+        "brass",
+        "copper",
+        "zinc"
+      ]
+    },
+    {
+      "path": "data/loconautics/loot_table/blocks/{color}_slatted_firebox.json",
+      "colors": [
+        "industrial",
+        "andesite",
+        "brass",
+        "copper",
+        "zinc"
+      ]
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/slatted/single.json",
+      "colors": [
+        "industrial",
+        "andesite",
+        "brass",
+        "copper",
+        "zinc"
+      ]
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/slatted/front.json",
+      "colors": [
+        "industrial",
+        "andesite",
+        "brass",
+        "copper",
+        "zinc"
+      ]
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/slatted/middle.json",
+      "colors": [
+        "industrial",
+        "andesite",
+        "brass",
+        "copper",
+        "zinc"
+      ]
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/slatted/end.json",
+      "colors": [
+        "industrial",
+        "andesite",
+        "brass",
+        "copper",
+        "zinc"
+      ]
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/slatted/joined.json",
+      "colors": [
+        "industrial",
+        "andesite",
+        "brass",
+        "copper",
+        "zinc"
+      ]
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/slatted/single_open.json",
+      "colors": [
+        "industrial",
+        "andesite",
+        "brass",
+        "copper",
+        "zinc"
+      ]
+    },
+    {
+      "path": "assets/loconautics/models/block/boiler/firebox/{color}/slatted/end_open.json",
+      "colors": [
+        "industrial",
+        "andesite",
+        "brass",
+        "copper",
+        "zinc"
+      ]
     }
   ],
   "tags": [
@@ -739,6 +1494,146 @@
       "path": "data/loconautics/tags/item/slatted_boiler_bodies.json",
       "values": [
         "loconautics:{color}_slatted_boiler_body"
+      ]
+    },
+    {
+      "path": "data/minecraft/tags/block/mineable/axe.json",
+      "values": [
+        "loconautics:{color}_ribbed_firebox",
+        "loconautics:{color}_paneled_firebox",
+        "loconautics:{color}_plated_firebox",
+        "loconautics:{color}_framed_firebox",
+        "loconautics:{color}_slatted_firebox"
+      ]
+    },
+    {
+      "path": "data/minecraft/tags/block/mineable/pickaxe.json",
+      "values": [
+        "loconautics:{color}_ribbed_firebox",
+        "loconautics:{color}_paneled_firebox",
+        "loconautics:{color}_plated_firebox",
+        "loconautics:{color}_framed_firebox",
+        "loconautics:{color}_slatted_firebox"
+      ]
+    },
+    {
+      "path": "data/minecraft/tags/block/mineable/axe.json",
+      "values": [
+        "loconautics:{color}_ribbed_firebox",
+        "loconautics:{color}_paneled_firebox",
+        "loconautics:{color}_plated_firebox",
+        "loconautics:{color}_framed_firebox",
+        "loconautics:{color}_slatted_firebox"
+      ]
+    },
+    {
+      "path": "data/minecraft/tags/block/mineable/pickaxe.json",
+      "values": [
+        "loconautics:{color}_ribbed_firebox",
+        "loconautics:{color}_paneled_firebox",
+        "loconautics:{color}_plated_firebox",
+        "loconautics:{color}_framed_firebox",
+        "loconautics:{color}_slatted_firebox"
+      ]
+    },
+    {
+      "path": "data/minecraft/tags/block/mineable/axe.json",
+      "values": [
+        "loconautics:{color}_ribbed_firebox",
+        "loconautics:{color}_paneled_firebox",
+        "loconautics:{color}_plated_firebox",
+        "loconautics:{color}_framed_firebox",
+        "loconautics:{color}_slatted_firebox"
+      ]
+    },
+    {
+      "path": "data/minecraft/tags/block/mineable/pickaxe.json",
+      "values": [
+        "loconautics:{color}_ribbed_firebox",
+        "loconautics:{color}_paneled_firebox",
+        "loconautics:{color}_plated_firebox",
+        "loconautics:{color}_framed_firebox",
+        "loconautics:{color}_slatted_firebox"
+      ]
+    },
+    {
+      "path": "data/minecraft/tags/block/mineable/axe.json",
+      "values": [
+        "loconautics:{color}_ribbed_firebox",
+        "loconautics:{color}_paneled_firebox",
+        "loconautics:{color}_plated_firebox",
+        "loconautics:{color}_framed_firebox",
+        "loconautics:{color}_slatted_firebox"
+      ]
+    },
+    {
+      "path": "data/minecraft/tags/block/mineable/pickaxe.json",
+      "values": [
+        "loconautics:{color}_ribbed_firebox",
+        "loconautics:{color}_paneled_firebox",
+        "loconautics:{color}_plated_firebox",
+        "loconautics:{color}_framed_firebox",
+        "loconautics:{color}_slatted_firebox"
+      ]
+    },
+    {
+      "path": "data/loconautics/tags/block/boiler_firebox.json",
+      "values": [
+        "loconautics:{color}_ribbed_firebox",
+        "loconautics:{color}_paneled_firebox",
+        "loconautics:{color}_plated_firebox",
+        "loconautics:{color}_framed_firebox",
+        "loconautics:{color}_slatted_firebox"
+      ]
+    },
+    {
+      "path": "data/minecraft/tags/block/mineable/axe.json",
+      "values": [
+        "loconautics:{color}_ribbed_firebox",
+        "loconautics:{color}_paneled_firebox",
+        "loconautics:{color}_plated_firebox",
+        "loconautics:{color}_framed_firebox",
+        "loconautics:{color}_slatted_firebox"
+      ]
+    },
+    {
+      "path": "data/minecraft/tags/block/mineable/pickaxe.json",
+      "values": [
+        "loconautics:{color}_ribbed_firebox",
+        "loconautics:{color}_paneled_firebox",
+        "loconautics:{color}_plated_firebox",
+        "loconautics:{color}_framed_firebox",
+        "loconautics:{color}_slatted_firebox"
+      ]
+    },
+    {
+      "path": "data/loconautics/tags/item/ribbed_fireboxes.json",
+      "values": [
+        "loconautics:{color}_ribbed_firebox"
+      ]
+    },
+    {
+      "path": "data/loconautics/tags/item/paneled_fireboxes.json",
+      "values": [
+        "loconautics:{color}_paneled_firebox"
+      ]
+    },
+    {
+      "path": "data/loconautics/tags/item/plated_fireboxes.json",
+      "values": [
+        "loconautics:{color}_plated_firebox"
+      ]
+    },
+    {
+      "path": "data/loconautics/tags/item/framed_fireboxes.json",
+      "values": [
+        "loconautics:{color}_framed_firebox"
+      ]
+    },
+    {
+      "path": "data/loconautics/tags/item/slatted_fireboxes.json",
+      "values": [
+        "loconautics:{color}_slatted_firebox"
       ]
     }
   ]

@@ -37,7 +37,12 @@ public record ConnectionBounds(int x, int y, int z) {
     }
 
     public Set<BlockPos> group(ConnectedBlock block, BlockGetter level, BlockState state, BlockPos anchor) {
-        BlockPos start = anchor.immutable();
+        return group(block, level, state, anchor, anchor);
+    }
+
+    public Set<BlockPos> group(ConnectedBlock block, BlockGetter level, BlockState state, BlockPos anchor,
+                               BlockPos origin) {
+        BlockPos start = origin.immutable();
         Set<BlockPos> found = new HashSet<>();
         Deque<BlockPos> pending = new ArrayDeque<>();
         found.add(start);
@@ -50,7 +55,8 @@ public record ConnectionBounds(int x, int y, int z) {
 
                 BlockPos next = current.relative(dir);
                 if (found.contains(next) || !fits(found, next)) continue;
-                if (!block.connectsTo(level, state, start, next)) continue;
+                if (!block.connectsTo(level, state, anchor, next)) continue;
+                if (!block.seamJoined(level, current, next)) continue;
 
                 found.add(next);
                 pending.add(next);

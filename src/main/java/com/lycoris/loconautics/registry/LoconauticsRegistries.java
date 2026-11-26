@@ -610,7 +610,11 @@ public final class LoconauticsRegistries {
 
                         output.accept(CREATIVE_TRAIN_RELOCATOR.get());
 
-                        output.accept(com.lycoris.loconautics.content.boiler.BoilerBlocks.FIREBOX_ITEM.get());
+                        com.lycoris.loconautics.content.boiler.BoilerBlocks.forEachFireboxItem((item, inTab) ->
+                                output.accept(new net.minecraft.world.item.ItemStack(item),
+                                        inTab
+                                                ? net.minecraft.world.item.CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS
+                                                : net.minecraft.world.item.CreativeModeTab.TabVisibility.SEARCH_TAB_ONLY));
                         com.lycoris.loconautics.content.boiler.BoilerBlocks.forEachBodyItem((item, inTab) ->
                                 output.accept(new net.minecraft.world.item.ItemStack(item),
                                         inTab

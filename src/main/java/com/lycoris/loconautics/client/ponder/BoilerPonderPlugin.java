@@ -20,16 +20,20 @@ public class BoilerPonderPlugin implements PonderPlugin {
 
     @Override
     public void registerScenes(PonderSceneRegistrationHelper<ResourceLocation> helper) {
-        helper.forComponents(BoilerBlocks.FIREBOX.getId(), BoilerBlocks.FIREBOX_STOCKER.getId())
-                .addStoryBoard("boiler/firebox", BoilerScenes::firebox)
-                .addStoryBoard("boiler/barrel", BoilerScenes::assembly)
+        helper.forComponents(fireboxIds())
+                .addStoryBoard("boiler/barrel", FireboxScenes::fire)
+                .addStoryBoard("boiler/firebox_row", FireboxScenes::row)
+                .addStoryBoard("boiler/stoker", FireboxScenes::stoker)
+                .addStoryBoard("boiler/boiler", BoilerSetupScenes::assembly)
                 .addStoryBoard("boiler/barrel", BoilerScenes::ratio)
+                .addStoryBoard("boiler/barrel", BoilerScenes::level)
                 .addStoryBoard("boiler/barrel", BoilerScenes::failure);
 
         helper.forComponents(bodyIds())
-                .addStoryBoard("boiler/barrel", BoilerScenes::assembly)
+                .addStoryBoard("boiler/boiler", BoilerSetupScenes::assembly)
                 .addStoryBoard("boiler/water", BoilerScenes::water)
                 .addStoryBoard("boiler/barrel", BoilerScenes::ratio)
+                .addStoryBoard("boiler/barrel", BoilerScenes::level)
                 .addStoryBoard("boiler/barrel", BoilerScenes::smokestack)
                 .addStoryBoard("boiler/barrel", BoilerScenes::takeoff);
 
@@ -41,6 +45,9 @@ public class BoilerPonderPlugin implements PonderPlugin {
                         BoilerBlocks.VALVE_ITEM.getId())
                 .addStoryBoard("boiler/barrel", BoilerScenes::pressure)
                 .addStoryBoard("boiler/barrel", BoilerScenes::failure);
+
+        helper.forComponents(ResourceLocation.fromNamespaceAndPath("create", "steam_whistle"))
+                .addStoryBoard("boiler/barrel", BoilerScenes::whistle);
 
         helper.forComponents(BoilerBlocks.BOILER_BOGEY.getId())
                 .addStoryBoard("boiler/bogey_wheels", BoilerBogeyScenes::wheels)
@@ -62,6 +69,14 @@ public class BoilerPonderPlugin implements PonderPlugin {
 
         helper.forComponents(DashboardBlocks.DASHBOARDS.values().stream().map(DeferredHolder::getId).toList())
                 .addStoryBoard("dashboard/dashboard", DashboardScenes::desk);
+    }
+
+    private static List<ResourceLocation> fireboxIds() {
+        List<ResourceLocation> ids = new ArrayList<>();
+        ids.add(BoilerBlocks.FIREBOX_STOCKER.getId());
+        BoilerBlocks.DYED_FIREBOXES.values().forEach(byColor -> byColor.values().forEach(block -> ids.add(block.getId())));
+        BoilerBlocks.EXTRA_FIREBOXES.values().forEach(byKind -> byKind.values().forEach(block -> ids.add(block.getId())));
+        return ids;
     }
 
     private static List<ResourceLocation> bodyIds() {

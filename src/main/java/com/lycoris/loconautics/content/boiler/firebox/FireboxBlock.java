@@ -2,7 +2,6 @@ package com.lycoris.loconautics.content.boiler.firebox;
 
 
 import com.lycoris.loconautics.common.ignition.Igniters;
-import com.lycoris.loconautics.common.ShiftPlacement;
 import com.lycoris.loconautics.client.connected.ConnectedBlock;
 import com.lycoris.loconautics.client.connected.ConnectionBounds;
 import com.lycoris.loconautics.client.copycat.CopycatMaterialSource;
@@ -11,6 +10,8 @@ import com.lycoris.loconautics.content.boiler.BoilerBlocks;
 import com.lycoris.loconautics.content.boiler.BoilerAttach;
 import com.lycoris.loconautics.content.boiler.BoilerLinePlacement;
 import com.lycoris.loconautics.content.boiler.BoilerShapes;
+import com.lycoris.loconautics.content.boiler.BoilerTags;
+import com.lycoris.loconautics.content.boiler.barrel.BoilerBarrelBlock;
 import com.lycoris.loconautics.foundation.pick.OversizeShape;
 import com.mojang.serialization.MapCodec;
 import com.simibubi.create.content.equipment.wrench.IWrenchable;
@@ -29,6 +30,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Mirror;
@@ -46,6 +48,15 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import java.util.List;
+import net.minecraft.world.entity.LivingEntity;
+import java.util.Set;
+import net.minecraft.world.level.BlockAndTintGetter;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.item.ShovelItem;
+import java.util.LinkedHashSet;
 
 public class FireboxBlock extends BaseEntityBlock
         implements BlockSubLevelAssemblyListener, IWrenchable, ConnectedBlock,
@@ -53,12 +64,30 @@ public class FireboxBlock extends BaseEntityBlock
 
     public static final BooleanProperty EXTENSION = BooleanProperty.create("extension");
 
+    // sticky, so a cut seam between two fireboxes survives block updates
+    public static final BooleanProperty SEVERED_NORTH = BooleanProperty.create("severed_north");
+    public static final BooleanProperty SEVERED_SOUTH = BooleanProperty.create("severed_south");
+    public static final BooleanProperty SEVERED_EAST = BooleanProperty.create("severed_east");
+    public static final BooleanProperty SEVERED_WEST = BooleanProperty.create("severed_west");
+
+    public static BooleanProperty severedFor(Direction side) {
+        return switch (side) {
+            case NORTH -> SEVERED_NORTH;
+            case SOUTH -> SEVERED_SOUTH;
+            case EAST -> SEVERED_EAST;
+            case WEST -> SEVERED_WEST;
+            default -> throw new IllegalArgumentException("a firebox seam is never " + side);
+        };
+    }
+
     public FireboxBlock(BlockBehaviour.Properties properties) {
         super(properties);
         registerDefaultState(getStateDefinition().any()
                 .setValue(BlockStateProperties.LIT, false)
                 .setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.NORTH)
                 .setValue(EXTENSION, false)
+                .setValue(SEVERED_NORTH, false).setValue(SEVERED_SOUTH, false)
+                .setValue(SEVERED_EAST, false).setValue(SEVERED_WEST, false)
                 .setValue(BoilerAttach.RAISED, false));
     }
 
@@ -69,21 +98,54 @@ public class FireboxBlock extends BaseEntityBlock
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(BlockStateProperties.LIT, BlockStateProperties.HORIZONTAL_FACING, EXTENSION, BoilerAttach.RAISED);
+        builder.add(BlockStateProperties.LIT, BlockStateProperties.HORIZONTAL_FACING, EXTENSION, BoilerAttach.RAISED,
+                SEVERED_NORTH, SEVERED_SOUTH, SEVERED_EAST, SEVERED_WEST);
     }
 
     @Override
-    public @Nullable BlockState getStateForPlacement(net.minecraft.world.item.context.BlockPlaceContext context) {
+    public @Nullable BlockState getStateForPlacement(BlockPlaceContext context) {
         return defaultBlockState()
-                .setValue(BlockStateProperties.HORIZONTAL_FACING, ShiftPlacement.facing(context))
+                .setValue(BlockStateProperties.HORIZONTAL_FACING, context.getHorizontalDirection().getOpposite())
                 .setValue(EXTENSION, absorbingController(context.getLevel(), context.getClickedPos()) != null)
                 .setValue(BoilerAttach.RAISED, context.isSecondaryUseActive());
     }
 
     @Override
     protected BlockState rotate(BlockState state, Rotation rotation) {
-        return state.setValue(BlockStateProperties.HORIZONTAL_FACING,
+        BlockState turned = state.setValue(BlockStateProperties.HORIZONTAL_FACING,
                 rotation.rotate(state.getValue(BlockStateProperties.HORIZONTAL_FACING)));
+        for (Direction side : Direction.Plane.HORIZONTAL) {
+            turned = turned.setValue(severedFor(rotation.rotate(side)), state.getValue(severedFor(side)));
+        }
+        return turned;
+    }
+
+    @Override
+    protected BlockState updateShape(BlockState state, Direction direction, BlockState neighborState,
+                                     LevelAccessor level, BlockPos pos, BlockPos neighborPos) {
+        if (direction.getAxis().isHorizontal() && state.getValue(severedFor(direction))
+                && !neighborState.is(BoilerTags.BOILER_FIREBOX)) {
+            return state.setValue(severedFor(direction), false);
+        }
+        return state;
+    }
+
+    @Override
+    public boolean seamJoined(BlockGetter level, BlockPos from, BlockPos to) {
+        Direction side = Direction.fromDelta(to.getX() - from.getX(), to.getY() - from.getY(), to.getZ() - from.getZ());
+        if (side == null || !side.getAxis().isHorizontal()) return true;
+        BlockState here = level.getBlockState(from);
+        BlockState there = level.getBlockState(to);
+        boolean cutHere = here.getBlock() instanceof FireboxBlock && here.getValue(severedFor(side));
+        boolean cutThere = there.getBlock() instanceof FireboxBlock && there.getValue(severedFor(side.getOpposite()));
+        return !cutHere && !cutThere;
+    }
+
+    @Override
+    public boolean backOpen(BlockGetter level, BlockState state, BlockPos pos) {
+        Direction facing = state.getValue(BlockStateProperties.HORIZONTAL_FACING);
+        BlockState behind = level.getBlockState(pos.relative(facing.getOpposite()));
+        return behind.getBlock() instanceof BoilerBarrelBlock && BoilerBarrelBlock.joinsToward(behind, facing);
     }
 
     @Override
@@ -96,7 +158,7 @@ public class FireboxBlock extends BaseEntityBlock
         for (Direction dir : Direction.Plane.HORIZONTAL) {
             BlockPos controller = FireboxGroups.controllerOf(level, pos.relative(dir));
             if (controller == null || controller.equals(pos)) continue;
-            if (!FireboxGroups.canAbsorb(level, controller, java.util.List.of(pos))) continue;
+            if (!FireboxGroups.canAbsorb(level, controller, List.of(pos))) continue;
             return controller;
         }
         return null;
@@ -104,13 +166,13 @@ public class FireboxBlock extends BaseEntityBlock
 
     @Override
     public void setPlacedBy(Level level, BlockPos pos, BlockState state,
-                            @Nullable net.minecraft.world.entity.LivingEntity placer, ItemStack stack) {
+                            @Nullable LivingEntity placer, ItemStack stack) {
         super.setPlacedBy(level, pos, state, placer, stack);
         if (level.isClientSide) return;
 
         BlockPos controller = absorbingController(level, pos);
         if (controller != null) {
-            FireboxGroups.adopt(level, controller, java.util.List.of(pos));
+            FireboxGroups.adopt(level, controller, List.of(pos));
             absorbNeighbors(level, controller);
             FireboxGroups.freeDoor(level, controller);
             return;
@@ -131,7 +193,7 @@ public class FireboxBlock extends BaseEntityBlock
                 BlockPos other = FireboxGroups.controllerOf(level, member.relative(dir));
                 if (other == null || other.equals(controller)) continue;
 
-                java.util.Set<BlockPos> theirs = FireboxGroups.members(level, other);
+                Set<BlockPos> theirs = FireboxGroups.members(level, other);
                 if (!FireboxGroups.canAbsorb(level, controller, theirs)) continue;
 
                 if (level.getBlockEntity(other) instanceof FireboxBlockEntity oldController
@@ -162,7 +224,7 @@ public class FireboxBlock extends BaseEntityBlock
     }
 
     @Override
-    public @Nullable BlockState copycatMaterial(net.minecraft.world.level.BlockAndTintGetter level,
+    public @Nullable BlockState copycatMaterial(BlockAndTintGetter level,
                                                 BlockPos pos, BlockState state) {
         BlockPos controller = FireboxGroups.renderAnchor(level, pos);
         if (controller == null) return null;
@@ -227,9 +289,9 @@ public class FireboxBlock extends BaseEntityBlock
         }
         boolean open = controller.toggleDoors();
         level.playSound(null, pos,
-                open ? net.minecraft.sounds.SoundEvents.IRON_TRAPDOOR_OPEN
-                        : net.minecraft.sounds.SoundEvents.IRON_TRAPDOOR_CLOSE,
-                net.minecraft.sounds.SoundSource.BLOCKS, 0.7f, 1.1f);
+                open ? SoundEvents.IRON_TRAPDOOR_OPEN
+                        : SoundEvents.IRON_TRAPDOOR_CLOSE,
+                SoundSource.BLOCKS, 0.7f, 1.1f);
         return InteractionResult.CONSUME;
     }
 
@@ -246,7 +308,7 @@ public class FireboxBlock extends BaseEntityBlock
         if (!(level.getBlockEntity(pos) instanceof FireboxBlockEntity controller)) {
             return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         }
-        if (stack.getItem() instanceof net.minecraft.world.item.ShovelItem) {
+        if (stack.getItem() instanceof ShovelItem) {
             if (level.isClientSide) return ItemInteractionResult.SUCCESS;
             if (!controller.extinguish()) controller.dropOneFuel();
             return ItemInteractionResult.SUCCESS;
@@ -274,6 +336,12 @@ public class FireboxBlock extends BaseEntityBlock
 
         if (face.getAxis() == Direction.Axis.Y) return InteractionResult.PASS;
 
+        Direction seam = FireboxSeams.aimedEnd(state, pos, context.getClickLocation());
+        if (seam != null && FireboxSeams.hasPartner(level, pos, state, seam)) {
+            if (!level.isClientSide) FireboxSeams.toggle(level, pos, seam);
+            return InteractionResult.sidedSuccess(level.isClientSide);
+        }
+
         if (level.isClientSide) return InteractionResult.SUCCESS;
 
         boolean isExtension = state.getValue(EXTENSION);
@@ -286,8 +354,8 @@ public class FireboxBlock extends BaseEntityBlock
         }
 
         BlockPos controllerPos = FireboxGroups.controllerOf(level, pos);
-        java.util.Set<BlockPos> group = controllerPos == null
-                ? java.util.Set.of(pos.immutable())
+        Set<BlockPos> group = controllerPos == null
+                ? Set.of(pos.immutable())
                 : FireboxGroups.members(level, controllerPos);
 
         if (controllerPos != null && level.getBlockEntity(controllerPos) instanceof FireboxBlockEntity old) {
@@ -320,7 +388,7 @@ public class FireboxBlock extends BaseEntityBlock
     }
 
     private void handOverOrDrop(Level level, BlockPos removedPos, BlockState removedState) {
-        java.util.Set<BlockPos> remaining = new java.util.LinkedHashSet<>(
+        Set<BlockPos> remaining = new LinkedHashSet<>(
                 FireboxGroups.members(level, removedPos));
         remaining.remove(removedPos);
 
@@ -350,7 +418,7 @@ public class FireboxBlock extends BaseEntityBlock
             FireboxBlockEntity.transferControllerData(old, level, removedPos, target, preferred);
         }
 
-        java.util.Set<BlockPos> island = FireboxGroups.component(level, target, removedPos);
+        Set<BlockPos> island = FireboxGroups.component(level, target, removedPos);
         level.setBlock(target, level.getBlockState(target)
                 .setValue(EXTENSION, false)
                 .setValue(BlockStateProperties.HORIZONTAL_FACING, preferred), 3);

@@ -2,8 +2,8 @@
     "parent": "minecraft:block/block",
     "render_type": "minecraft:cutout",
     "textures": {
-        "all": "loconautics:block/boiler/barrel/red/shell_atlas",
-        "particle": "loconautics:block/boiler/barrel/red/shell_atlas"
+        "all": "loconautics:block/boiler/firebox/red/body_atlas",
+        "particle": "loconautics:block/boiler/firebox/red/body_atlas"
     },
     "elements": [
         {

@@ -52,118 +52,6 @@ public class BoilerScenes {
     private static final BlockPos TANK_LOW = new BlockPos(0, 1, 2);
     private static final BlockPos TANK_HIGH = new BlockPos(0, 3, 2);
 
-    public static void firebox(SceneBuilder builder, SceneBuildingUtil util) {
-        CreateSceneBuilder scene = open(builder, "boiler_firebox", "Firing a Boiler");
-
-        scene.world().showSection(util.select().fromTo(LONE_LEG, LONE_FIREBOX), Direction.DOWN);
-        scene.idle(15);
-        scene.overlay().showText(60)
-                .text("The Firebox burns fuel to heat a Boiler")
-                .attachKeyFrame()
-                .placeNearTarget()
-                .pointAt(util.vector().topOf(LONE_FIREBOX));
-        scene.idle(70);
-
-        scene.overlay().showControls(util.vector().blockSurface(LONE_FIREBOX, Direction.WEST), Pointing.RIGHT, 40)
-                .rightClick()
-                .withItem(new ItemStack(Items.COAL));
-        scene.idle(20);
-        light(scene, util, LONE_FIREBOX, true);
-        scene.overlay().showText(60)
-                .text("Right click it with any furnace fuel to light it")
-                .attachKeyFrame()
-                .placeNearTarget()
-                .pointAt(util.vector().blockSurface(LONE_FIREBOX, Direction.WEST));
-        scene.idle(70);
-
-        scene.overlay().showText(60)
-                .text("It holds a single stack and burns it faster under load")
-                .placeNearTarget()
-                .pointAt(util.vector().topOf(LONE_FIREBOX));
-        scene.idle(70);
-
-        scene.overlay().showControls(util.vector().blockSurface(LONE_FIREBOX, Direction.WEST), Pointing.RIGHT, 30)
-                .rightClick();
-        scene.idle(20);
-        scene.overlay().showText(60)
-                .text("An empty hand will swing the doors open or closed")
-                .attachKeyFrame()
-                .placeNearTarget()
-                .pointAt(util.vector().blockSurface(LONE_FIREBOX, Direction.WEST));
-        scene.idle(70);
-
-        scene.overlay().showControls(util.vector().blockSurface(LONE_FIREBOX, Direction.WEST), Pointing.RIGHT, 30)
-                .rightClick()
-                .withItem(new ItemStack(Items.IRON_SHOVEL));
-        scene.idle(20);
-        light(scene, util, LONE_FIREBOX, false);
-        scene.overlay().showText(60)
-                .text("Using a Shovel scrapes the fire back out")
-                .attachKeyFrame()
-                .placeNearTarget()
-                .pointAt(util.vector().blockSurface(LONE_FIREBOX, Direction.WEST));
-        scene.idle(70);
-
-        scene.world().setBlock(LONE_LEG, BoilerBlocks.FIREBOX_STOCKER.get().defaultBlockState()
-                .setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.WEST), true);
-        scene.idle(20);
-        scene.overlay().showOutline(PonderPalette.GREEN, "stocker", util.select().position(LONE_LEG), 60);
-        scene.overlay().showText(60)
-                .text("A Firebox Stoker underneath holds 9 stacks of fuel")
-                .attachKeyFrame()
-                .placeNearTarget()
-                .pointAt(util.vector().blockSurface(LONE_LEG, Direction.WEST));
-        scene.idle(70);
-    }
-
-    public static void assembly(SceneBuilder builder, SceneBuildingUtil util) {
-        CreateSceneBuilder scene = open(builder, "boiler_assembly", "Assembling a Boiler");
-
-        scene.world().showSection(util.select().fromTo(LEGS_FROM, LEGS_TO), Direction.DOWN);
-        scene.world().showSection(util.select().position(FIREBOX), Direction.DOWN);
-        scene.idle(15);
-        scene.world().showSection(util.select().fromTo(BODY_NEAR, BODY_FAR), Direction.DOWN);
-        scene.overlay().showText(60)
-                .text("Boiler Body blocks touching the Firebox form the barrel")
-                .attachKeyFrame()
-                .placeNearTarget()
-                .pointAt(util.vector().topOf(BODY_MID));
-        scene.idle(70);
-
-        scene.world().showSection(util.select().position(SMOKESTACK), Direction.DOWN);
-        scene.overlay().showText(60)
-                .text("A Smokestack on top of any body block lets waste gas out")
-                .attachKeyFrame()
-                .placeNearTarget()
-                .pointAt(util.vector().topOf(SMOKESTACK));
-        scene.idle(70);
-
-        showHatch(scene, util, HATCH);
-        scene.overlay().showText(60)
-                .text("Water enters through a Fluid Hatch touching a body block")
-                .attachKeyFrame()
-                .placeNearTarget()
-                .pointAt(util.vector().topOf(HATCH));
-        scene.idle(70);
-
-        scene.world().showSection(util.select().fromTo(SHAFT, TAKEOFF), Direction.SOUTH);
-        scene.overlay().showText(60)
-                .text("A Steam Takeoff against the barrel turns steam into rotation")
-                .attachKeyFrame()
-                .placeNearTarget()
-                .pointAt(util.vector().topOf(TAKEOFF));
-        scene.idle(70);
-
-        scene.overlay().showControls(util.vector().topOf(FIREBOX), Pointing.DOWN, 50)
-                .withItem(AllItems.GOGGLES.asStack());
-        scene.overlay().showText(70)
-                .text("Engineer's Goggles on the Firebox name the next missing piece")
-                .attachKeyFrame()
-                .placeNearTarget()
-                .pointAt(util.vector().topOf(FIREBOX));
-        scene.idle(80);
-    }
-
     public static void ratio(SceneBuilder builder, SceneBuildingUtil util) {
         CreateSceneBuilder scene = open(builder, "boiler_ratio", "Sizing a Boiler");
         base(scene, util);
@@ -201,6 +89,13 @@ public class BoilerScenes {
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(FIREBOX));
         scene.idle(70);
+
+        scene.overlay().showText(70)
+                .text("Only 3 Fireboxes and 9 Boiler Body blocks count, extra ones are decorative")
+                .attachKeyFrame()
+                .placeNearTarget()
+                .pointAt(util.vector().topOf(BODY_MID));
+        scene.idle(80);
     }
 
     public static void smokestack(SceneBuilder builder, SceneBuildingUtil util) {
@@ -230,7 +125,7 @@ public class BoilerScenes {
         scene.idle(70);
 
         scene.overlay().showText(60)
-                .text("...and chokes the output completely after 45 seconds")
+                .text("...and chokes the output completely after a while")
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(BODY_FAR));
         scene.idle(70);
@@ -238,7 +133,7 @@ public class BoilerScenes {
         scene.world().showSection(util.select().position(SMOKESTACK), Direction.DOWN);
         scene.idle(20);
         scene.overlay().showText(60)
-                .text("Fitting the stack clears the gas twice as fast")
+                .text("Fitting a stack lets the gas clear and the output recover")
                 .attachKeyFrame()
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(SMOKESTACK));
@@ -259,14 +154,8 @@ public class BoilerScenes {
         scene.idle(10);
         showHatch(scene, util, WET_HATCH);
         scene.overlay().showText(60)
-                .text("A Fluid Hatch against a body block is a water inlet")
+                .text("A Nozzle Socket against a body block is a water inlet")
                 .attachKeyFrame()
-                .placeNearTarget()
-                .pointAt(util.vector().topOf(WET_HATCH));
-        scene.idle(70);
-
-        scene.overlay().showText(60)
-                .text("Hose Nozzles can dock into it to fill the boiler")
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(WET_HATCH));
         scene.idle(70);
@@ -277,7 +166,7 @@ public class BoilerScenes {
         scene.idle(25);
         scene.world().showSection(util.select().position(CONNECTOR), Direction.EAST);
         scene.overlay().showText(60)
-                .text("Using a Fluid Pipe on the barrel places a Barrel Pipe Connector")
+                .text("Using a Fluid Pipe on the barrel places a Boiler Pipe Connector")
                 .attachKeyFrame()
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(CONNECTOR));
@@ -320,6 +209,13 @@ public class BoilerScenes {
                 .placeNearTarget()
                 .pointAt(util.vector().blockSurface(CONNECTOR, Direction.NORTH));
         scene.idle(70);
+
+        scene.overlay().showText(60)
+                .text("The more steam the boiler gives out, the more water it uses")
+                .attachKeyFrame()
+                .placeNearTarget()
+                .pointAt(util.vector().topOf(WET_BODY));
+        scene.idle(70);
     }
 
     public static void takeoff(SceneBuilder builder, SceneBuildingUtil util) {
@@ -347,10 +243,17 @@ public class BoilerScenes {
 
         scene.overlay().showOutline(PonderPalette.BLUE, "barrel", util.select().fromTo(BODY_NEAR, BODY_FAR), 60);
         scene.overlay().showText(60)
-                .text("Stress Capacity depends on the size of the barrel")
+                .text("Stress Capacity follows the level of the Boiler and its pressure")
                 .attachKeyFrame()
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(BODY_MID));
+        scene.idle(70);
+
+        scene.overlay().showText(60)
+                .text("Boiler Bogeys draw steam first and the Takeoff gets what is left")
+                .attachKeyFrame()
+                .placeNearTarget()
+                .pointAt(util.vector().topOf(TAKEOFF));
         scene.idle(70);
 
         scene.world().setKineticSpeed(output, 0.0f);
@@ -363,52 +266,58 @@ public class BoilerScenes {
     }
 
     public static void pressure(SceneBuilder builder, SceneBuildingUtil util) {
-        CreateSceneBuilder scene = open(builder, "boiler_pressure", "Pressure and the Safety Valve");
+        CreateSceneBuilder scene = open(builder, "boiler_valve", "Venting with Smart Safety Valves");
         base(scene, util);
         light(scene, util, FIREBOX, true);
         scene.idle(15);
-
-        scene.overlay().showText(60)
-                .text("A burning, watered boiler builds up pressure")
-                .attachKeyFrame()
-                .placeNearTarget()
-                .pointAt(util.vector().topOf(BODY_MID));
-        scene.idle(70);
-
-        scene.overlay().showText(60)
-                .text("Working pressure is 1.0, and it bursts at 1.6")
-                .placeNearTarget()
-                .pointAt(util.vector().topOf(BODY_MID));
-        scene.idle(70);
 
         scene.world().showSection(util.select().position(SAFETY_VALVE), Direction.DOWN);
         scene.idle(10);
         scene.effects().emitParticles(util.vector().topOf(SAFETY_VALVE),
                 scene.effects().simpleParticleEmitter(ParticleTypes.CLOUD,
-                        util.vector().of(0.0, 0.25, 0.0)), 3.0f, 30);
+                        util.vector().of(0.0, 0.25, 0.0)), 3.0f, 60);
         scene.overlay().showText(60)
-                .text("Safety Valves vent the pressure from the barrel")
+                .text("Smart Safety Valves vent steam from the barrel to cut the pressure")
                 .attachKeyFrame()
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(SAFETY_VALVE));
+        scene.idle(70);
+
+        scene.overlay().showText(60)
+                .text("By default they open at 3/4 of the pressure that bursts the barrel")
+                .placeNearTarget()
+                .pointAt(util.vector().topOf(SAFETY_VALVE));
+        scene.idle(70);
+
+        scene.effects().indicateRedstone(SAFETY_VALVE);
+        scene.overlay().showText(60)
+                .text("A Redstone signal opens them fully")
+                .attachKeyFrame()
+                .placeNearTarget()
+                .pointAt(util.vector().blockSurface(SAFETY_VALVE, Direction.NORTH));
         scene.idle(70);
 
         scene.overlay().showControls(util.vector().blockSurface(SAFETY_VALVE, Direction.NORTH), Pointing.RIGHT, 40)
                 .rightClick()
                 .withItem(new ItemStack(BoilerBlocks.VALVE_ITEM.get()));
         scene.idle(25);
-        scene.overlay().showText(60)
-                .text("Right click a Safety Valve with a Valve to bind it")
+        scene.overlay().showText(70)
+                .text("A bound Valve on a panel sets the opening point from 5 to 100 percent")
                 .attachKeyFrame()
                 .placeNearTarget()
                 .pointAt(util.vector().blockSurface(SAFETY_VALVE, Direction.NORTH));
+        scene.idle(80);
+
+        scene.overlay().showText(60)
+                .text("Settings above 90 percent leave no room before the barrel bursts")
+                .attachKeyFrame()
+                .colored(PonderPalette.RED)
+                .placeNearTarget()
+                .pointAt(util.vector().topOf(SAFETY_VALVE));
         scene.idle(70);
 
-        scene.world().setBlock(SAFETY_VALVE, BoilerBlocks.SMART_SAFETY_VALVE.get().defaultBlockState(), true);
-        scene.idle(15);
         scene.overlay().showText(60)
-                .text("Smart Safety Valves vent by themselves at 3/4 of burst pressure")
-                .attachKeyFrame()
+                .text("The steam jet burns anything standing in front of it")
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(SAFETY_VALVE));
         scene.idle(70);
@@ -424,26 +333,27 @@ public class BoilerScenes {
 
         scene.overlay().showOutline(PonderPalette.RED, "dry", util.select().position(HATCH), 60);
         scene.overlay().showText(60)
-                .text("A hot boiler with no water will fail in 30 seconds...")
+                .text("A hot boiler with no water will fail after a while...")
                 .attachKeyFrame()
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(HATCH));
         scene.idle(70);
 
         scene.overlay().showText(60)
-                .text("...but refilling it brings the countdown down twice as fast")
+                .text("...but refilling it brings the countdown back down")
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(HATCH));
         scene.idle(70);
 
         scene.overlay().showOutline(PonderPalette.RED, "burst", util.select().fromTo(BODY_NEAR, BODY_FAR), 60);
         scene.overlay().showText(60)
-                .text("A full fire against a shut valve will burst the barrel")
+                .text("Too much pressure with no way out will burst the barrel")
                 .attachKeyFrame()
                 .placeNearTarget()
                 .pointAt(util.vector().topOf(BODY_MID));
         scene.idle(70);
 
+        scene.world().showSection(util.select().position(SMOKESTACK), Direction.DOWN);
         scene.overlay().showOutline(PonderPalette.GREEN, "gas", util.select().position(SMOKESTACK), 60);
         scene.overlay().showText(60)
                 .text("Waste gas only chokes the output, it never explodes")
@@ -452,20 +362,16 @@ public class BoilerScenes {
                 .pointAt(util.vector().topOf(SMOKESTACK));
         scene.idle(70);
 
-        scene.overlay().showText(60)
-                .text("The blast scales with the size of the barrel")
-                .placeNearTarget()
-                .pointAt(util.vector().topOf(BODY_MID));
-        scene.idle(70);
-
-        scene.overlay().showControls(util.vector().blockSurface(FIREBOX, Direction.WEST), Pointing.RIGHT, 40)
-                .rightClick()
-                .withItem(new ItemStack(Items.IRON_SHOVEL));
-        scene.idle(25);
         light(scene, util, FIREBOX, false);
-        scene.overlay().showText(60)
-                .text("In Arcade mode it locks out, and a Shovel resets it")
+        scene.overlay().showText(70)
+                .text("A failed Boiler loses its pressure and its fire goes out")
                 .attachKeyFrame()
+                .placeNearTarget()
+                .pointAt(util.vector().blockSurface(FIREBOX, Direction.WEST));
+        scene.idle(80);
+
+        scene.overlay().showText(60)
+                .text("A message names the cause and what to fix")
                 .placeNearTarget()
                 .pointAt(util.vector().blockSurface(FIREBOX, Direction.WEST));
         scene.idle(70);
@@ -492,7 +398,7 @@ public class BoilerScenes {
                 be -> be.addGauge(PanelSlot.TOP_LEFT, FIREBOX, GaugeMetric.PRESSURE));
         scene.idle(20);
         scene.overlay().showText(60)
-                .text("It can be placed on any face in the same level")
+                .text("Up to 4 Gauges fit on one face of a panel")
                 .attachKeyFrame()
                 .placeNearTarget()
                 .pointAt(util.vector().blockSurface(PANEL, Direction.NORTH));
@@ -513,6 +419,89 @@ public class BoilerScenes {
                 .text("Gauges also read speedometers, stressometers and fluid valves")
                 .placeNearTarget()
                 .pointAt(util.vector().blockSurface(PANEL, Direction.NORTH));
+        scene.idle(70);
+    }
+
+    public static void level(SceneBuilder builder, SceneBuildingUtil util) {
+        CreateSceneBuilder scene = open(builder, "boiler_level", "Boiler Levels");
+        base(scene, util);
+        scene.idle(15);
+
+        scene.overlay().showText(70)
+                .text("A Boiler has a level that is the lower of its size and its fire")
+                .attachKeyFrame()
+                .placeNearTarget()
+                .pointAt(util.vector().topOf(BODY_MID));
+        scene.idle(80);
+
+        scene.overlay().showOutline(PonderPalette.BLUE, "size", util.select().fromTo(BODY_NEAR, BODY_FAR), 60);
+        scene.overlay().showText(60)
+                .text("Boiler Body blocks and Fireboxes raise the size level")
+                .attachKeyFrame()
+                .placeNearTarget()
+                .pointAt(util.vector().topOf(BODY_MID));
+        scene.idle(70);
+
+        scene.overlay().showOutline(PonderPalette.GREEN, "fire", util.select().position(FIREBOX), 60);
+        scene.overlay().showText(60)
+                .text("Better fuel gives each Firebox more fire levels")
+                .attachKeyFrame()
+                .placeNearTarget()
+                .pointAt(util.vector().topOf(FIREBOX));
+        scene.idle(70);
+
+        scene.overlay().showText(70)
+                .text("Each level adds to the steam pool that Bogeys and Takeoffs draw from")
+                .attachKeyFrame()
+                .placeNearTarget()
+                .pointAt(util.vector().topOf(BODY_MID));
+        scene.idle(80);
+
+        scene.overlay().showControls(util.vector().topOf(FIREBOX), Pointing.DOWN, 50)
+                .withItem(AllItems.GOGGLES.asStack());
+        scene.overlay().showText(70)
+                .text("Engineer's Goggles show the size and fire bars of the Boiler")
+                .attachKeyFrame()
+                .placeNearTarget()
+                .pointAt(util.vector().topOf(FIREBOX));
+        scene.idle(80);
+    }
+
+    public static void whistle(SceneBuilder builder, SceneBuildingUtil util) {
+        CreateSceneBuilder scene = open(builder, "boiler_whistle", "Sounding Boiler Whistles");
+        base(scene, util);
+        light(scene, util, FIREBOX, true);
+        scene.idle(15);
+
+        scene.world().setBlock(SAFETY_VALVE, AllBlocks.STEAM_WHISTLE.get().defaultBlockState(), true);
+        scene.idle(15);
+        scene.overlay().showText(60)
+                .text("Steam Whistles on a Boiler sound once it holds some pressure")
+                .attachKeyFrame()
+                .placeNearTarget()
+                .pointAt(util.vector().topOf(SAFETY_VALVE));
+        scene.idle(70);
+
+        scene.overlay().showText(60)
+                .text("The stronger the pressure the stronger the blast")
+                .attachKeyFrame()
+                .placeNearTarget()
+                .pointAt(util.vector().topOf(SAFETY_VALVE));
+        scene.idle(70);
+
+        scene.overlay().showText(60)
+                .text("A Sneaking rider sounds the nearest Whistle")
+                .attachKeyFrame()
+                .placeNearTarget()
+                .pointAt(util.vector().topOf(SAFETY_VALVE));
+        scene.idle(70);
+
+        scene.effects().indicateRedstone(SAFETY_VALVE);
+        scene.overlay().showText(60)
+                .text("A Whistle powered by Redstone sounds too")
+                .attachKeyFrame()
+                .placeNearTarget()
+                .pointAt(util.vector().topOf(SAFETY_VALVE));
         scene.idle(70);
     }
 

@@ -96,6 +96,70 @@
       ],
       "keep": 0.0,
       "gamma": 1.4
+    },
+    {
+      "type": "loconautics:palette_swap",
+      "source": "loconautics:block/boiler/firebox/red/shell_atlas",
+      "from": "red",
+      "target": "loconautics:block/boiler/firebox/{color}/shell_atlas",
+      "ignore": [[0, 68, 26, 4], [178, 52, 26, 10]]
+    },
+    {
+      "type": "loconautics:palette_swap",
+      "source": "loconautics:block/boiler/firebox/red/shell_atlas",
+      "from": "red",
+      "target": "loconautics:block/boiler/firebox/{color}/shell_atlas",
+      "ignore": [[0, 68, 26, 4], [178, 52, 26, 10]],
+      "colors": [
+        "industrial"
+      ]
+    },
+    {
+      "type": "loconautics:palette_swap",
+      "source": "loconautics:block/boiler/firebox/red/shell_atlas",
+      "from": "red",
+      "target": "loconautics:block/boiler/firebox/{color}/shell_atlas",
+      "ignore": [[0, 68, 26, 4], [178, 52, 26, 10]],
+      "colors": [
+        "andesite",
+        "brass",
+        "copper",
+        "zinc"
+      ],
+      "keep": 0.0,
+      "gamma": 1.4
+    },
+    {
+      "type": "loconautics:palette_swap",
+      "source": "loconautics:block/boiler/firebox/red/body_atlas",
+      "from": "red",
+      "target": "loconautics:block/boiler/firebox/{color}/body_atlas",
+      "ignore": [[48, 36, 24, 8], [48, 60, 24, 2]]
+    },
+    {
+      "type": "loconautics:palette_swap",
+      "source": "loconautics:block/boiler/firebox/red/body_atlas",
+      "from": "red",
+      "target": "loconautics:block/boiler/firebox/{color}/body_atlas",
+      "ignore": [[48, 36, 24, 8], [48, 60, 24, 2]],
+      "colors": [
+        "industrial"
+      ]
+    },
+    {
+      "type": "loconautics:palette_swap",
+      "source": "loconautics:block/boiler/firebox/red/body_atlas",
+      "from": "red",
+      "target": "loconautics:block/boiler/firebox/{color}/body_atlas",
+      "ignore": [[48, 36, 24, 8], [48, 60, 24, 2]],
+      "colors": [
+        "andesite",
+        "brass",
+        "copper",
+        "zinc"
+      ],
+      "keep": 0.0,
+      "gamma": 1.4
     }
   ]
 }

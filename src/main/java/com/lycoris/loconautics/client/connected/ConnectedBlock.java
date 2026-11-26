@@ -22,4 +22,12 @@ public interface ConnectedBlock {
     default boolean isOpenFace(BlockState state, Direction face) {
         return false;
     }
+
+    default boolean seamJoined(BlockGetter level, BlockPos from, BlockPos to) {
+        return true;
+    }
+
+    default boolean backOpen(BlockGetter level, BlockState state, BlockPos pos) {
+        return false;
+    }
 }

@@ -2,7 +2,7 @@ package com.lycoris.loconautics.content.boiler;
 
 import com.lycoris.loconautics.LoconauticsConstants;
 import com.lycoris.loconautics.content.boiler.barrel.DyedBoilerBarrelBlock;
-import com.lycoris.loconautics.content.boiler.firebox.FireboxBlock;
+import com.lycoris.loconautics.content.boiler.firebox.DyedFireboxBlock;
 import com.lycoris.loconautics.content.boiler.firebox.FireboxBlockEntity;
 import com.lycoris.loconautics.content.boiler.firebox.FireboxStockerBlock;
 import com.lycoris.loconautics.content.boiler.firebox.FireboxStockerBlockEntity;
@@ -56,21 +56,6 @@ public final class BoilerBlocks {
         return LoconauticsBlockProperties.metallic().noOcclusion();
     }
 
-    public static final DeferredHolder<Block, FireboxBlock> FIREBOX =
-            LoconauticsRegistries.BLOCKS.register("firebox", () -> new FireboxBlock(
-                    stoneish().sound(SoundType.NETHERITE_BLOCK)
-                            .lightLevel(state -> state.getValue(BlockStateProperties.LIT) ? 13 : 0)));
-
-    public static final DeferredHolder<Item, BlockItem> FIREBOX_ITEM =
-            LoconauticsRegistries.ITEMS.register("firebox", () ->
-                    new BlockItem(FIREBOX.get(), new Item.Properties().stacksTo(64)));
-
-    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<FireboxBlockEntity>>
-            FIREBOX_BE = BLOCK_ENTITIES.register("firebox", () ->
-            BlockEntityType.Builder
-                    .of(BoilerBlocks::createFireboxBE, FIREBOX.get())
-                    .build(null));
-
     public static final DyeColor BODY_TAB_COLOR = DyeColor.RED;
 
     public static final String BODY_TAB_KIND = "ribbed";
@@ -78,6 +63,30 @@ public final class BoilerBlocks {
     public static final List<String> BODY_KINDS = List.of("ribbed", "paneled", "plated", "framed", "slatted");
 
     public static final List<DyeColor> BODY_COLORS = ColorOrder.ORDER;
+
+    public static final Map<String, Map<DyeColor, DeferredHolder<Block, DyedFireboxBlock>>> DYED_FIREBOXES =
+            registerDyedFireboxes();
+
+    public static final Map<String, Map<DyeColor, DeferredHolder<Item, BlockItem>>> DYED_FIREBOX_ITEMS =
+            registerDyedFireboxItems();
+
+    public static final Map<String, Map<String, DeferredHolder<Block, DyedFireboxBlock>>> EXTRA_FIREBOXES =
+            registerExtraFireboxes();
+
+    public static final Map<String, Map<String, DeferredHolder<Item, BlockItem>>> EXTRA_FIREBOX_ITEMS =
+            registerExtraFireboxItems();
+
+    public static final DeferredHolder<Block, DyedFireboxBlock> FIREBOX =
+            DYED_FIREBOXES.get(BODY_TAB_KIND).get(BODY_TAB_COLOR);
+
+    public static final DeferredHolder<Item, BlockItem> FIREBOX_ITEM =
+            DYED_FIREBOX_ITEMS.get(BODY_TAB_KIND).get(BODY_TAB_COLOR);
+
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<FireboxBlockEntity>>
+            FIREBOX_BE = BLOCK_ENTITIES.register("firebox", () ->
+            BlockEntityType.Builder
+                    .of(BoilerBlocks::createFireboxBE, fireboxBlocks())
+                    .build(null));
 
     public static final Map<String, Map<DyeColor, DeferredHolder<Block, DyedBoilerBarrelBlock>>> DYED_BODIES =
             registerDyedBodies();
@@ -133,6 +142,105 @@ public final class BoilerBlocks {
                 out.accept(EXTRA_BODY_ITEMS.get(color).get(kind).get(), false);
             }
         }
+    }
+
+    public static String fireboxName(String color, String kind) {
+        return color + "_" + kind + "_firebox";
+    }
+
+    private static BlockBehaviour.Properties firebox() {
+        return stoneish().sound(SoundType.NETHERITE_BLOCK)
+                .lightLevel(state -> state.getValue(BlockStateProperties.LIT) ? 13 : 0);
+    }
+
+    public static Block dyedFirebox(String kind, DyeColor color) {
+        Map<DyeColor, DeferredHolder<Block, DyedFireboxBlock>> byColor = DYED_FIREBOXES.get(kind);
+        if (byColor == null || !byColor.containsKey(color)) {
+            return null;
+        }
+        return byColor.get(color).get();
+    }
+
+    public static List<Item> fireboxItems() {
+        List<Item> items = new ArrayList<>();
+        DYED_FIREBOX_ITEMS.values().forEach(byColor -> byColor.values().forEach(item -> items.add(item.get())));
+        EXTRA_FIREBOX_ITEMS.values().forEach(byKind -> byKind.values().forEach(item -> items.add(item.get())));
+        return items;
+    }
+
+    public static void forEachFireboxItem(BiConsumer<Item, Boolean> out) {
+        for (DyeColor color : ColorOrder.ORDER) {
+            for (String kind : BODY_KINDS) {
+                out.accept(DYED_FIREBOX_ITEMS.get(kind).get(color).get(),
+                        color == BODY_TAB_COLOR && kind.equals(BODY_TAB_KIND));
+            }
+        }
+        for (String color : ColorOrder.EXTRA) {
+            for (String kind : BODY_KINDS) {
+                out.accept(EXTRA_FIREBOX_ITEMS.get(color).get(kind).get(), false);
+            }
+        }
+    }
+
+    private static Block[] fireboxBlocks() {
+        List<Block> blocks = new ArrayList<>();
+        DYED_FIREBOXES.values().forEach(byColor -> byColor.values().forEach(block -> blocks.add(block.get())));
+        EXTRA_FIREBOXES.values().forEach(byKind -> byKind.values().forEach(block -> blocks.add(block.get())));
+        return blocks.toArray(Block[]::new);
+    }
+
+    private static Map<String, Map<DyeColor, DeferredHolder<Block, DyedFireboxBlock>>> registerDyedFireboxes() {
+        Map<String, Map<DyeColor, DeferredHolder<Block, DyedFireboxBlock>>> all = new LinkedHashMap<>();
+        for (String kind : BODY_KINDS) {
+            Map<DyeColor, DeferredHolder<Block, DyedFireboxBlock>> byColor = new LinkedHashMap<>();
+            for (DyeColor color : BODY_COLORS) {
+                byColor.put(color, LoconauticsRegistries.BLOCKS.register(fireboxName(color.getSerializedName(), kind),
+                        () -> new DyedFireboxBlock(firebox(), kind, color)));
+            }
+            all.put(kind, Collections.unmodifiableMap(byColor));
+        }
+        return Collections.unmodifiableMap(all);
+    }
+
+    private static Map<String, Map<DyeColor, DeferredHolder<Item, BlockItem>>> registerDyedFireboxItems() {
+        Map<String, Map<DyeColor, DeferredHolder<Item, BlockItem>>> all = new LinkedHashMap<>();
+        for (String kind : BODY_KINDS) {
+            Map<DyeColor, DeferredHolder<Item, BlockItem>> byColor = new LinkedHashMap<>();
+            for (DyeColor color : BODY_COLORS) {
+                byColor.put(color, LoconauticsRegistries.ITEMS.register(fireboxName(color.getSerializedName(), kind),
+                        () -> new BlockItem(DYED_FIREBOXES.get(kind).get(color).get(),
+                                new Item.Properties().stacksTo(64))));
+            }
+            all.put(kind, Collections.unmodifiableMap(byColor));
+        }
+        return Collections.unmodifiableMap(all);
+    }
+
+    private static Map<String, Map<String, DeferredHolder<Block, DyedFireboxBlock>>> registerExtraFireboxes() {
+        Map<String, Map<String, DeferredHolder<Block, DyedFireboxBlock>>> all = new LinkedHashMap<>();
+        for (String color : ColorOrder.EXTRA) {
+            Map<String, DeferredHolder<Block, DyedFireboxBlock>> byKind = new LinkedHashMap<>();
+            for (String kind : BODY_KINDS) {
+                byKind.put(kind, LoconauticsRegistries.BLOCKS.register(fireboxName(color, kind),
+                        () -> new DyedFireboxBlock(firebox(), kind, color)));
+            }
+            all.put(color, Collections.unmodifiableMap(byKind));
+        }
+        return Collections.unmodifiableMap(all);
+    }
+
+    private static Map<String, Map<String, DeferredHolder<Item, BlockItem>>> registerExtraFireboxItems() {
+        Map<String, Map<String, DeferredHolder<Item, BlockItem>>> all = new LinkedHashMap<>();
+        for (String color : ColorOrder.EXTRA) {
+            Map<String, DeferredHolder<Item, BlockItem>> byKind = new LinkedHashMap<>();
+            for (String kind : BODY_KINDS) {
+                byKind.put(kind, LoconauticsRegistries.ITEMS.register(fireboxName(color, kind),
+                        () -> new BlockItem(EXTRA_FIREBOXES.get(color).get(kind).get(),
+                                new Item.Properties().stacksTo(64))));
+            }
+            all.put(color, Collections.unmodifiableMap(byKind));
+        }
+        return Collections.unmodifiableMap(all);
     }
 
     private static Block[] barrelBlocks() {
