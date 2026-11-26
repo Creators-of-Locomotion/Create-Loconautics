@@ -31,6 +31,7 @@ import dev.ryanhcode.sable.api.sublevel.SubLevelContainer;
 import dev.ryanhcode.sable.sublevel.ServerSubLevel;
 import dev.ryanhcode.sable.sublevel.system.SubLevelPhysicsSystem;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
@@ -431,11 +432,9 @@ public class HoseWinchBlockEntity extends GeneratingKineticBlockEntity implement
         return null;
     }
 
-    public net.minecraft.core.Direction fluidInputSide() {
-        net.minecraft.world.level.block.state.BlockState st = getBlockState();
-        return st.hasProperty(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING)
-                ? st.getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING).getOpposite()
-                : net.minecraft.core.Direction.UP;
+    public Direction fluidInputSide() {
+        BlockState st = getBlockState();
+        return st.hasProperty(BlockStateProperties.FACING) ? st.getValue(BlockStateProperties.FACING) : Direction.UP;
     }
 
     @Override

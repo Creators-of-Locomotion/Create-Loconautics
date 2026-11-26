@@ -72,26 +72,30 @@ public class HoseWinchBlock extends DirectionalAxisKineticBlock
         };
     }
 
-    private static final VoxelShape BASE_SHAPE = Shapes.or(
-            Block.box(0, 0, 4, 16, 3, 12),
+    private static final VoxelShape FRAME = Shapes.or(
+            Block.box(0, 0, 3, 16, 3, 13),
             Block.box(0, 2, 2, 3, 14, 14),
-            Block.box(13, 2, 2, 16, 14, 14),
-            Block.box(3, 4, 4, 13, 12, 12),
-            Block.box(3, 13, 2, 13, 14, 14),
-            Block.box(3, 14, 3, 13, 16, 13));
+            Block.box(13, 2, 2, 16, 14, 14));
+
+    private static final VoxelShape EMPTY_SHAPE = Shapes.or(FRAME, Block.box(3, 4.5, 4.5, 13, 11.5, 11.5));
+    private static final VoxelShape COILED_SHAPE = Shapes.or(FRAME, Block.box(3, 2, 2, 13, 14, 14));
 
     // thin plate like simulated, the hose starts at the block center
     private static final VoxelShape PHYSICS_BASE = Block.box(1, 0, 1, 15, 0.25, 15);
 
-    private static final Map<Direction, VoxelShape> SHAPES_ALONG = shapes(BASE_SHAPE, true);
-    private static final Map<Direction, VoxelShape> SHAPES_ACROSS = shapes(BASE_SHAPE, false);
+    private static final Map<Direction, VoxelShape> SHAPES_ALONG = shapes(EMPTY_SHAPE, true);
+    private static final Map<Direction, VoxelShape> SHAPES_ACROSS = shapes(EMPTY_SHAPE, false);
+    private static final Map<Direction, VoxelShape> COILED_ALONG = shapes(COILED_SHAPE, true);
+    private static final Map<Direction, VoxelShape> COILED_ACROSS = shapes(COILED_SHAPE, false);
     private static final Map<Direction, VoxelShape> PHYSICS_ALONG = shapes(PHYSICS_BASE, true);
     private static final Map<Direction, VoxelShape> PHYSICS_ACROSS = shapes(PHYSICS_BASE, false);
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        Map<Direction, VoxelShape> shapes =
-                state.getValue(AXIS_ALONG_FIRST_COORDINATE) ? SHAPES_ALONG : SHAPES_ACROSS;
+        boolean along = state.getValue(AXIS_ALONG_FIRST_COORDINATE);
+        Map<Direction, VoxelShape> shapes = state.getValue(HAS_COIL)
+                ? (along ? COILED_ALONG : COILED_ACROSS)
+                : (along ? SHAPES_ALONG : SHAPES_ACROSS);
         return shapes.get(state.getValue(FACING));
     }
 
