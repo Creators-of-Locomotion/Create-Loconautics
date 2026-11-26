@@ -57,7 +57,7 @@ import java.util.UUID;
 public class HoseNozzleBlockEntity extends SmartBlockEntity
         implements HoseStrandHolder, HoseLinkEndpoint, BlockEntitySubLevelActor, GrabbableActor {
 
-    private static final int UNDOCK_SAFETY_TICKS = 10;
+    private static final int UNDOCK_SAFETY_TICKS = 50;
     private static final int REDOCK_COOLDOWN_TICKS = 10;
     private static final int LINK_SPRAY_FLOW = 16;
     private static final int LINK_FLOW_LINGER_TICKS = 3;
