@@ -203,8 +203,11 @@ public class BoilerBogeyBlockEntity extends AbstractBogeyBlockEntity implements 
     }
 
     public void flipPistons() {
-        CompoundTag data = getBogeyData();
-        data.putBoolean(BoilerBogeyWheels.PISTONS_REAR_KEY, !data.getBoolean(BoilerBogeyWheels.PISTONS_REAR_KEY));
+        setPistonsRear(!getBogeyData().getBoolean(BoilerBogeyWheels.PISTONS_REAR_KEY));
+    }
+
+    public void setPistonsRear(boolean rear) {
+        getBogeyData().putBoolean(BoilerBogeyWheels.PISTONS_REAR_KEY, rear);
         setChanged();
         if (level != null) level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
     }

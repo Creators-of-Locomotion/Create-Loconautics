@@ -129,10 +129,13 @@ public class BoilerBogeyBlock extends AbstractBogeyBlock<BoilerBogeyBlockEntity>
     public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer,
                             ItemStack stack) {
         super.setPlacedBy(level, pos, state, placer, stack);
-        if (level.isClientSide || !FrequencyBindUtil.isBound(stack)
-                || !(level.getBlockEntity(pos) instanceof BoilerBogeyBlockEntity bogey)) {
+        if (level.isClientSide || !(level.getBlockEntity(pos) instanceof BoilerBogeyBlockEntity bogey)) {
             return;
         }
+        if (placer != null) {
+            bogey.setPistonsRear(placer.getDirection().getAxisDirection() == Direction.AxisDirection.NEGATIVE);
+        }
+        if (!FrequencyBindUtil.isBound(stack)) return;
         var registries = level.registryAccess();
         ItemStack[] speed = FrequencyBindUtil.read(stack, registries, "Speed");
         if (speed != null) bogey.setSpeedFrequency(speed[0], speed[1]);
