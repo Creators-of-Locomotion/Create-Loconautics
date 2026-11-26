@@ -170,6 +170,7 @@
 - A slow car stops at a track end like a Create train instead of running off.
 - The lever hold bar is wider and takes the part colors.
 - Shovel right click takes one fuel, sneaking takes it all in full stacks.
+- Hose Winch free reel is analog, a weaker redstone signal makes it stiffer.
 - Firebox explosion on impact, along with its crash config options.
 
 ### Ponder

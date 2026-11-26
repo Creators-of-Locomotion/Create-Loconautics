@@ -226,7 +226,7 @@
       "kind": "binary"
     },
     "loconautics:hose_winch": {
-      "kind": "binary"
+      "kind": "analog"
     },
     "loconautics:fluid_hatch_gray": {
       "kind": "binary"

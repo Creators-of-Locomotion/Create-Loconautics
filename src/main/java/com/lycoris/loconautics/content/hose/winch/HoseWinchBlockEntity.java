@@ -524,7 +524,9 @@ public class HoseWinchBlockEntity extends GeneratingKineticBlockEntity implement
         }
         boolean externalDrive = isFreeSpin() && appliedRpm == 0.0f && getSpeed() != 0.0f;
         boolean freeSpinning = isFreeSpin() && !externalDrive;
-        double pull = freeSpinning ? Math.max(freeSpinPayout(rope), grabPayout(rope, resolveNozzle(strand))) : 0.0;
+        double pull = freeSpinning
+                ? Math.max(freeSpinPayout(rope), grabPayout(rope, resolveNozzle(strand))) * level.getBestNeighborSignal(getBlockPos()) / 15.0
+                : 0.0;
         smoothedPayout = Mth.lerp(FREE_SPIN_PAYOUT_SMOOTH, smoothedPayout, pull);
         if (smoothedPayout < 0.002) {
             smoothedPayout = 0.0;
