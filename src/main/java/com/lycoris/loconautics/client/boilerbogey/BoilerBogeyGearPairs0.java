@@ -14,7 +14,7 @@ final class BoilerBogeyGearPairs0 {
     private static final String[] PART = {};
     private static final int[] PART_BONE = {};
     private static final float[][] PART_CENTER = {};
-    private static final String[] STATIC_PART = {"bogey_chassis_0", "bogey_chassis_1"};
+    private static final String[] STATIC_PART = {"bogey_chassis_p0_0", "bogey_chassis_p0_1"};
     private static final float[][] STATIC_CENTER = {{0f, 18f, 13f}, {0f, 18f, 27.5f}};
 
     // time per key, then x y z per key, then 1 where the key is a catmull rom key

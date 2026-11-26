@@ -84,6 +84,7 @@
 - Trackless cars coupled into a train cross portals with it, untested.
 - Bogeys still behind a portal keep turning after the train crosses, untested.
 - Holding Space while standing still approaches the station again.
+- Boiler bogeys with no wheels show plain side plates where the axle boxes were open.
 
 - Deployers lay track along the car on a turned train.
 ### Added
