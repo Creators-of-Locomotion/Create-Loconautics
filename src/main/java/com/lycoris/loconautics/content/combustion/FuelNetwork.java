@@ -7,6 +7,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
@@ -35,17 +36,28 @@ public final class FuelNetwork {
         FluidStack[] fuel = {kind.isEmpty() ? FluidStack.EMPTY : kind.copyWithAmount(1)};
 
         for (BlockPos engine : engines) {
-            BlockPos first = engine.below();
-            if (!level.isLoaded(first)) continue;
-            FluidTransportBehaviour pipe = FluidPropagator.getPipe(level, first);
-            if (pipe == null) {
-                addTank(level, first, Direction.UP, tanksSeen, fuel, totals);
-                continue;
+            readFrom(level, engine, Direction.DOWN, pipesSeen, tanksSeen, fuel, totals);
+            BlockState state = level.getBlockState(engine);
+            if (!(state.getBlock() instanceof SmallEngineBlock)) continue;
+            Direction facing = SmallEngineBlock.output(state);
+            if (!EngineRow.joinsToward(state, facing, facing.getOpposite())) {
+                readFrom(level, engine, facing.getOpposite(), pipesSeen, tanksSeen, fuel, totals);
             }
-            if (!FluidPropagator.getPipeConnections(level.getBlockState(first), pipe).contains(Direction.UP)) continue;
-            walk(level, engine, first, pipesSeen, tanksSeen, fuel, totals);
         }
         return new Reading(totals[0], totals[1]);
+    }
+
+    private static void readFrom(Level level, BlockPos engine, Direction face, Set<BlockPos> pipesSeen,
+                                 Set<BlockPos> tanksSeen, FluidStack[] fuel, int[] totals) {
+        BlockPos first = engine.relative(face);
+        if (!level.isLoaded(first)) return;
+        FluidTransportBehaviour pipe = FluidPropagator.getPipe(level, first);
+        if (pipe == null) {
+            addTank(level, first, face.getOpposite(), tanksSeen, fuel, totals);
+            return;
+        }
+        if (!FluidPropagator.getPipeConnections(level.getBlockState(first), pipe).contains(face.getOpposite())) return;
+        walk(level, engine, first, pipesSeen, tanksSeen, fuel, totals);
     }
 
     private static void walk(Level level, BlockPos engine, BlockPos first, Set<BlockPos> pipesSeen,

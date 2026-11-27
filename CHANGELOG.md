@@ -1,5 +1,6 @@
 # Loconautics Changelog
 - Firebox ends keep their back wall and glow when a boiler joins them.
+- Small engines take fuel through the nozzle face, the same as the bottom.
 
 ## Ver 0.1.4BETA
 

@@ -135,7 +135,7 @@ public class SmallEngineBlockEntity extends GeneratingKineticBlockEntity impleme
     @Nullable
     public IFluidHandler fluidHandler(@Nullable Direction side) {
         if (side == null) return anySide;
-        return side == Direction.DOWN ? inlet : null;
+        return side == Direction.DOWN || side == dockFace() && atTail() ? inlet : null;
     }
 
     public boolean isHead() {
