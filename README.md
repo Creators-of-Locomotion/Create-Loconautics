@@ -53,7 +53,7 @@ Partial translations are fine. Any text that is missing will be shown in English
 
 - Lyc and MDLOP, development
 - Basilforrealss, TugKanDeMan and Hatchet, art
-- ZyxBe, MaxweLi, Bwah, Popochka, GoldenPants, Čipollø and Miat, testing.
+- MaxweLi, Bwah, Popochka, GoldenPants, Čipollø and Miat, testing.
 - The Create team, for the trains this is built around.
 - RyanHCode and the Sable team, for the physics.
 - Dimforge, for Rapier.
