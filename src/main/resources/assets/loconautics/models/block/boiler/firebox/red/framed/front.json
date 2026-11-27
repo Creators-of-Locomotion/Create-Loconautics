@@ -8,5 +8,5 @@
         "0": "loconautics:block/boiler/firebox/red/body_atlas",
         "particle": "loconautics:block/boiler/firebox/red/body_atlas"
     },
-    "visibility": {"back": false, "orange": false, "frame_back": false, "shell_middle": false, "shell_back": false}
+    "visibility": {"inside_single": false, "back": false, "orange": false, "frame_back": false, "shell_middle": false, "shell_back": false}
 }

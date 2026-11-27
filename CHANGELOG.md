@@ -1,4 +1,5 @@
 # Loconautics Changelog
+- Firebox ends keep their back wall and glow when a boiler joins them.
 
 ## Ver 0.1.4BETA
 
