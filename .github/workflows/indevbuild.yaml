@@ -17,6 +17,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
     - uses: actions/checkout@v5
@@ -33,17 +35,25 @@ jobs:
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@11d4d83c63a6ce61b32d8a9c4faddbdb04fe9917 # v6
 
-    - name: Build with Gradle Wrapper
-      run: ./gradlew build
-
-    - name: Publish indev-latest
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Compute version
       run: |
-        SHORT=$(git rev-parse --short HEAD)
-        gh release delete indev-latest --cleanup-tag --yes || true
-        gh release create indev-latest build/libs/*.jar \
+        BASE=$(grep '^mod_version' gradle.properties | cut -d= -f2 | sed -E 's/[^0-9.].*//')
+        echo "VERSION=$BASE-indev.${{ github.run_number }}" >> "$GITHUB_ENV"
+
+    - name: Build
+      run: ./gradlew build -Pmod_version="$VERSION"
+
+    - name: Publish release
+      run: |
+        gh release create "$VERSION" build/libs/*.jar \
           --target "$GITHUB_SHA" \
           --prerelease \
-          --title "Indev build $SHORT" \
-          --notes "Automatic build of indev at $SHORT. Unstable, back up your worlds."
+          --title "$VERSION" \
+          --notes "Automatic build of indev at ${GITHUB_SHA::7}. Unstable, back up your worlds."
+
+    - name: Prune old releases
+      run: |
+        gh release delete indev-latest --cleanup-tag --yes || true
+        gh release list --limit 100 --json tagName --jq '.[].tagName | select(contains("-indev."))' \
+          | tail -n +11 \
+          | xargs -r -n1 gh release delete --cleanup-tag --yes
