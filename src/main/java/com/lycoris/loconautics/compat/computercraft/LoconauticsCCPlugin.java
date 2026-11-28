@@ -25,6 +25,10 @@ public final class LoconauticsCCPlugin {
                 PeripheralCapability.get(),
                 LoconauticsRegistries.TURNTABLE_BEARING_BE.get(),
                 (bearing, side) -> TurntableBearingPeripheral.of(bearing));
+        event.registerBlockEntity(
+                PeripheralCapability.get(),
+                com.lycoris.loconautics.content.dashboard.DashboardBlocks.DASHBOARD_BE.get(),
+                (dashboard, side) -> DashboardPeripheral.of(dashboard));
     }
 
     public static void install() {
