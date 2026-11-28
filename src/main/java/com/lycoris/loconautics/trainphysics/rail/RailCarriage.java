@@ -4,6 +4,7 @@ import com.lycoris.loconautics.LoconauticsConstants;
 import com.lycoris.loconautics.common.track.TrackProfile;
 import com.lycoris.loconautics.compat.railways.RailwaysSwitches;
 import com.lycoris.loconautics.foundation.debug.SteerTrace;
+import com.lycoris.loconautics.config.ExperimentalConfig;
 import com.lycoris.loconautics.trainphysics.portal.PortalFrame;
 import com.simibubi.create.content.trains.entity.TravellingPoint;
 import com.simibubi.create.content.trains.entity.TravellingPoint.IPortalListener;
@@ -316,6 +317,10 @@ public final class RailCarriage {
         return crossing -> {
             if (RailSeams.crossable(crossing)) {
                 return false;
+            }
+            if (!ExperimentalConfig.portalTwins()) {
+                pendingPortal = crossing;
+                return true;
             }
             if (portal == null) {
                 portal = PortalFrame.of(graph, crossing, dimOf(point.edge));

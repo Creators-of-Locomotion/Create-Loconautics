@@ -5,15 +5,21 @@ import com.lycoris.loconautics.common.advancement.TrainAdvancements;
 import com.lycoris.loconautics.common.sable.SableTeleportation;
 import com.lycoris.loconautics.trainphysics.SableTrain;
 import com.lycoris.loconautics.trainphysics.TrainConsist;
+import com.lycoris.loconautics.trainphysics.TrainLength;
 import com.lycoris.loconautics.common.sable.SubLevelData;
+import com.lycoris.loconautics.config.ExperimentalConfig;
 import com.lycoris.loconautics.config.LoconauticsConfig;
 import com.lycoris.loconautics.trainphysics.drive.TrainRailAdvance;
 import com.lycoris.loconautics.trainphysics.rail.RailCarriage;
+import com.lycoris.loconautics.trainphysics.rail.RailFollower;
+import com.lycoris.loconautics.trainphysics.spawn.SableTrainSpawner;
 import com.lycoris.loconautics.trainphysics.state.CartEvent;
 import com.lycoris.loconautics.trainphysics.state.CartStateStore;
 import com.lycoris.loconautics.trainphysics.state.SableTrainRegistry;
 import com.lycoris.loconautics.trainphysics.teleport.TrainTeleporter;
 import com.lycoris.loconautics.trainphysics.wheels.GhostWheelBodies;
+import com.simibubi.create.content.trains.entity.TravellingPoint;
+import com.simibubi.create.content.trains.graph.TrackGraphLocation;
 import dev.ryanhcode.sable.api.sublevel.SubLevelContainer;
 import dev.ryanhcode.sable.companion.math.BoundingBox3ic;
 import dev.ryanhcode.sable.companion.math.Pose3dc;
@@ -21,6 +27,7 @@ import dev.ryanhcode.sable.sublevel.ServerSubLevel;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3d;
 
 import java.util.ArrayList;
@@ -43,6 +50,22 @@ public final class TrainPortalCrossing {
     private static final Map<UUID, Long> ISSUE278_UNTIL = new HashMap<>();
 
     private static final long REFUSAL_RETRY_TICKS = 20;
+
+    private static final long POP_HOLD_TICKS = 40;
+
+    private static final double POP_MARGIN = 2.0;
+
+    private static final double POP_FAR_STEP = 40.0;
+
+    private static final double POP_APPROACH = 1.0e-3;
+
+    private static final double IDLE_SPEED = 0.005;
+
+    private static final Vec3 POP_UP = new Vec3(0.0, 1.0, 0.0);
+
+    private static final Map<UUID, Long> POP_RETRY = new HashMap<>();
+
+    private static final Map<UUID, Double> POP_DEPTH = new HashMap<>();
 
     private static final class Straddle {
         PortalFrame frame;
@@ -75,6 +98,7 @@ public final class TrainPortalCrossing {
         @Override
         public void forget(SableTrain train, UUID subId, CartEvent event) {
             if (clears(event)) {
+                POP_DEPTH.remove(subId);
                 end(train, false);
             }
         }
@@ -84,6 +108,8 @@ public final class TrainPortalCrossing {
             CARS.keySet().retainAll(liveSubs);
             CROSSING_OF.keySet().retainAll(liveSubs);
             ISSUE278_UNTIL.keySet().retainAll(liveSubs);
+            POP_RETRY.keySet().retainAll(liveSubs);
+            POP_DEPTH.keySet().retainAll(liveSubs);
         }
 
         @Override
@@ -128,6 +154,10 @@ public final class TrainPortalCrossing {
         if (car == null) {
             return;
         }
+        if (!ExperimentalConfig.portalTwins()) {
+            pop(train, car);
+            return;
+        }
         issue278After(train, car);
         PortalFrame frame = frameOf(car, train);
         if (frame == null) {
@@ -145,7 +175,7 @@ public final class TrainPortalCrossing {
         }
         Straddle straddle = CARS.computeIfAbsent(car.subLevelId(), id -> new Straddle(frame));
         straddle.frame = frame;
-        if (!TrainRailAdvance.anyPointFar(car) && span[1] <= -CLEAR_MARGIN) {
+        if (!TrainRailAdvance.anyPointFar(car) && clear(train, span)) {
             straddle.clearTicks++;
             if (straddle.clearTicks >= CLEAR_HOLD) {
                 end(train, true);
@@ -183,6 +213,92 @@ public final class TrainPortalCrossing {
         handOver(train, crossing, frame);
     }
 
+    private static void pop(SableTrain train, SableTrain.Car car) {
+        UUID id = car.subLevelId();
+        ServerLevel home = train.level();
+        long now = home.getGameTime();
+        PortalFrame frame = train.isDerailed() ? null : lookAhead(car, train);
+        ServerSubLevel master = frame == null ? null : SubLevelData.resolve(home, id);
+        if (master == null) {
+            POP_DEPTH.remove(id);
+            return;
+        }
+        double depth = frame.depth(master.logicalPose().position());
+        Double before = POP_DEPTH.put(id, depth);
+        boolean approaching = before != null && depth - before > POP_APPROACH;
+        Long retryAt = POP_RETRY.get(id);
+        if (retryAt != null && now < retryAt || !approaching && !TrainRailAdvance.anyPendingPortal(car)) {
+            return;
+        }
+        ServerLevel far = home.getServer().getLevel(frame.farDim());
+        TrackGraphLocation start = far == null ? null : frame.farStart(car.carriage().graph());
+        Vec3 out = frame.exitDirection();
+        double length = TrainLength.consistLength(home, id) + POP_MARGIN;
+        TrackGraphLocation nose = start == null ? null
+                : SableTrainSpawner.locationBack(start, POP_UP, out, -length, true);
+        if (nose == null && start != null) {
+            nose = SableTrainSpawner.locationBack(start, POP_UP, out, -trackPast(start, out, length), true);
+        }
+        List<SableTrain> chain = chain(train);
+        if (nose == null) {
+            refusePop(chain, now);
+            return;
+        }
+        if (!holdFarChunks(far, frame, nose)) {
+            return;
+        }
+        List<ServerPlayer> riders = new ArrayList<>();
+        for (SableTrain member : chain) {
+            ServerSubLevel sub = SubLevelData.resolve(member.level(), member.car().subLevelId());
+            if (sub != null) {
+                riders.addAll(TrainAdvancements.riders(sub));
+            }
+        }
+        TrainTeleporter.Result result = TrainTeleporter.teleportThroughPortal(train, far, nose, POP_UP, out, frame,
+                line -> PortalTrace.log("{}", line));
+        if (!result.ok()) {
+            refusePop(chain, now);
+            return;
+        }
+        for (SableTrain member : result.cars()) {
+            POP_RETRY.put(member.car().subLevelId(), now + POP_HOLD_TICKS);
+            POP_DEPTH.remove(member.car().subLevelId());
+        }
+        TrainAdvancements.portal(riders);
+    }
+
+    private static double trackPast(TrackGraphLocation start, Vec3 out, double length) {
+        for (double reach = length; reach > 0.0; reach -= 1.0) {
+            if (SableTrainSpawner.locationBack(start, POP_UP, out, -reach, true) != null) {
+                return reach;
+            }
+        }
+        return 0.0;
+    }
+
+    private static void refusePop(List<SableTrain> chain, long now) {
+        for (SableTrain member : chain) {
+            POP_RETRY.put(member.car().subLevelId(), now + REFUSAL_RETRY_TICKS);
+        }
+    }
+
+    private static boolean holdFarChunks(ServerLevel far, PortalFrame frame, TrackGraphLocation nose) {
+        TravellingPoint tip = RailFollower.pointAt(nose);
+        Vec3 end = tip == null ? null : tip.getPosition(nose.graph);
+        Vec3 from = frame.farPoint();
+        int steps = end == null ? 0 : (int) Math.ceil(from.distanceTo(end) / POP_FAR_STEP);
+        boolean ready = true;
+        for (int i = 0; i <= steps; i++) {
+            Vec3 at = steps == 0 ? from : from.lerp(end, (double) i / steps);
+            ready &= PortalHold.holdFarChunks(far, at.x, at.y, at.z);
+        }
+        return ready;
+    }
+
+    private static boolean clear(SableTrain train, double[] span) {
+        return span[1] <= -CLEAR_MARGIN || span[1] <= 0.0 && Math.abs(train.speed()) < IDLE_SPEED;
+    }
+
     private static PortalFrame frameOf(SableTrain.Car car, SableTrain train) {
         PortalFrame frame = unifyFrame(car, train);
         return frame != null ? frame : chainFrame(car, train);
@@ -207,7 +323,7 @@ public final class TrainPortalCrossing {
                 continue;
             }
             double[] span = span(master, other.frame);
-            if (span != null && span[1] > -CLEAR_MARGIN) {
+            if (span != null && !clear(train, span)) {
                 return other.frame;
             }
         }
@@ -474,7 +590,7 @@ public final class TrainPortalCrossing {
         double reach = Math.max(bounds.maxX() - bounds.minX(), bounds.maxZ() - bounds.minZ()) + 1.0;
         PortalFrame ahead = car.carriage().portalWithin(reach);
         double[] span = ahead == null ? null : span(master, ahead);
-        if (span == null || span[1] <= -CLEAR_MARGIN) {
+        if (span == null || clear(train, span)) {
             return null;
         }
         return ahead;
@@ -533,6 +649,8 @@ public final class TrainPortalCrossing {
         CARS.clear();
         CROSSING_OF.clear();
         ISSUE278_UNTIL.clear();
+        POP_RETRY.clear();
+        POP_DEPTH.clear();
     }
 
     private static List<RailCarriage> rails(SableTrain.Car car) {

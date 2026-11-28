@@ -1,6 +1,16 @@
 # Loconautics Changelog
+
+## Ver 0.1.5BETA
+
+### Bug Fixes
 - Firebox ends keep their back wall and glow when a boiler joins them.
+
+### Added
 - Small engines take fuel through the nozzle face, the same as the bottom.
+
+### Changed
+- Trains pop through nether portals whole as soon as they touch one.
+- Portal twins are experimental now, turn them on in the experimental config.
 
 ## Ver 0.1.4BETA
 

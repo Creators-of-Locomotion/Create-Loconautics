@@ -994,6 +994,8 @@
   "loconautics.configuration.experimental.screwLink.tooltip": "The screw link coupler. Not finished yet. Off hides it, stops it being placed and removes its recipe. Needs a restart.",
   "loconautics.configuration.experimental.handbrake": "Handbrake",
   "loconautics.configuration.experimental.handbrake.tooltip": "The handbrake. Not finished yet. Off hides it, stops it being placed and removes its recipe. Needs a restart.",
+  "loconautics.configuration.experimental.portalTwins": "Portal Twins",
+  "loconautics.configuration.experimental.portalTwins.tooltip": "Trains cross a portal as a body that is cut in two and drawn on both sides. Not finished yet. Off, a train that touches a portal appears whole on the other side. Needs a restart.",
   "loconautics.configuration.foundation": "Train Types",
   "loconautics.configuration.gauges": "Gauges",
   "loconautics.configuration.hose": "Hoses",

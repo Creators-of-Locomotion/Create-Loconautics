@@ -87,6 +87,17 @@ public final class TrainTeleporter {
 
     public static Result teleportToRail(SableTrain train, ServerLevel destLevel, TrackGraphLocation loc,
                                         Vec3 upNormal, Vec3 look, @Nullable Vec3 facing, Consumer<String> trace) {
+        return teleportToRail(train, destLevel, loc, upNormal, look, facing, null, trace);
+    }
+
+    public static Result teleportThroughPortal(SableTrain train, ServerLevel destLevel, TrackGraphLocation loc,
+                                               Vec3 upNormal, Vec3 look, PortalFrame frame, Consumer<String> trace) {
+        return teleportToRail(train, destLevel, loc, upNormal, look, null, frame, trace);
+    }
+
+    private static Result teleportToRail(SableTrain train, ServerLevel destLevel, TrackGraphLocation loc,
+                                         Vec3 upNormal, Vec3 look, @Nullable Vec3 facing, @Nullable PortalFrame turn,
+                                         Consumer<String> trace) {
         List<SableTrain> cars = chain(train);
         String refusal = refuse(cars);
         if (refusal != null) {
@@ -107,6 +118,10 @@ public final class TrainTeleporter {
                 return new Result("car " + shortId(car) + " has no live body", 0, cars);
             }
             Vec3 carFacing = facing != null ? facing : (car.speed() < 0.0 ? look.reverse() : look);
+            if (turn != null) {
+                Vec3 turned = turn.dirToFar(SableTrainSpawner.currentFacing(sub, car.car()));
+                carFacing = new Vec3(turned.x, 0.0, turned.z).normalize();
+            }
             SableTrainSpawner.SeatPose seat =
                     SableTrainSpawner.seatPoseAt(car.level(), car, spots.get(i), upNormal, carFacing, false);
             if (seat == null || seat.origin() == null) {

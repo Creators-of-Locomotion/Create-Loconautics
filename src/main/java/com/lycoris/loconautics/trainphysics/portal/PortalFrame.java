@@ -2,6 +2,7 @@ package com.lycoris.loconautics.trainphysics.portal;
 
 import com.simibubi.create.content.trains.graph.TrackEdge;
 import com.simibubi.create.content.trains.graph.TrackGraph;
+import com.simibubi.create.content.trains.graph.TrackGraphLocation;
 import com.simibubi.create.content.trains.graph.TrackNode;
 import com.simibubi.create.content.trains.graph.TrackNodeLocation;
 import net.createmod.catnip.data.Couple;
@@ -59,6 +60,29 @@ public record PortalFrame(ResourceKey<Level> nearDim, ResourceKey<Level> farDim,
             }
         }
         return null;
+    }
+
+    public TrackGraphLocation farStart(TrackGraph graph) {
+        TrackNode node = graph.locateNode(farLoc);
+        if (node == null) {
+            return null;
+        }
+        for (Map.Entry<TrackNode, TrackEdge> entry : graph.getConnectionsFrom(node).entrySet()) {
+            if (entry.getValue().getLength() <= ZERO_LENGTH) {
+                continue;
+            }
+            TrackGraphLocation start = new TrackGraphLocation();
+            start.graph = graph;
+            start.edge = Couple.create(node.getLocation(), entry.getKey().getLocation());
+            start.position = 0.0;
+            return start;
+        }
+        return null;
+    }
+
+    public Vec3 exitDirection() {
+        Vec3 out = dirToFar(inward);
+        return new Vec3(out.x, 0.0, out.z).normalize();
     }
 
     private static double heading(Vec3 d) {

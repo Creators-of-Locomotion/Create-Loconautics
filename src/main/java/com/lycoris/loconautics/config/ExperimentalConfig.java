@@ -34,6 +34,10 @@ public final class ExperimentalConfig {
         return SPEC.isLoaded() && VALUES.get(feature).get();
     }
 
+    public static boolean portalTwins() {
+        return SPEC.isLoaded() && VALUES.get(ExperimentalFeature.PORTAL_TWINS).get();
+    }
+
     private ExperimentalConfig() {
     }
 }
