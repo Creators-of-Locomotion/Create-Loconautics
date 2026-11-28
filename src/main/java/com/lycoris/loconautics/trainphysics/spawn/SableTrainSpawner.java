@@ -7,6 +7,8 @@ import com.lycoris.loconautics.common.sable.SableTeleportation;
 import com.lycoris.loconautics.common.track.BogeyTrackFit;
 import com.lycoris.loconautics.config.LoconauticsConfig;
 import com.lycoris.loconautics.content.knuckle.KnuckleBlockEntity;
+import com.lycoris.loconautics.content.knuckle.KnuckleTuning;
+import com.lycoris.loconautics.content.schedule.ScheduleConductor;
 import com.lycoris.loconautics.network.packets.train.SableTrainSyncPacket;
 import com.lycoris.loconautics.trainphysics.SableTrain;
 import com.lycoris.loconautics.trainphysics.sublevel.SablePlotFrame;
@@ -55,6 +57,7 @@ import dev.ryanhcode.sable.sublevel.SubLevel;
 import dev.ryanhcode.sable.sublevel.storage.SubLevelRemovalReason;
 import dev.simulated_team.simulated.util.SimAssemblyHelper;
 import dev.simulated_team.simulated.util.SimMathUtils;
+import net.createmod.catnip.data.Couple;
 import net.createmod.catnip.data.Pair;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -74,7 +77,9 @@ import org.joml.Vector3d;
 import org.joml.Vector3dc;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -263,9 +268,9 @@ public final class SableTrainSpawner {
                                           Vec3 railDir, BlockPos preferredAnchor) {
         // bogey positions are recorded in world space, converted to the bodys local frame after assembly
         List<BlockPos> bogeyPositions = bogeysIn(level, blocks);
-        bogeyPositions.sort(java.util.Comparator.comparingDouble(p -> p.getX() * railDir.x + p.getZ() * railDir.z));
+        bogeyPositions.sort(Comparator.comparingDouble(p -> p.getX() * railDir.x + p.getZ() * railDir.z));
         // the blocks leave the world on assembly, so which bogeys hang has to be read now
-        Set<BlockPos> hangingBogeys = new java.util.HashSet<>();
+        Set<BlockPos> hangingBogeys = new HashSet<>();
         for (BlockPos p : bogeyPositions) {
             if (WheelColliders.isUpsideDown(level.getBlockState(p))) {
                 hangingBogeys.add(p);
@@ -570,7 +575,6 @@ public final class SableTrainSpawner {
         }
         ServerSubLevelContainer container = SubLevelContainer.getContainer(level);
 
-        ArticulationLinks.release(level, sub);
         squareUpForDisassembly(level, train, sub, stationPos);
         sub = SubLevelData.resolve(level, subId);
         if (sub == null) {
@@ -588,7 +592,7 @@ public final class SableTrainSpawner {
         Rotation rotation = SimAssemblyHelper.rotationFrom90DegRots(turns);
 
         // create hands the schedule item back on disassembly, so do we, before the sub level is gone
-        com.lycoris.loconautics.content.schedule.ScheduleConductor.returnScheduleOnDisassembly(level, train.id(), sub,
+        ScheduleConductor.returnScheduleOnDisassembly(level, train.id(), sub,
                 drawn, sender);
 
         SimAssemblyHelper.disassembleSubLevel(level, sub, anchor, goal, rotation, true);
@@ -880,13 +884,11 @@ public final class SableTrainSpawner {
         }
         TeleportStrands.Carry strands = TeleportStrands.capture(level, moving);
         int placed = 0;
-        ArticulationLinks.suspend(level, cars);
         for (int i = 0; i < cars.size(); i++) {
             if (settleSeat(level, cars.get(i), seats.get(i), true)) {
                 placed++;
             }
         }
-        ArticulationLinks.resume(level, cars);
         TeleportStrands.restore(strands, Map.of(), level, Map.of());
         reengageKnuckles(level, cars);
         LoconauticsConstants.LOGGER.info("[sabletrain] relocated consist of {}/{} car(s) starting at {}",
@@ -1029,7 +1031,7 @@ public final class SableTrainSpawner {
         }
         double fx = reference.x;
         double fz = reference.z;
-        bogeys.sort(java.util.Comparator.comparingDouble(
+        bogeys.sort(Comparator.comparingDouble(
                 b -> b.localPos().getX() * fx + b.localPos().getZ() * fz));
     }
 
@@ -1083,7 +1085,7 @@ public final class SableTrainSpawner {
             Quaterniond fromQ = new Quaterniond(sub.logicalPose().orientation());
             SeatBlend.begin(sub, seat.origin(), seat.orient());
             writePose(level, sub, seat.origin(), seat.orient());
-            com.lycoris.loconautics.trainphysics.wheels.GhostWheelBodies.carryWheels(train, fromPos, fromQ,
+            GhostWheelBodies.carryWheels(train, fromPos, fromQ,
                     seat.origin(), seat.orient());
             return true;
         }
@@ -1219,7 +1221,7 @@ public final class SableTrainSpawner {
         // a seat origin out at the plot means a follower never lifted through its host, which reads as the car vanishing
         LoconauticsConstants.LOGGER.info("[sabletrain] seated car {} on {} bogey(s) at {}",
                 train.id(), bogeys.size(), v3d(seat.origin()));
-        if (com.lycoris.loconautics.content.knuckle.KnuckleTuning.trace) {
+        if (KnuckleTuning.trace) {
             LoconauticsConstants.LOGGER.info("[knuckle] seated state car={} axleSign={} servo={} following={} "
                             + "brakeHold={} handbrake={} scheduleDriven={} lead={} trail={} settle={} bogeys={} railVsBody={}",
                     train.id(), train.axleSign(), train.servoBrake(), train.isFollowing(), train.brakeHold(),
@@ -1280,7 +1282,7 @@ public final class SableTrainSpawner {
         for (int i = 0; i < n; i++) {
             offsets[i] -= mid;
         }
-        java.util.Arrays.sort(order, java.util.Comparator.comparingDouble(i -> offsets[i]));
+        Arrays.sort(order, Comparator.comparingDouble(i -> offsets[i]));
 
         List<SableTrain.Bogey> bogeys = new ArrayList<>(n);
         for (int i : order) {
@@ -1386,7 +1388,7 @@ public final class SableTrainSpawner {
         }
         TrackGraphLocation out = new TrackGraphLocation();
         out.graph = graph;
-        out.edge = net.createmod.catnip.data.Couple.create(p.node1.getLocation(), p.node2.getLocation());
+        out.edge = Couple.create(p.node1.getLocation(), p.node2.getLocation());
         out.position = p.position;
         return out;
     }
@@ -1665,7 +1667,7 @@ public final class SableTrainSpawner {
         if (train == null || level != train.level()) {
             return fallback;
         }
-        Vec3 plate = com.lycoris.loconautics.trainphysics.wheels.GhostWheelBodies
+        Vec3 plate = GhostWheelBodies
                 .plateFacing(train, bogey.localPos());
         return plate == null ? fallback : plate;
     }

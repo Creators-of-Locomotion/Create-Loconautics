@@ -4,6 +4,7 @@
 
 ### Bug Fixes
 - Firebox ends keep their back wall and glow when a boiler joins them.
+- Swivel bearings on a physics build disassemble again instead of leaving their part loose.
 
 ### Added
 - Small engines take fuel through the nozzle face, the same as the bottom.

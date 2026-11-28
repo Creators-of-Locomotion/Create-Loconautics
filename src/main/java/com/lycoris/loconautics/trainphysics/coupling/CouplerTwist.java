@@ -1,7 +1,6 @@
 package com.lycoris.loconautics.trainphysics.coupling;
 
 import com.lycoris.loconautics.common.sable.BodyRef;
-import com.lycoris.loconautics.common.sable.SubLevelData;
 import com.lycoris.loconautics.content.knuckle.KnuckleTuning;
 import com.lycoris.loconautics.foundation.debug.DebugLines;
 import com.lycoris.loconautics.trainphysics.SableTrain;
@@ -28,7 +27,6 @@ import org.joml.Vector3d;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -45,7 +43,6 @@ public final class CouplerTwist {
     private static final long RAMP_TICKS = 8L;
     private static final long NEVER = -1_000_000L;
     private static final double MIN_SPAN = 0.05;
-    private static final double RIGID_AXIS = 0.707;
 
     private CouplerTwist() {
     }
@@ -56,7 +53,6 @@ public final class CouplerTwist {
             if (!clears(event)) {
                 return;
             }
-            ARTICULATED.remove(subId);
             STATES.keySet().removeIf(pair -> pair.lo().equals(subId) || pair.hi().equals(subId));
         }
 
@@ -69,8 +65,7 @@ public final class CouplerTwist {
         public String describe(UUID trainId, UUID subId) {
             long pairs = STATES.keySet().stream()
                     .filter(pair -> pair.lo().equals(subId) || pair.hi().equals(subId)).count();
-            boolean articulated = ARTICULATED.contains(subId);
-            return pairs == 0 && !articulated ? "" : "restPairs=" + pairs + " articulated=" + articulated;
+            return pairs == 0 ? "" : "restPairs=" + pairs;
         }
 
         @Override
@@ -108,11 +103,7 @@ public final class CouplerTwist {
     private record Entry(Pair pair, TwistLink link) {
     }
 
-    private record Swivel(Pair pair, TwistLink link, boolean rigid, double axisDot) {
-    }
-
-    private record Snapshot(long tick, List<Entry> links, List<Swivel> swivels, Map<UUID, SableTrain> trains,
-                            Map<UUID, List<UUID>> groups, Map<Pair, TwistLink> shown) {
+    private record Snapshot(long tick, List<Entry> links, Map<UUID, SableTrain> trains, Map<Pair, TwistLink> shown) {
     }
 
     private static final class State {
@@ -135,7 +126,6 @@ public final class CouplerTwist {
 
     private static final Map<ResourceKey<Level>, Snapshot> SNAPSHOTS = new ConcurrentHashMap<>();
     private static final Map<Pair, State> STATES = new ConcurrentHashMap<>();
-    private static final Set<UUID> ARTICULATED = ConcurrentHashMap.newKeySet();
 
     // the providers scan block entities, so this is once per game tick, not per substep
     public static void collect(ServerLevel level) {
@@ -152,92 +142,29 @@ public final class CouplerTwist {
             }
         }
         Map<Pair, TwistLink> best = new HashMap<>();
-        List<Swivel> swivels = new ArrayList<>();
         for (UUID body : trains.keySet()) {
-            TrainConsist.twistLinks(level, body, link -> consider(level, trains, link, best, swivels));
+            TrainConsist.twistLinks(level, body, link -> consider(trains, link, best));
         }
-        Set<Pair> rigidPairs = new HashSet<>();
-        Map<UUID, UUID> parent = new HashMap<>();
         Map<Pair, TwistLink> shown = new HashMap<>();
-        for (Swivel swivel : swivels) {
-            shown.put(swivel.pair(), swivel.link());
-            if (swivel.rigid()) {
-                rigidPairs.add(swivel.pair());
-                union(parent, swivel.pair().lo(), swivel.pair().hi());
-            }
-        }
         List<Entry> links = new ArrayList<>();
         for (Map.Entry<Pair, TwistLink> entry : best.entrySet()) {
-            if (!rigidPairs.contains(entry.getKey())) {
-                links.add(new Entry(entry.getKey(), entry.getValue()));
-                shown.put(entry.getKey(), entry.getValue());
-            }
+            links.add(new Entry(entry.getKey(), entry.getValue()));
+            shown.put(entry.getKey(), entry.getValue());
         }
-        Snapshot next = new Snapshot(now, links, swivels, trains, groupsOf(parent), shown);
+        Snapshot next = new Snapshot(now, links, trains, shown);
         SNAPSHOTS.put(level.dimension(), next);
         noteLinkChanges(level, previous, next);
     }
 
-    private static void consider(ServerLevel level, Map<UUID, SableTrain> trains, TwistLink link,
-                                 Map<Pair, TwistLink> best, List<Swivel> swivels) {
+    private static void consider(Map<UUID, SableTrain> trains, TwistLink link, Map<Pair, TwistLink> best) {
         if (link.subA().equals(link.subB()) || !trains.containsKey(link.subA()) || !trains.containsKey(link.subB())) {
             return;
         }
         Pair pair = Pair.of(link.subA(), link.subB());
-        if (link.kind() == TwistLink.Kind.SWIVEL) {
-            swivels.add(evaluateSwivel(level, pair, link));
-            return;
-        }
         TwistLink held = best.get(pair);
         if (held == null || link.strength() > held.strength()) {
             best.put(pair, link);
         }
-    }
-
-    // a bearing whose axis is not along the track already locks relative roll in its own rotary joint
-    private static Swivel evaluateSwivel(ServerLevel level, Pair pair, TwistLink link) {
-        ServerSubLevel own = SubLevelData.resolve(level, link.subA());
-        double dot = 0.0;
-        boolean known = false;
-        if (own != null && link.axisA() != null) {
-            Vector3d axis = own.logicalPose().orientation().transform(new Vector3d(link.axisA()));
-            for (UUID id : List.of(link.subA(), link.subB())) {
-                CarriageRoll.Roll roll = CarriageRoll.rollById(id);
-                if (roll != null && roll.lastDriveTick != Long.MIN_VALUE) {
-                    known = true;
-                    dot = Math.max(dot, Math.abs(axis.dot(roll.axis)));
-                }
-            }
-        }
-        return new Swivel(pair, link, !known || dot < RIGID_AXIS, dot);
-    }
-
-    private static void union(Map<UUID, UUID> parent, UUID a, UUID b) {
-        parent.putIfAbsent(a, a);
-        parent.putIfAbsent(b, b);
-        parent.put(find(parent, a), find(parent, b));
-    }
-
-    private static UUID find(Map<UUID, UUID> parent, UUID id) {
-        UUID root = id;
-        while (!parent.get(root).equals(root)) {
-            root = parent.get(root);
-        }
-        return root;
-    }
-
-    private static Map<UUID, List<UUID>> groupsOf(Map<UUID, UUID> parent) {
-        Map<UUID, List<UUID>> byRoot = new HashMap<>();
-        for (UUID id : parent.keySet()) {
-            byRoot.computeIfAbsent(find(parent, id), key -> new ArrayList<>()).add(id);
-        }
-        Map<UUID, List<UUID>> groups = new HashMap<>();
-        for (List<UUID> members : byRoot.values()) {
-            for (UUID member : members) {
-                groups.put(member, members);
-            }
-        }
-        return groups;
     }
 
     private static void noteLinkChanges(ServerLevel level, Snapshot previous, Snapshot next) {
@@ -263,24 +190,6 @@ public final class CouplerTwist {
             }
         }
         return count;
-    }
-
-    public static String articulatedLock(UUID id) {
-        for (Snapshot snapshot : SNAPSHOTS.values()) {
-            List<UUID> group = snapshot.groups().get(id);
-            if (group == null) {
-                continue;
-            }
-            for (UUID other : group) {
-                String reason = other.equals(id) ? null : CarriageRoll.primaryLockOf(other);
-                if (reason != null) {
-                    ARTICULATED.add(id);
-                    return CarriageRoll.LOCK_ARTICULATED;
-                }
-            }
-        }
-        ARTICULATED.remove(id);
-        return null;
     }
 
     public static void solve(SubLevelPhysicsSystem system, double dt) {
@@ -497,12 +406,10 @@ public final class CouplerTwist {
 
     public static void retain(Set<UUID> live) {
         STATES.keySet().removeIf(pair -> !live.contains(pair.lo()) || !live.contains(pair.hi()));
-        ARTICULATED.retainAll(live);
     }
 
     public static void clearAll() {
         STATES.clear();
         SNAPSHOTS.clear();
-        ARTICULATED.clear();
     }
 }

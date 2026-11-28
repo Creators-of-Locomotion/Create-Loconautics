@@ -865,7 +865,6 @@ public final class SableTrainDriver {
         }
         SubLevelSplitWatcher.adoptMarkedBogeys();
         com.lycoris.loconautics.trainphysics.spawn.AssembledBogeyTrains.processPending();
-        com.lycoris.loconautics.trainphysics.spawn.ArticulationLinks.processPending(event.getServer());
         forgetDeadTrains();
         sweepStaleState();
         // runs before the empty check so the last cart removed also drops its shadow

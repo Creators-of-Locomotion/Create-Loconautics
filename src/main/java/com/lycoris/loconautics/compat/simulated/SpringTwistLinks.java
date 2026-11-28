@@ -21,7 +21,7 @@ public final class SpringTwistLinks {
             return null;
         }
         return new TwistLink(own.getUniqueId(), spring.getCenter(), partnerId, partner.getCenter(),
-                TwistLink.Kind.SPRING, strength(spring.getBlockState().getValue(SpringBlock.SIZE)), null);
+                TwistLink.Kind.SPRING, strength(spring.getBlockState().getValue(SpringBlock.SIZE)));
     }
 
     private static double strength(SpringBlock.Size size) {

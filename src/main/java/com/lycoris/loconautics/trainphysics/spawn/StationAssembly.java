@@ -41,9 +41,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Deque;
 import java.util.HashSet;
-import java.util.IdentityHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Predicate;
@@ -109,7 +107,6 @@ public final class StationAssembly {
             claimed.addAll(cluster);
             carriages.add(cluster);
         }
-        ArticulationLinks.absorbBogeylessFronts(level, carriages, claimed, scan, honeyGlue);
 
         Set<BlockPos> frontCarriage = carriageContaining(carriages, frontBogey);
         if (frontCarriage == null) {
@@ -138,9 +135,6 @@ public final class StationAssembly {
             }
         }
 
-        List<ArticulationLinks.Hinge> hinges = ArticulationLinks.collect(level, carriages);
-        Map<Set<BlockPos>, ArticulationLinks.BuiltCar> builtCars = new IdentityHashMap<>();
-        Set<BlockPos> assembled = new HashSet<>();
         String baseName = station.lastDisassembledTrainName != null
                 ? station.lastDisassembledTrainName.getString()
                 : SableTrainSpawner.defaultTrainName();
@@ -177,15 +171,12 @@ public final class StationAssembly {
             SableTrainSpawner.lastTrainId = id;
             SableTrainPersistence.persist(train);
             SableTrainSyncPacket.broadcast(train);
-            assembled.addAll(cluster);
-            builtCars.put(cluster, new ArticulationLinks.BuiltCar(car, anchor));
             built++;
         }
         if (built == 0) {
             fail(acc, "no_bogeys", -1);
             return;
         }
-        ArticulationLinks.linkAll(level, hinges, builtCars);
 
         acc.loconautics$exception(null, -1);
         station.exitAssemblyMode();
@@ -283,9 +274,6 @@ public final class StationAssembly {
                 BlockState nextState = level.getBlockState(next);
                 if (nextState.isAir() || nextState.getBlock() instanceof ITrackBlock
                         || !BlockMovementChecks.isMovementNecessary(nextState, level, next)) {
-                    continue;
-                }
-                if (ArticulationLinks.isHinge(state, nextState, offset)) {
                     continue;
                 }
                 if (isStructurallyAttached(level, pos, state, next, nextState, offset, honeyGlue)) {

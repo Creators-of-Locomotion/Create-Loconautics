@@ -373,7 +373,7 @@ public class KnuckleBlockEntity extends SmartBlockEntity implements PartialSafeN
             return null;
         }
         return new TwistLink(own.getUniqueId(), hingePlot(), partnerSubLevelId, partner.hingePlot(),
-                TwistLink.Kind.KNUCKLE, 1.0, null);
+                TwistLink.Kind.KNUCKLE, 1.0);
     }
 
     static Vector3d hingeLocal(BlockPos p, Direction facing) {

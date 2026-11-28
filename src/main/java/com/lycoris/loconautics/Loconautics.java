@@ -207,7 +207,6 @@ public final class Loconautics {
                 new com.lycoris.loconautics.trainphysics.coupling.SteelCableCouplingProvider());
         com.lycoris.loconautics.trainphysics.TrainConsist.registerProvider(
                 new com.lycoris.loconautics.trainphysics.coupling.ScrewLinkCouplingProvider());
-        com.lycoris.loconautics.trainphysics.spawn.ArticulationLinks.registerProviders();
         com.lycoris.loconautics.common.ConnectorDetachers.register(
                 new com.lycoris.loconautics.content.knuckle.KnuckleDetacher());
 

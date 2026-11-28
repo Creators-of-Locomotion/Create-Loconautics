@@ -6,9 +6,7 @@ import com.lycoris.loconautics.content.knuckle.KnuckleBlockEntity;
 import com.lycoris.loconautics.content.knuckle.KnuckleTuning;
 import com.lycoris.loconautics.trainphysics.drive.SableTrainDriver;
 import com.lycoris.loconautics.trainphysics.drive.TrainRailAdvance;
-import com.lycoris.loconautics.trainphysics.spawn.ArticulationLinks;
 import com.lycoris.loconautics.trainphysics.spacing.CarExtent;
-import com.lycoris.loconautics.trainphysics.spawn.SableTrainSpawner;
 import com.lycoris.loconautics.trainphysics.state.SableTrainRegistry;
 import dev.ryanhcode.sable.sublevel.ServerSubLevel;
 import net.minecraft.core.BlockPos;
@@ -24,7 +22,7 @@ import java.util.UUID;
 
 public final class TrainLength {
 
-    public static final double COUPLING_GAP = com.lycoris.loconautics.content.knuckle.KnuckleTuning.REST_LENGTH - 2.0;
+    public static final double COUPLING_GAP = KnuckleTuning.REST_LENGTH - 2.0;
 
     public record BogeyPlace(UUID subLevelId, int carIndex, int bogeyIndex, BlockPos localPos,
                              double offset, Vector3d world) {}
@@ -108,14 +106,8 @@ public final class TrainLength {
         return mid.div(bogeys.size());
     }
 
-    // a hinged pair keeps its live spacing, a knuckle pair sits with the two hinges one rest length apart, anything else gets the rest gap
+    // knuckle hinges sit one rest length apart
     public static double centerSpacing(ServerLevel level, SableTrain prev, SableTrain car, double prevHalf, double half) {
-        ServerSubLevel subA = SubLevelData.resolve(level, prev.car().subLevelId());
-        ServerSubLevel subB = SubLevelData.resolve(level, car.car().subLevelId());
-        if (subA != null && subB != null && ArticulationLinks.hinged(level, prev.car().subLevelId(), car.car().subLevelId())) {
-            return SableTrainSpawner.bogeyAnchorWorld(subA, prev.car())
-                    .distance(SableTrainSpawner.bogeyAnchorWorld(subB, car.car()));
-        }
         double fromPrev = hingeOffset(level, prev, car);
         double fromCar = hingeOffset(level, car, prev);
         if (Double.isNaN(fromPrev) || Double.isNaN(fromCar)) {

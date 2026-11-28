@@ -7,7 +7,6 @@ import com.lycoris.loconautics.trainphysics.SableTrain;
 import com.lycoris.loconautics.trainphysics.state.CartEvent;
 import com.lycoris.loconautics.trainphysics.state.CartStateStore;
 import com.lycoris.loconautics.trainphysics.SableTrain.Car;
-import com.lycoris.loconautics.trainphysics.coupling.CouplerTwist;
 import com.lycoris.loconautics.trainphysics.spawn.WheelColliders;
 import dev.ryanhcode.sable.api.physics.handle.RigidBodyHandle;
 import dev.ryanhcode.sable.api.physics.mass.MassData;
@@ -21,6 +20,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.joml.Quaterniond;
 import org.joml.Vector3d;
 
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -48,7 +48,7 @@ public final class CarriageRoll {
         }
 
         @Override
-        public void retain(java.util.Set<UUID> liveTrains, java.util.Set<UUID> liveSubs) {
+        public void retain(Set<UUID> liveTrains, Set<UUID> liveSubs) {
             CarriageRoll.retain(liveSubs);
         }
 
@@ -75,10 +75,9 @@ public final class CarriageRoll {
     public static final double SUSPENSION_HZ = 1.2;
     public static final int UNGLUE_TICKS = 3;
     public static final double FALL_MARGIN = Math.toRadians(5.0);
-    public static final String LOCK_ARTICULATED = "articulated";
     private static final double MIN_GRAVITY = 0.5;
     private static final long RIDE_TICKS = 3L;
-    private static final java.util.Set<String> LASTING_LOCKS = java.util.Set.of("docked", "monorail",
+    private static final Set<String> LASTING_LOCKS = Set.of("docked", "monorail",
             "no_wheel_lift", "upside_down", "trackless", "pivot", "no_bogey");
 
     public static final TagKey<Block> NO_WHEEL_LIFT = TagKey.create(Registries.BLOCK,
@@ -221,11 +220,6 @@ public final class CarriageRoll {
         return id == null ? null : STATE.get(id);
     }
 
-    public static String primaryLockOf(UUID id) {
-        Roll roll = STATE.get(id);
-        return roll == null ? null : roll.primaryLock;
-    }
-
     public static boolean isRolling(UUID id) {
         Roll roll = STATE.get(id);
         return roll != null && roll.rolling;
@@ -275,7 +269,7 @@ public final class CarriageRoll {
                 return "upside_down";
             }
         }
-        return CouplerTwist.articulatedLock(sub.getUniqueId());
+        return null;
     }
 
     public static boolean hasGravity(double alongUp) {
@@ -466,7 +460,7 @@ public final class CarriageRoll {
         ROLLING_THIS_STEP.remove(id);
     }
 
-    public static void retain(java.util.Set<UUID> live) {
+    public static void retain(Set<UUID> live) {
         STATE.keySet().retainAll(live);
         ROLLING_THIS_STEP.keySet().retainAll(live);
     }
